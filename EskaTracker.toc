@@ -1,0 +1,25 @@
+## Interface: 70300
+## Title: EskaTracker
+## Author: Skamer
+## Notes: EskaTracker
+## SavedVariables: EskaTrackerDB
+## Version: 2.0.0
+## X-Stage: Alpha
+## Dependencies: PLoop, Scorpio
+## OptionalDeps: LibStub, LibSharedMedia-3.0
+embeds.xml
+
+# Core API Files
+API\API.xml
+
+# Localization files
+Locales\locales.xml
+
+# Main files
+EskaTracker.lua
+
+# Theme files
+Themes\themes.xml
+
+# Options files
+Options\Options.xml

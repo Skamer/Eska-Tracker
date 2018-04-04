@@ -1,0 +1,18 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+  <Script file="Core.lua"/>
+  <Script file="CallbackHandler.lua"/>
+  <Script file="Database.lua"/>
+  <Script file="Option.lua"/>
+  <Script file="State.lua"/>
+  <Script file="Theme.lua"/>
+  <Script file="ObjectManager.lua"/>
+  <Script file="Action.lua"/>
+  <Script file="IReusable.lua"/>
+  <Script file="Frame.lua"/>
+  <Script file="BorderFrame.lua"/>
+  <Script file="Block.lua"/>
+  <Script file="Tracker.lua"/>
+  <Script file="ContextMenu.lua"/>
+  <Script file="Notification.lua"/>
+</Ui>
