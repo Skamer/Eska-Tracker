@@ -51,6 +51,8 @@ function OnLoad(self)
   -- Setup the minimap button
   self:SetupMinimapButton()
 
+  Options:Register("theme-selected", "Eska")
+
 end
 
 function OnEnable(self)
@@ -96,6 +98,7 @@ enum "DependencyState" {
   "OUTDATED",   -- The addon doesn't work with the current dependency version, the dependency must be updated.
 }
 
+-- MinPLoop = 220
 function CheckPLoopVersion(self, printCheck)
   local deprecatedVersion = 190 -- The version below will be considered as deprecated
   local requiredVersion = 190   -- The version below will be considered as outdated and not working with the current addon version.

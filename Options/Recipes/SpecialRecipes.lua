@@ -157,3 +157,224 @@ class "AddonInfoRecipe" inherit "OptionRecipe"
 
   end
 endclass "AddonInfoRecipe"
+
+
+
+
+class "StateSelectRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  --- --------------------------------------------------------------------------
+  --- Fires when the user has selected a state
+  event "OnStateSelected"
+  ------------------------------------------------------------------------------
+  --                             Handlers                                     --
+  --- --------------------------------------------------------------------------
+  local function OnStateSelectedHandler(self, new)
+    if new == "none" then
+      OptionBuilder:SetVariable("state_selected", nil)
+    else
+      OptionBuilder:SetVariable("state_selected", new)
+    end
+
+    self:RebuildChildren()
+  end
+
+  function RebuildChildren(self)
+    if self.propertiesGroup then
+      local recipes = self:GetRecipes()
+      self.propertiesGroup:ReleaseChildren()
+      for index, recipe in recipes:GetIterator() do
+        recipe:Build(OptionContext(self.propertiesGroup, self, self.context))
+      end
+    end
+  end
+
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
+
+    local heading = _AceGUI:Create("Heading")
+    heading:SetRelativeWidth(1.0)
+    heading:SetText("Select a state")
+    context.parentWidget:AddChild(heading)
+
+    local statesGroup = _AceGUI:Create("SimpleGroup")
+    statesGroup:SetFullWidth(true)
+    statesGroup:SetLayout("Flow")
+
+    local currentButton
+
+    for index, stateID in self.statesID:GetIterator() do
+
+      local stateButton = _AceGUI:Create("Icon")
+      stateButton:SetImageSize(20, 20)
+      stateButton.frame:SetBackdrop(_Backdrops.Common)
+
+      if index == 1 then
+        currentButton = stateButton
+        stateButton.frame:SetBackdropColor(1, 1, 1, 0.5)
+      else
+        stateButton.frame:SetBackdropColor(1, 1, 1, 0)
+      end
+
+
+      local state = States:Get(stateID)
+      if state then
+        stateButton:SetLabel(state:ColorText(state.text))
+        if state.icon then
+          stateButton:SetImage(state.icon)
+        end
+      end
+
+      stateButton:SetCallback("OnClick", function()
+        if currentButton ~= stateButton then
+          currentButton.frame:SetBackdropColor(0, 0, 0, 0)
+          stateButton.frame:SetBackdropColor(1, 1, 1, 0.5)
+          currentButton = stateButton
+
+          self:OnStateSelected(stateID)
+        end
+      end)
+
+      --stateButton:SetLabel(stateID)
+      --stateButton:SetImage([[Interface\AddOns\EskaTracker\Media\completed_icon]])
+      statesGroup:AddChild(stateButton)
+    end
+
+    context.parentWidget:AddChild(statesGroup)
+
+    local sep = _AceGUI:Create("Heading")
+    sep:SetFullWidth(true)
+    context.parentWidget:AddChild(sep)
+
+    -- Create the group (maintly used by ThemePropertyRecipe)
+    local recipes = self:GetRecipes()
+    if recipes then
+      local propertiesGroup = _AceGUI:Create("SimpleGroup")
+      propertiesGroup:SetLayout("List")
+      propertiesGroup:SetFullWidth(true)
+      context.parentWidget:AddChild(propertiesGroup)
+      for index, recipe in recipes:GetIterator() do
+        recipe:Build(OptionContext(propertiesGroup, self, context))
+      end
+
+      self.propertiesGroup = propertiesGroup
+    end
+  end
+
+  __Arguments__ { String }
+  function AddState(self, id)
+    self.statesID:Insert(id)
+  end
+
+  __Arguments__ { State }
+  function AddState(self, state)
+    AddState(self, state.id)
+  end
+
+  ------------------------------------------------------------------------------
+  --                            Constructor                                   --
+  --- --------------------------------------------------------------------------
+  function StateSelectRecipe(self)
+    super(self)
+
+    -- Links events
+    self.OnStateSelected = OnStateSelectedHandler
+
+    self.statesID = Array[String]()
+    self:AddState("none") -- Add none by default
+    self:AddState("progress")
+    self:AddState("idle")
+    self:AddState("completed")
+    self:AddState("failed")
+    self:AddState("tracked")
+  end
+
+
+end)
+
+
+
+--------------------------------------------------------------------------------
+--                                                                            --
+--                          Spec Profil                                       --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "SpecProfilRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  --- Fired when a profil has changed
+  event "OnProfilChanged"
+  ------------------------------------------------------------------------------
+  --                             Handlers                                     --
+  ------------------------------------------------------------------------------
+  local function OnProfilChangedHandler(self, new)
+    Profils:SelectForSpec(self.specIndex, new)
+  end
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
+
+
+    local _, sName, _, sIcon = GetSpecializationInfo(self.specIndex)
+    local row = _AceGUI:Create("SimpleGroup")
+    row:SetFullWidth(true)
+    row:SetLayout("Flow")
+
+    local icon = _AceGUI:Create("Label")
+    icon:SetRelativeWidth(0.15)
+    icon:SetText(string.format("|T%s:24:24|t", sIcon))
+    row:AddChild(icon)
+
+    local specName = _AceGUI:Create("Label")
+    specName:SetText(sName)
+    specName:SetRelativeWidth(0.3)
+    row:AddChild(specName)
+
+
+    local list = {
+      ["__global"] = "Global profil",
+      ["__char"]   = "Character profil",
+      ["__spec"]   = "Specialization profil",
+    }
+
+    for profilName in pairs(Profils:GetUserProfilsList()) do
+      list[profilName] = profilName
+    end
+
+    local profilList = _AceGUI:Create("Dropdown")
+    profilList:SetList(list)
+    profilList:SetValue(Profils:GetProfileForSpec(self.specIndex) or "__global")
+    profilList:SetCallback("OnValueChanged", function(_, _,value) self:OnProfilChanged(value) end)
+    row:AddChild(profilList)
+
+    context.parentWidget:AddChild(row)
+  end
+
+  function SetSpecIndex(self, index)
+    self.specIndex = index
+    return self
+  end
+
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "specIndex" { TYPE = Number }
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function SpecProfilRecipe(self)
+    super(self)
+
+    -- Link event
+    self.OnProfilChanged = OnProfilChangedHandler
+  end
+end)

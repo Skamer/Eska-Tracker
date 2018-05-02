@@ -12,10 +12,10 @@ Ceil = math.ceil
 class "__WidgetEvent__" (function(_ENV)
     local function handler (delegate, owner, eventname)
         if delegate:IsEmpty() then
-            owner:SetScript(eventname, nil)
+            owner:GetFrameContainer():SetScript(eventname, nil)
         else
-            if owner:GetScript(eventname) == nil then
-                owner:SetScript(eventname, function(self, ...)
+            if owner:GetFrameContainer():GetScript(eventname) == nil then
+                owner:GetFrameContainer():SetScript(eventname, function(self, ...)
                     -- Call the delegate directly
                     delegate(owner, ...)
                 end)
@@ -34,6 +34,8 @@ class "Frame" (function(_ENV)
   _FrameCache = setmetatable({}, { __mode = "k"})
   event "OnWidthChanged"
   event "OnHeightChanged"
+
+  __WidgetEvent__()
   event "OnSizeChanged"
   ------------------------------------------------------------------------------
   --                             Handlers                                     --
@@ -73,20 +75,20 @@ class "Frame" (function(_ENV)
   __Arguments__ { Number }
   function SetWidth(self, width)
     self.width = width
-    return OnSizeChanged(self, width, self.height)
+    return self
   end
 
   __Arguments__ { Number }
   function SetHeight(self, height)
     self.height = height
-    return OnSizeChanged(self, self.width, height)
+    return self
   end
 
   __Arguments__ { Number, Number }
   function SetSize(self, width, height)
     self.width = width
     self.height = height
-    return OnSizeChanged(self, width, height)
+    return self
   end
 
   function GetValidParentWidth(self)
@@ -269,7 +271,13 @@ class "Frame" (function(_ENV)
         parent:HookScript("OnSizeChanged", function(f, width, height)
           if f._ekt_objects then
             for obj in pairs(f._ekt_objects) do
-              obj:SelectLayout(width, height)
+              if f:GetWidth() ~= Ceil(width) then
+                obj:OnParentWidthChanged(Ceil(width))
+              end
+
+              if f:GetHeight() ~= Ceil(height) then
+                obj:OnParentHeightChanged(Ceil(height))
+              end
             end
           end
         end)
@@ -284,8 +292,8 @@ class "Frame" (function(_ENV)
   ------------------------------------------------------------------------------
   --- Select Layout that is adapted for the width avalaible.
   -- This function may be overrided if the frame need layout system.
-  __Arguments__ { Number, Number }
-  function SelectLayout(self, width, height)
+  __Arguments__ { Number }
+  function SelectLayout(self, width)
     self.layout = nil
   end
 
@@ -313,6 +321,31 @@ class "Frame" (function(_ENV)
     end
   end
 
+  --- This function will be called when the width of parent is changed
+  -- During this moment, we check if the layout may be changed
+  -- The function can be overrided, if the frame must be notified by this changed
+  -- for doing its own stuffs.
+  __Arguments__ { Number }
+  function OnParentWidthChanged(self, width)
+    self:SelectLayout(width)
+  end
+
+  --- This method will be called when the height of parent is changed.
+  -- WARNING: Not enter in an infinite loop in changing the height
+  __Arguments__ { Number }
+  function OnParentHeightChanged(self, height)
+    if not self._firstParentHeightChangedOccured then
+      self:UpdateTextHeight()
+      self._firstParentHeightChangedOccured = true
+    end
+  end
+
+  --- This method will update the fonstring height, this is called by
+  -- OnParentHeightChanged with a check for avoiding an infinite loop.
+  -- Put here, your fonstrings height operations if you want something that is correct
+  -- for their loading
+  function UpdateTextHeight(self) end
+
   --- Force the object to layout its frames.
   function ForceLayout(self, layout)
     self:OnLayout(layout and layout or self.layout)
@@ -328,11 +361,43 @@ class "Frame" (function(_ENV)
   ------------------------------------------------------------------------------
   --                   Skin Methods                                           --
   ------------------------------------------------------------------------------
+  function Layout(self, layout)
+    if not self._pendingLayout then
+      self._pendingLayout = true
+      Scorpio.Delay(0.1, function()
+        local aborted = false
+        if Interface.IsSubType(getmetatable(self), IReusable) and self.isReusable then
+          self._needDoLayout = true
+          aborted = true
+        end
+
+        if not aborted then
+          self:ForceLayout()
+        end
+        self._pendingLayout = false
+      end)
+    end
+  end
 
   --- Request the object to be skinned.
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
   function Skin(self, flags, target)
-    self:ForceSkin(flags, target)
+    if not self._pendingSkin then
+      self._pendingSkin = true
+      Scorpio.Delay(0.1, function()
+        local aborted = false
+        if Interface.IsSubType(getmetatable(self), IReusable) and self.isReusable then
+          self._needSkin = true
+          aborted = true
+        end
+
+        if not aborted then
+          self:ForceSkin(flags, target)
+        end
+
+        self._pendingSkin = false
+      end)
+    end
   end
 
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
@@ -493,11 +558,9 @@ class "Frame" (function(_ENV)
     local objects = objectList and objectList or _FrameCache
     for obj in pairs(objects) do
       if obj:IsRegisteredOption(option) then
-        print("IsRegisteredOption", option)
         if not obj.isReusable then
           obj:OnOption(option, newValue, oldValue)
         else
-          print("Pending")
           obj:AddPendingOption(option)
         end
       end
@@ -506,7 +569,7 @@ class "Frame" (function(_ENV)
 
   --- Reskin all frames in calling their Skin method
   __Arguments__ { ClassType, Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String, "ALL"), Variable.Optional(Table) }
-  function SkinAll(class, flags, target, objectList)
+  __Static__() function SkinAll(class, flags, target, objectList)
     local objects = objectList and objectList or _FrameCache
     -- TODO: Add Theme:EnableCaching
     for obj in pairs(objects) do
@@ -517,19 +580,10 @@ class "Frame" (function(_ENV)
 
   --- Reload all frames in calling their OnReload method
   __Arguments__ { ClassType, Variable.Optional(Table) }
-  function ReloadAll(class, objectList)
+  __Static__() function ReloadAll(class, objectList)
     local objects = objectList and objectList or _FrameCache
     for obj in pairs(objects) do
       obj:Reload()
-    end
-  end
-
-  local function WidthCallback(self, new, old)
-    print("[WidthCallback]", new, old)
-    if self._ekt_objects then
-      for obj in pairs(f._ekt_objects) do
-        obj:SelectLayout(width, self.height)
-      end
     end
   end
   ------------------------------------------------------------------------------
@@ -560,13 +614,6 @@ class "Frame" (function(_ENV)
     this(self)
 
     self.frame = frame
-
-    frame:HookScript("OnSizeChanged", function(_, width, height)
-      self.width = Ceil(width)
-      self.height = Ceil(height)
-    end)
-
-    self.OnWidthChanged = WidthCallback
   end
 
 end)
@@ -582,16 +629,155 @@ class "FrameRow" (function(_ENV)
     frame:SetParent(self)
     self.frames:Insert(frame)
 
+    frame.OnHeightChanged = function()
+      self:Layout()
+    end
+
     self:Layout()
   end
 
-  function OnLayout(self)
-    self:ApplyLayoutList()
+  __Arguments__ { Frame }
+  function RemoveFrame(self, frame)
+    if self.frames:Remove(frame) then
+      frame:SetParent()
+      frame:ClearAllPoints()
+      frame:Hide()
+      frame.OnHeightChanged = nil
 
-    self:CalculateHeight()
+      self:Layout()
+    end
   end
 
+  function OnLayout(self)
+  if self.layout and self.layout == "Flow" then
+      self:ApplyLayoutFlow()
+    else
+      self:ApplyLayoutList()
+    end
+  end
 
+  -- NOTE: We need to override the function in order to avoid self.layout is reset
+  __Arguments__ { Number}
+  function SelectLayout(self, width)
+    return self.layout
+  end
+  ------------------------------------------------------------------------------
+  --                     Flow Layout part                                     --
+  ------------------------------------------------------------------------------
+  function ApplyLayoutFlow(self)
+    local width         = self.frame:GetWidth() > 0 and self.frame:GetWidth() or self:GetValidParentWidth()
+    local widthUsable   = width - self.offsetX * 2
+    local centeredFrame = self.alignment and self.alignment == "CENTER"
+    -- Row variables
+    local rowWidth      = 0
+    local startNewRow   = true
+    local rowHeight     = 0
+    local offsetY       = self.offsetY
+    local rowFirstObj -- use in order to center frames
+
+
+    for index, obj in self.frames:GetIterator() do
+      -- Do init stuff for objects
+      obj:ClearAllPoints()
+      obj:Show()
+      -- Calculate the width if there is a relative width
+      if obj.relWidth then
+        obj.width = obj.relWidth * widthUsable
+      end
+
+      -- Specific stuffs for the first object
+      if index == 1 then
+        rowFirstObj = obj
+        startNewRow = false
+
+        -- Set position
+        obj:SetPoint("TOP", 0, -offsetY)
+        obj:SetPoint("LEFT", self.offsetX, 0)
+      else
+        -- First, check if there is enought space for next object
+        if rowWidth + obj.width >= widthUsable then
+          startNewRow = true
+
+          offsetY   = offsetY + rowHeight + self.verticalSpacing
+          rowHeight = 0
+        end
+
+        -- must we start a new row ?
+        if startNewRow then
+          -- Center the frames of the previous row
+          if centeredFrame then
+            -- REVIEW the formula may be wrong
+            rowFirstObj:SetPoint("LEFT", ((widthUsable - rowWidth) / 2) + self.offsetX, 0)
+          end
+
+          obj:SetPoint("TOP", 0, -offsetY)
+          obj:SetPoint("LEFT", self.offsetX)
+
+          startNewRow = false
+          rowWidth    = 0
+          rowFirstObj = obj
+        else
+          obj:SetPoint("LEFT", previousFrame, "RIGHT", self.horizontalSpacing, 0)
+        end
+      end
+
+      rowWidth      = rowWidth + obj.width + self.horizontalSpacing -- Important to include the spacing here
+      rowHeight     = max(rowHeight, obj.height)
+      previousFrame = obj.frame
+    end
+
+    -- Center the last row if needed
+    if centeredFrame then
+      rowFirstObj:SetPoint("LEFT", ((widthUsable - rowWidth) / 2) + self.offsetX)
+    end
+
+    self:CalculateFlowLayoutHeight()
+  end
+
+  function CalculateFlowLayoutHeight(self)
+    local height = self.baseHeight
+
+    local width       = self.frame:GetWidth() > 0 and self.frame:GetWidth() or self:GetValidParentWidth()
+    local widthUsable = width - self.offsetX + 2
+    -- Row variables
+    local rowWidth    = 0
+    local startNewRow = true
+    local rowHeight   = 0
+    local rowsHeight  = 0
+
+    for index, obj in self.frames:GetIterator() do
+      if obj.relWidth then
+        obj.width = obj.relWidth * widthUsable
+      end
+
+      if index == 1 then
+        startNewRow = false
+      else
+        if rowWidth + obj.width >= widthUsable then
+          startNewRow = true
+        end
+
+        if startNewRow then
+          rowsHeight = rowsHeight + rowHeight + self.verticalSpacing
+          rowHeight  = 0
+          rowWidth   = 0
+          startNewRow = false
+        end
+      end
+
+      rowWidth  = rowWidth + obj.width + self.horizontalSpacing
+      rowHeight = max(rowHeight, obj.height)
+    end
+
+    rowsHeight = rowsHeight + rowHeight
+
+    height = rowsHeight + (2 * self.offsetY)
+
+    self.height = height
+  end
+  ------------------------------------------------------------------------------
+  --                     List Layout part                                     --
+  ------------------------------------------------------------------------------
   function ApplyLayoutList(self)
     local width = self.frame:GetWidth() > 0 and self.frame:GetWidth() or self:GetValidParentWidth()
     local widthUsable = width - self.offsetX * 2
@@ -623,10 +809,11 @@ class "FrameRow" (function(_ENV)
       previousFrame = frame
     end
 
-    self:CalculateHeight()
+    self:CalculateListLayoutHeight()
   end
 
-  function CalculateHeight(self)
+
+  function CalculateListLayoutHeight(self)
     local height = self.baseHeight + self.offsetY * 2
 
     for index, frame in self.frames:GetIterator() do
@@ -639,16 +826,32 @@ class "FrameRow" (function(_ENV)
 
     self.height = height
   end
+
+
+  function CalculateHeight(self)
+    if self.layout and self.layout == "Flow" then
+      self:CalculateFlowLayoutHeight()
+    else
+      self:CalculateListLayoutHeight()
+    end
+  end
+
+  --- If the parent width has changed, we need to re-layout frames to update
+  -- their width
+  __Arguments__ { Number }
+  function OnParentWidthChanged(self, width)
+    super.OnParentWidthChanged(self, width)
+
+    self:Layout()
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "alignment" { TYPE = String, DEFAULT = "CENTER"}
-  property "mode"
-  property "autoResize"
-  property "spacing"
-  property "verticalSpacing" { TYPE = Number, DEFAULT = 2}
-  property "offsetY" { TYPE = Number, DEFAULT = 2 }
-  property "offsetX" { TYPE = Number, DEFAULT = 2}
+  property "alignment"          { TYPE = String, DEFAULT = "CENTER"}
+  property "horizontalSpacing"  { TYPE = Number, DEFAULT = 2 }
+  property "verticalSpacing"    { TYPE = Number, DEFAULT = 2}
+  property "offsetY"            { TYPE = Number, DEFAULT = 2 }
+  property "offsetX"            { TYPE = Number, DEFAULT = 2}
   ---------------------------------------------- --------------------------------
   --                         Constructor                                      --
   ------------------------------------------------------------------------------
@@ -656,5 +859,8 @@ class "FrameRow" (function(_ENV)
     super(self, CreateFrame("Frame"))
 
     self.frames = List()
+
+    self.height     =  0
+    self.baseHeight =  self.height
   end
 end)

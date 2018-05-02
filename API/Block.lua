@@ -1,4 +1,4 @@
---============================================================================--
+ --============================================================================--
 --                          Eska Quest Tracker                                --
 -- @Author  : Skamer <https://mods.curse.com/members/DevSkamer>               --
 -- @Website : https://wow.curseforge.com/projects/eska-quest-tracker          --
@@ -54,7 +54,8 @@ class "BlockCategory" (function(_ENV)
   function GetTracker(self)
     if not self.__tracker then
       Database:SelectRoot()
-      if Database:SelectTable(true, "blocks", "categories", self.id) then
+      --Database:PrepareDatabase()
+      if Database:SelectTable(false, "blocks", "categories", self.id) then
         local value = Database:GetValue("tracker")
         if value then
           return value
@@ -66,10 +67,6 @@ class "BlockCategory" (function(_ENV)
   end
 
   function SetTracker(self, value)
-
-
-
-
     local useDefaultValue = false
     if value == nil then
       value = API:GetDefaultValueFromObj(self, "tracker")
@@ -88,12 +85,50 @@ class "BlockCategory" (function(_ENV)
       self.__tracker = value
     end
   end
+  --[[
+  function TryToGetValidBlock(self)
+    -- Get the block selected by category (return the value by default or set by user if exists)
+    local selected = self.selected
+
+    local blockClass
+    if selected then
+      blockClass = Blocks:Get(selected)
+    end
+
+    -- if block is always nil, this is because the block selected not exists or has been not registered !
+    -- so get the first block found with the category given
+    if not blockClass then
+      blockClass = Blocks:GetFirstForCategory(self.id)
+    end
+
+    if blockClass then
+      selected = API:GetDefaultValueFromClass(blockClass, "id")
+    e
+    return selected, blockClass
+  end --]]
+
+  function TryToGetValidBlock(self)
+    -- Get the block selected by category
+    local selected = self.selected
+
+    local blockClass = Blocks:Get(selected)
+    if blockClass then
+      return selected, blockClass
+    end
+
+    -- if block is always nil, this is because the block selected don't exists or has been not registered !
+    -- so get the first block found with the category given
+    blockClass = Blocks:GetFirstForCategory(self.id)
+    if blockClass then
+      return API:GetDefaultValueFromClass(blockClass, "id"), blockClass
+    end
+  end
 
   property "id" { TYPE = String, FIELD = "__id" }
   property "name" { TYPE = String, FIELD = "__name" }
   property "order" { TYPE = Number, HANDLER = UpdateOrder, DEFAULT = function(self) return self._initOrder end, FIELD = "__order" }
   property "selected" { TYPE = String, HANDLER = UpdateSelected, DEFAULT = function(self) return self._initSelected end, FIELD = "__selected" }
-  property "tracker" { TYPE = String, HANDLER = UpdateTracker, DEFAULT = "Main", GET = "GetTracker", SET = "SetTracker" }
+  property "tracker" { TYPE = String, HANDLER = UpdateTracker, DEFAULT = "main-tracker", GET = "GetTracker", SET = "SetTracker" }
   property "_initOrder" { TYPE = Number, DEFAULT = 100 }
   property "_initSelected" { TYPE = String }
 
@@ -135,34 +170,52 @@ class "Block" (function(_ENV)
     local state = self:GetCurrentState()
     Theme:SkinText(self.frame.header.text, Theme.SkinFlags.TEXT_TRANSFORM, new, state)
   end
+
+  local function SetContentHeight(self, new, old)
+    self.frame.content:SetHeight(new)
+
+    self.height = self.height + (new - old)
+  end
+
+  local function IsActiveChanged(self, new, old)
+    if new then
+      local category = Blocks:GetCategory(self.category)
+      Trackers:TransferBlock(self.category, category.tracker)
+    else
+      print("Remove", self.category)
+      local tracker = Trackers:GetTrackerByBlockCategoryID(self.category)
+      tracker:RemoveBlockByCategoryID(self.category)
+    end
+  end
   ------------------------------------------------------------------------------
   --                             Methods                                      --
   ------------------------------------------------------------------------------
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
   function OnSkin(self, flags, target)
+
       -- Call our super 'OnSkin'
       super.OnSkin(self, flags, target)
       -- Get the current state
       local state = self:GetCurrentState()
 
       -- Start Skinning stuff is needed
-      if Theme:NeedSkin(target, self.frame) then
+      if Theme:NeedSkin(self.frame, target) then
         Theme:SkinFrame(self.frame, flags, state)
       end
 
-      if Theme:NeedSkin(target, self.frame.header) then
+      if Theme:NeedSkin(self.frame.header, target) then
         Theme:SkinFrame(self.frame.header, flags, state)
       end
 
-      if Theme:NeedSkin(target, self.frame.content) then
+      if Theme:NeedSkin(self.frame.content, target) then
         Theme:SkinFrame(self.frame.content, flags, state)
       end
 
-      if Theme:NeedSkin(target, self.frame.header.text) then
+      if Theme:NeedSkin(self.frame.header.text, target) then
         Theme:SkinText(self.frame.header.text, flags, self.text, state)
       end
 
-      if Theme:NeedSkin(target, self.frame.header.stripe) then
+      if Theme:NeedSkin(self.frame.header.stripe, target) then
         Theme:SkinTexture(self.frame.header.stripe, flags, state)
       end
   end
@@ -222,20 +275,32 @@ class "Block" (function(_ENV)
   function ReloadAll()
     Frame:ReloadAll(_FrameCache)
   end
+
+  __Arguments__ { ClassType, String }
+  __Static__() function GetCached(self, blockID)
+    for block in pairs(_BlockCache) do
+      if block.id == blockID then
+        return block
+      end
+    end
+  end
   ------------------------------------------------------------------------------
   --                            Properties                                    --
   ------------------------------------------------------------------------------
   property "id" { TYPE = String, DEFAULT = "defaultID" }
   property "text" { TYPE = String, DEFAULT = "Default Header Text", HANDLER = SetText }
-  property "isActive" { TYPE = Boolean, DEFAULT = true }
+  property "isActive" { TYPE = Boolean, DEFAULT = true, HANDLER = IsActiveChanged }
   property "order" { TYPE = Number, DEFAULT = 100 } -- is a shortcut of the category order
   property "category" { TYPE = String }
-  property "tracker" { TYPE = String }
+  property "tracker" { TYPE = String  }
   property "expanded" { TYPE = Boolean, DEFAULT = true }
+  property "contentHeight" { TYPE = Number, DEFAULT = 0, HANDLER = SetContentHeight }
 
   __Static__() property "_prefix" { DEFAULT = "block"}
 
   function Block(self)
+    super(self)
+
     self.frame = CreateFrame("Frame")
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropBorderColor(0, 0, 0, 0)
@@ -278,6 +343,7 @@ class "Block" (function(_ENV)
     content:SetPoint("LEFT")
     content:SetPoint("RIGHT")
     content:SetPoint("BOTTOM")
+    content:SetBackdrop(_Backdrops.Common)
     self.frame.content = content
 
     self.height = 34
@@ -299,6 +365,11 @@ class "Blocks"
 
   __Arguments__ { ClassType, BlockCategory }
   __Static__() function RegisterCategory(self, category)
+
+    if not _CATEGORIES[category.id] then
+      Scorpio.FireSystemEvent("EKT_BLOCK_CATEGORY_REGISTERED", category)
+    end
+
     _CATEGORIES[category.id] = category
 
     category.OnOrderChanged = function(self, new)
@@ -326,6 +397,10 @@ class "Blocks"
       return _CATEGORIES[id]
     end
 
+    __Static__() function IterateCategories(self)
+      return _CATEGORIES:GetIterator()
+    end
+
     __Arguments__ { ClassType, String}
     __Static__() function Get(self, id)
       for class in _BLOCKS:GetIterator() do
@@ -349,14 +424,61 @@ class "Blocks"
 end)
 
 
+class "__Block__" (function(_ENV)
+  extend "IApplyAttribute"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function AttachAttribute(self, target, targettype, owner, name, stack)
+    local id       = self[1]
+    local category = self[2]
+    local prefix   = "block."..category
 
-Blocks:RegisterCategory(BlockCategory("quests", "Quests", 50, "eska-quests"))
+    Attribute.IndependentCall(function()
+      class(target) (function(_ENV)
+        inherit "Block"
+
+        property "id" { TYPE = String, DEFAULT = id }
+        property "category" { TYPE = String, DEFAULT = category }
+
+        property "_prefix" { STATIC = true, DEFAULT = prefix }
+      end)
+    end)
+
+    Blocks:Register(target)
+  end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "AttributeTarget" { DEFAULT = AttributeTargets.Class }
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  __Arguments__ { Variable.Rest(NEString) }
+  function __new(cls, ...)
+    return { ... }, true
+  end
+
+  __Arguments__ { NEString }
+  function __call(self, other)
+    tinsert(self, other)
+    return self
+  end
+end)
+
+
+
+--[[Blocks:RegisterCategory(BlockCategory("quests", "Quests", 50, "eska-quests"))
 Blocks:RegisterCategory(BlockCategory("bonus-objectives", "Bonus objectives", 12, "eska-bonus-objectives"))
 Blocks:RegisterCategory(BlockCategory("world-quests", "World quests", 15, "eska-world-quests"))
 Blocks:RegisterCategory(BlockCategory("achievements", "Achievements", 10, "eska-achievements"))
 Blocks:RegisterCategory(BlockCategory("dungeon", "Dungeon", 10, "eska-dungeon"))
 Blocks:RegisterCategory(BlockCategory("keystone", "Keystone", 5, "eska-keystone"))
-Blocks:RegisterCategory(BlockCategory("scenario", "Scenario", 10, "eska-scenario"))
+Blocks:RegisterCategory(BlockCategory("scenario", "Scenario", 10, "eska-scenario"))--]]
+
+function OnLoad(self)
+
+end
 
 --[[
 _G.EKT_BLOCK = function(id)
@@ -395,6 +517,8 @@ _G.EKT_BLOCK = function(id)
   return block
 end --]]
 
+--Category:GetValidBlockID()
+
 
  local function GetBlock(id)
   -- Get the category
@@ -425,9 +549,12 @@ end --]]
   end
 
   local block = blockClass()
+
   local tracker = Trackers:Get(category.tracker)
 
-  tracker:AddBlock(block)
+  if tracker then
+    tracker:AddBlock(block)
+  end
 
   return block
 end
@@ -437,3 +564,19 @@ _G.EKT_BLOCK = GetBlock
 
 --- [[ Experimental ]]
 Environment.RegisterGlobalKeyword{ block = GetBlock }
+
+
+
+__SystemEvent__()
+function EKT_PROFIL_CHANGED()
+  Profils:PrepareDatabase()
+
+  if Database:SelectTable(false, "blocks") then
+    for id, trackerDB in Database:IterateTable() do
+      local category = Blocks:GetCategory(id)
+      if category then
+        category.tracker = trackerDB.tracker
+      end
+    end
+  end
+end

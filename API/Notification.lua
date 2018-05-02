@@ -12,67 +12,53 @@ namespace                            "EKT"
 __Recyclable__()
 class "NotificationButton" (function(_ENV)
   inherit "Frame"
-
+  ------------------------------------------------------------------------------
+  --                         Events                                           --
+  ------------------------------------------------------------------------------
+  __WidgetEvent__()
   event "OnClick"
+  ------------------------------------------------------------------------------
+  --                         Handlers                                         --
+  ------------------------------------------------------------------------------
+  local function UpdateText(self, new)
+    self.frame.text:SetText(new)
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "id"       { TYPE = String }
-  property "text"     { TYPE = String }
+  property "id"       { TYPE = String, DEFAULT = "yes" }
+  property "text"     { TYPE = String, DEFAULT = "", HANDLER = UpdateText }
+  property "icon"     { TYPE = String }
   ------------------------------------------------------------------------------
   --                         Constructor                                      --
   ------------------------------------------------------------------------------
+  __Arguments__ {}
   function NotificationButton(self)
-    super(self)
+    super(self, CreateFrame("Button"))
 
-    self.frame = CreateFrame("Button")
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(1, 0, 0, 0.75)
     self.frame:RegisterForClicks("LeftButtonUp")
 
     local text = self.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     text:SetAllPoints()
-    text:SetText("YES")
+    text:SetText("")
+    self.frame.text = text
 
     self.height = 16
     self.width  = 75
-    --self.relWidth = 0.4
+    self.relWidth = 0.4
+  end
+
+  __Arguments__ { String, String, Variable.Optional(String) }
+  function NotificationButton(self, id, text, icon)
+    this(self)
+
+    self.id   = id
+    self.text = text
+    self.icon = icon
   end
 end)
-
-
-
-class "NotificationButtonRow" (function(_ENV)
-  inherit "Frame"
-  ------------------------------------------------------------------------------
-  --                         Methods                                          --
-  ------------------------------------------------------------------------------
-  __Arguments__ { NotificationButton }
-  function AddButton(self, button)
-    self.buttons:Insert(button)
-  end
-
-  function OnLayout(self)
-    local width = self.frame:GetWidth() > 0 and self.frame:GetWidth() or self:GetValidParentWidth()
-
-
-  end
-  ------------------------------------------------------------------------------
-  --                         Properties                                       --
-  ------------------------------------------------------------------------------
-  property "elementsAlignment"
-  property "elementsSpacing"
-  ------------------------------------------------------------------------------
-  --                         Constructor                                      --
-  ------------------------------------------------------------------------------
-  function NotificationButtonRow(self)
-    super(self, CreateFrame("Frame"))
-
-    self.buttons = List()
-  end
-
-end)
-
 
 class "BaseNotification" (function(_ENV)
   inherit "Frame"
@@ -264,18 +250,6 @@ class "InteractiveNotification" (function(_ENV)
   ------------------------------------------------------------------------------
   --                         Methods                                          --
   ------------------------------------------------------------------------------
-  --[[function AddButton(self, button)
-    self.buttons:Insert(button)
-    button:SetParent(self)
-    button.OnHeightChanged = function(button, new, old)
-      self.height = self.height + (new - old)
-    end
-
-    self:Layout()
-
-    return self
-  end --]]
-
   function AddButton(self, button)
     -- Create the button row frame
     if not self.buttonRow then
@@ -291,197 +265,18 @@ class "InteractiveNotification" (function(_ENV)
       self.height = self.height + (new - old)
     end
 
+    button.OnClick = function()
+      self:OnConfirmedAnswer(button.id, button)
+    end
+
     self:Layout()
 
     return self
   end
 
-  __Arguments__ { Number, Number }
-  function SelectLayout(self, width, height)
-    self.layout = nil
+  function GetButtonRow(self)
+    return self.buttonRow
   end
-
-
-
-  -- "CENTERED" ""
-  -- SetButtonAlignment -- "FLOW" "LIST"
-
-
-
-  -- SetButtonlayoutStyle
-  -- "Flow" --
-  -- "CENTERED"
-  -- "Resize the children"
-
-
-  --function OnLayout(self, layout)
-    --local previousFrame
-    --[[
-    local right = self.frame:GetRight()
-    local left = self.frame:GetLeft()
-    print("OnLayout Width", right, left, self.frame:GetWidth())
-
-    local parent = self.frame:GetParent()
-    local width = 0
-    while(parent) do
-      width = parent:GetWidth()
-      if width and width > 0 then
-        break;
-      end
-      parent = parent:GetParent()
-    end
-
-    print("PARENT", width) --]]
-    --[[local width = self.frame:GetWidth() > 0 and self.frame:GetWidth() or self:GetValidParentWidth()
-    local offsetWidth = 5
-    local offsetY = 2
-    -- Row properties
-    local offsetWidth = 5
-    local rowWidth    = offsetWidth * 2
-    local rowHeight   = 0
-    local startNewRow = true
-
-    for index, button in self.buttons:GetIterator() do
-      button:ClearAllPoints()
-      button:Show()
-
-      if index == 1 then
-        button:SetPoint("TOP", self.frame.content, "BOTTOM")
-        button:SetPoint("LEFT", offsetWidth)
-        rowWidth = rowWidth + button.width
-        startNewRow = false
-      else
-        if rowWidth + button.width + self.buttonsXSpacing > width then
-          startNewRow = true
-          offsetY     = offsetY + rowHeight
-          rowHeight   = 0
-        end
-
-        if startNewRow then
-          button:SetPoint("TOP", self.frame.content, "BOTTOM", 0, -offsetY)
-          button:SetPoint("LEFT", offsetWidth)
-          startNewRow = false
-        else
-          button:SetPoint("TOPLEFT", previousFrame, "TOPRIGHT", self.buttonsXSpacing, 0)
-
-        end
-      end
-
-      rowHeight = max(rowHeight, button.height)
-      previousFrame = button.frame
-    end--]]
---[[
-    for index, button in self.buttons:GetIterator() do
-      button:Show()
-      button:ClearAllPoints()
-
-      if index == 1 then
-        button:SetPoint("TOP", self.frame.content, "BOTTOM")
-        button:SetPoint("LEFT")
-        button:SetPoint("RIGHT")
-      else
-        button:SetPoint("TOPLEFT", previousFrame, "BOTTOMLEFT", 0, -5)
-        button:SetPoint("TOPRIGHT", previousFrame, "BOTTOMRIGHT")
-      end
-
-      previousFrame = button.frame
-    end
-    --]]
-
-  --  self:CalculateHeight()
---  end
-
-
---[[
-  function ApplyButtonsListLayout(self)
-    local previousFrame
-    local width   = self.frame:GetWidth() > 0 and self.frame:GetWidth() or self:GetValidParentWidth()
-    -- Row properties
-    local rowWidth    = self.buttonsOffsetX * 2
-    local startNewRow = true
-    local rowHeight   = 0
-    local rowFirstFram
-
-    for index, button in self.buttons:GetIterator() do
-      button:ClearAllPoints()
-      button:Show()
-
-      -- Resolve the button width if needed
-      if button.relWidth then
-        button.Width =  Width * button.relWidth
-      end
-
-      local button =
-
-      --
-      -- 5 + 50 + 5 = 60
-      -- 5 + 25 + 50 +  25 + 5
-      -- 100
-      -- 50
-      -- 100 - 50 /25
-      --
-
-
-      local offsetX = self.buttonsOffsetX * 2 + button.width
-
-      if index == 1 then
-        button:SetPoint("TOP", self.frame.content, "BOTTOM", 0, self.buttonsOffsetY)
-        button:SetPoint("LEFT", self.buttonsOffsetY)
-
-      else
-        button:SetPoint("TOP",
-
-
-    end
-  end
-  --]]
-
-  function CalculateHeight(self)
-    local height = self.baseHeight
-
-    local width = self.frame:GetWidth() > 0 and self.frame:GetWidth() or self:GetValidParentWidth()
-    -- Row properties
-    local offsetWidth = 5
-    local rowWidth    = offsetWidth * 2
-    local rowHeight   = 0
-    local startNewRow = true
-    local heightOffsetBetweenRow = 2
-    local rowsHeight  = 2
-
-    for index, button in self.buttons:GetIterator() do
-      if index == 1 then
-        rowWidth = rowWidth + button.width
-        startNewRow = false
-      else
-        if rowWidth + button.width + self.buttonsXSpacing > width then
-          startNewRow = true
-          rowsHeight  = rowsHeight + rowHeight + heightOffsetBetweenRow
-          rowHeight   = 0
-        end
-
-        if startNewRow then
-          startNewRow = false
-        end
-      end
-
-      rowHeight = max(rowHeight, button.height)
-    end
-
-    rowsHeight = rowsHeight + rowHeight
-
-    self.height = self.height + rowsHeight + 2
-  end
---[[
-  function CalculateHeight(self)
-    local height = self.baseHeight
-    for index, button in self.buttons:GetIterator() do
-      local offset = index > 1 and 5 or 0
-      height = height + button.height + offset
-    end
-
-    self.height = height
-  end
---]]
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -703,8 +498,13 @@ end
 __Async__()
 function PullInteractive()
   local notif = InteractiveNotification()
-  notif:AddButton(NotificationButton())
-  notif:AddButton(NotificationButton())
+  notif:AddButton(NotificationButton("yes", "Yes !"))
+  notif:AddButton(NotificationButton("no", "No !"))
+  notif:AddButton(NotificationButton("cancel", "Cancel"))
+  --notif:GetButtonRow().layout = "Flow"
+
+
+  notif.OnConfirmedAnswer = function(...)  end
 
   --local row = notif:AddButtonRow()
 

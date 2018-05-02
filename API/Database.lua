@@ -209,3 +209,11 @@ end
   end
 
 end)
+
+
+function OnLoad(self)
+  --Database:GetSpec().profile_test = "Salut profile"
+  --Database:GetChar().profile_char = "Salut char"
+
+  --print("Spec profile", Database:GetChar()["__ScorpioSpecs"][1].profile_test)
+end

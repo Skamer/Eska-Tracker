@@ -1,38 +1,22 @@
--- ========================================================================== --
--- 										 EskaQuestTracker                                       --
--- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
--- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
--- ========================================================================== --
+--============================================================================--
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
+--============================================================================--
 Scorpio          "EskaTracker.Options.OptionRecipe"                           ""
 --============================================================================--
-namespace "EKT"
+namespace                        "EKT"
 --============================================================================--
-
---[[
-struct "OptionContext"
-  parentWidget = Table
-  parentRecipe = OptionRecipe
-
-
-  function OptionContext(self, variables)
-
-
-  end
-
-endstruct "OptionContext" --]]
-
+_Module = _M
+--------------------------------------------------------------------------------
+--                                                                            --
+--                           Option Context                                   --
+--                                                                            --
+--------------------------------------------------------------------------------
 class "OptionContext" (function(_ENV)
-  property "parentWidget" { TYPE = Table, DEFAULT = nil }
-  property "parentRecipe" { TYPE = OptionRecipe, DEFAULT = nil }
-
-  function __call(self, var)
-    local value = self:GetVariable(var)
-
-    if value then return value end
-
-    return OptionBuilder:GetVariable(var)
-  end
-
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   __Arguments__ { String, Variable.Optional() }
   function SetVariable(self, name, value)
     if not self.__variables then
@@ -48,6 +32,7 @@ class "OptionContext" (function(_ENV)
     end
   end
 
+
   __Arguments__ { String, Variable.Optional(Number, 1), Variable.Optional(Number) }
   function IncrementVariable(self, var, amountToIncrement, max)
     local value = self:GetVariable(var) + 1
@@ -58,7 +43,24 @@ class "OptionContext" (function(_ENV)
 
     self:SetVariable(var, value)
   end
+  ------------------------------------------------------------------------------
+  --                          Meta-Methods                                    --
+  ------------------------------------------------------------------------------
+  function __call(self, var)
+    local value = self:GetVariable(var)
 
+    if value then return value end
+
+    return OptionBuilder:GetVariable(var)
+  end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "parentWidget" { TYPE = Table, DEFAULT = nil }
+  property "parentRecipe" { TYPE = OptionRecipe, DEFAULT = nil }
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
   __Arguments__ { Table, Variable.Optional(OptionRecipe), Variable.Optional(OptionContext) }
   function OptionContext(self, parentWidget, parentRecipe, context)
     self.parentWidget = parentWidget
@@ -80,21 +82,14 @@ class "OptionContext" (function(_ENV)
   end
 
   __Arguments__ {}
-  function OptionContext(self)
-
-  end
-
+  function OptionContext(self) end
 
 end)
-
--- OptionContext(widget, self, context)
-
---context("theme-selected")
---context["theme-selected"] = "Eska"
---context.parentRecipe
---context:SetVariable("theme-selected")
-
-
+--------------------------------------------------------------------------------
+--                                                                            --
+--                           Option Recipe                                    --
+--                                                                            --
+--------------------------------------------------------------------------------
 class "OptionRecipe" (function(_ENV)
 
   __Default__("NONE")
@@ -105,15 +100,15 @@ class "OptionRecipe" (function(_ENV)
     "AND_WITH_ORDER"
   }
 
+
+  _EVENTS        = {}
+  _RECIPE_EVENTS = {}
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     self.context = context
   end
-
-  function Refresh(self)
-
-  end
-
-
 
   __Arguments__ {}
   function ResolveGroup(self)
@@ -131,8 +126,8 @@ class "OptionRecipe" (function(_ENV)
 
     -- 1. We check if there is a class/and/or/order delimiter
     --print(ResolveGroup, self.buildingGroup, self.__buildingGroup, self._buildingGroup)
-    local result = string.gsub(self.buildingGroup, "%[([:_&%w]*)%]", function(var)
-      --print("FIND CACHE", var, self.buildingGroup)
+    -- TODO: Adding new character if needed here: %-
+    local result = string.gsub(self.buildingGroup, "%[([:_&%w%-]*)%]", function(var)
       needCache = true -- so if we are here, we need to use cache for speeding up things
       if not list then
         list = {  strsplit("&", var) }
@@ -149,9 +144,7 @@ class "OptionRecipe" (function(_ENV)
       for index, str in pairs(list) do
         local final = string.format(result, str)
         tinsert(self._buildingGroupCache, final)
-        --print(index, final, str)
       end
-      --print("ALL CACHED")
     else
       -- Clear the cache if there is exists and is needed
       if self._buildingGroupCache then
@@ -171,7 +164,6 @@ class "OptionRecipe" (function(_ENV)
         return self.context(var)
       end
     end)
-    --print("Result", str, result)
     return result
   end
 
@@ -180,14 +172,16 @@ class "OptionRecipe" (function(_ENV)
 
   __Arguments__ {}
   function GetRecipes(self)
+    if not self.buildingGroup then
+      return
+    end
+
     -- if a cache is availaible, this is because there is a class, '&', '|' and '>'
     -- delimiters
-    --print(self._buildingGroupDelimiterType, "DELIMITER TYPE", self._buildingGroupCache)
     if self._buildingGroupCache then
       -- For '&' and '>' delimiters
       if (self._buildingGroupDelimiterType == BuildingGroupDelimiterType.AND) or
          (self._buildingGroupDelimiterType == BuildingGroupDelimiterType.AND_WITH_ORDER) then
-           --print("is this delimiter, AND")
         local list = List()
         for _, group in ipairs(self._buildingGroupCache) do
           group = self:ReplaceVariablesFromString(group)
@@ -235,13 +229,14 @@ class "OptionRecipe" (function(_ENV)
     end
   end
 
-
+  --- Link the recipe to a option, and will use 'Options' API
   __Arguments__ { String }
   function BindOption(self, option)
     self.option = option
     return self
   end
 
+  --- Set the Building Group the recipe will used to build its childens
   __Arguments__ { String }
   function SetBuildingGroup(self, group)
     local hasChanged = false
@@ -260,11 +255,14 @@ class "OptionRecipe" (function(_ENV)
     return self
   end
 
+  --- Return the Building Group
   function GetBuildingGroup(self)
     return self.__buildingGroup
   end
 
 
+  --- Will set the option linked, and use the set function if there is exists.
+  -- By the way, the option linked will call its handler.
   __Arguments__ { Any }
   function SetOption(self, value)
     if self.option then
@@ -276,6 +274,8 @@ class "OptionRecipe" (function(_ENV)
     end
   end
 
+  --- This function return the value related to option linked.
+  -- If no option linked, the function will use the 'Get'
   function GetOption(self)
     if self.option then
       return Options:Get(self.option)
@@ -298,6 +298,7 @@ class "OptionRecipe" (function(_ENV)
     return self
   end
 
+  --- Set the order where this recipes will be built.
   __Arguments__ { Number }
   function SetOrder(self, order)
     self.order = order
@@ -322,41 +323,45 @@ class "OptionRecipe" (function(_ENV)
     return result
   end
 
-  function IsEventRegistered(self, event)
-    return false
+
+  --- This function may be overrided
+  function Refresh(self) end
+
+  --- This function is called when an event (Scorpio) registered has triggered.
+  -- This may be overrided if needed
+  __Arguments__ { String, Variable.Rest() }
+  function OnEvent(self, event, ...) end
+
+  --- Called when a recipe has fired an event has been registered
+  __Arguments__ { String, Variable.Optional(Table), Variable.Rest()}
+  function OnRecipeEvent(self, event, sender, ...) end
+
+
+  --- Register the recipe has been notified when an event (Scorpio) has been triggered
+  __Arguments__ { String }
+  function RegisterEvent(self, event)
+    OptionRecipe:RegisterObjectEvent(self, event)
   end
 
-  function IsScorpioEventRegistered(self, event)
-    return false
+  --- Register the recipe has been notified when a recipe event has been triggered
+  function RegisterRecipeEvent(self, event)
+    local t = _RECIPE_EVENTS[event]
+    if not t then
+      t = setmetatable({}, { __mode = "k"})
+      _RECIPE_EVENTS[event] = t
+    end
+
+    if not t[self] then
+      t[self] = true
+    end
   end
 
-  function OnEvent(self, event, ...)
-    self:Refresh()
+  --- Fires an recipe event
+  __Arguments__ {String, Variable.Rest()}
+  function FireRecipeEvent(self, event, ...)
+    OptionRecipe:BroadcastRecipeEvent(event, self, ...)
   end
 
-  function OnScorpioEvent(self, event, ...)
-    self:Refresh()
-  end
-
-  function Refresh(self)
-
-  end
-
-  function AddEvent(self, event)
-
-  end
-
-  function AddEvents(self, ...)
-
-  end
-
-  function AddScorpioEvent(self, event)
-
-  end
-
-  function AddScorpioEvents(self, event)
-
-  end
 
   __Arguments__ { Function }
   function Get(self, func)
@@ -371,131 +376,70 @@ class "OptionRecipe" (function(_ENV)
   end
 
 
+  __Static__() function RegisterObjectEvent(self, obj, event)
+    local t = _EVENTS[event]
+    if not t then
+      t = setmetatable({}, { __mode = "k"} )
+      _Module:RegisterEvent(event, function(...)
+        for o in pairs(t) do
+          o:OnEvent(event, ...)
+        end
+      end)
+    end
 
+    if not t[obj] then
+      t[obj] = true
+    end
+  end
 
-  property "order" { TYPE = Number, DEFAULT = 100 }
-  property "id" { TYPE = String, DEFAULT = nil }
-  property "text" { TYPE = String, DEFAULT = "" }
-  property "option" { TYPE = String, DEFAULT = nil }
-  property "context" { TYPE = OptionContext, DEFAULT = nil }
-  property "buildingGroup" { TYPE = String, DEFAULT = nil, SET = "SetBuildingGroup",  FIELD = "__buildingGroup" }
+  __Arguments__ { ClassType, String, Variable.Optional(Table), Variable.Rest() }
+  __Static__() function BroadcastRecipeEvent(self, event, obj, ...)
+    local t = _RECIPE_EVENTS[event]
+    if t then
+      for o in pairs(t) do
+        if not obj or obj ~= o then
+          o:OnRecipeEvent(event, obj, ...)
+        end
+      end
+    end
+  end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "order"            { TYPE = Number, DEFAULT = 100 }
+  property "id"               { TYPE = String, DEFAULT = nil }
+  property "text"             { TYPE = String, DEFAULT = "" }
+  property "option"           { TYPE = String, DEFAULT = nil }
+  property "context"          { TYPE = OptionContext, DEFAULT = nil }
+  property "buildingGroup"    { TYPE = String, DEFAULT = nil, SET = "SetBuildingGroup",  FIELD = "__buildingGroup" }
   property "needResolveGroup" { TYPE = Boolean, DEFAULT = false }
-  property "setFunc" { TYPE = Function }
-  property "getFunc" { TYPE = Function }
-
+  property "setFunc"          { TYPE = Function }
+  property "getFunc"          { TYPE = Function }
   -- Use internally by delimiters (don't edit this property)
   property "_buildingGroupDelimiterType" { TYPE = BuildingGroupDelimiterType }
-
-end)
-
-
-
---[[
-
-
-__Abstract__()
-class "OptionRecipe"
   ------------------------------------------------------------------------------
-  --                             Methods                                      --
+  --                            Constructors                                  --
   ------------------------------------------------------------------------------
-  __Require__()
-  function Build(self, parent, info) end
-
-  __Arguments__ { Number }
-  function SetOrder(self, order)
-    self.order = order
-    return self
-  end
-
-  __Arguments__ { String }
-  function SetID(self, id)
-    self.id = id
-    return self
-  end
-
-  __Arguments__ { String }
-  function SetRecipeGroup(self, recipeGroup)
-    self.recipeGroup = recipeGroup
-    return self
-  end
-
-  __Arguments__ { String}
-  function SetRecipeGroup(self, recipeGroup)
-    self.recipeGroup = recipeGroup
-    return self
-  end
-
-  __Arguments__ { String }
-  function SetText(self, text)
-    self.text = text
-    return self
-  end
-
-  __Arguments__ { Any }
-  function SetOption(self, value)
-    if self.option then
-      Options:Set(self.option, value)
-    end
-  end
-
-  function GetOption(self)
-    if self.option then
-      return Options:Get(self.option)
-    end
-  end
-
-  __Arguments__ { String }
-  function BindOption(self, option)
-    self.option = option
-    return self
-  end
-  ------------------------------------------------------------------------------
-  --                            Properties                                    --
-  ------------------------------------------------------------------------------
-  property "order" { TYPE = Number, DEFAULT = 100 }
-  property "recipeGroup" { TYPE = String, DEFAULT = nil }
-  property "id" { TYPE = String, DEFAULT = nil }
-  property "text" { TYPE = String, DEFAULT = "" }
-  property "option" { TYPE = String, DEFAULT = nil }
-  ------------------------------------------------------------------------------
-  --                            Constructor                                   --
-  ------------------------------------------------------------------------------
-  __Arguments__ { String, String }
-  function OptionRecipe(self, text, recipeGroup)
-    This(self)
-
-    self.text = text
-    self.recipeGroup = recipeGroup
-  end
-
-  __Arguments__ {}
   function OptionRecipe(self)
 
   end
-endclass "OptionRecipe"
-
-
-class "OptionFrameRecipe" inherit "OptionRecipe"
-
-  function SetWidth(self, width)
-    self.width = width
-    return self
-  end
-
-  property "width" { TYPE = Number, DEFAULT = nil}
-endclass "OptionFrameRecipe" --]]
-
-
-
-
-
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                        OptionFrame Recipe                                  --
+--                                                                            --
+--------------------------------------------------------------------------------
 class "OptionFrameRecipe" (function(_ENV)
   inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function SetWidth(self, width)
     self.width = width
     return self
   end
-
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
   property "width" { TYPE = Number  }
-
 end)

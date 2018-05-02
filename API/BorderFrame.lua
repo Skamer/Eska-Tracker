@@ -154,10 +154,10 @@ class "BorderFrame" (function(_ENV)
 
   function SetBorderColor(self, color)
     if self.borders then
-      self.borders.top:SetColorTexture(color.r, color.g, color.g, color.a)
-      self.borders.left:SetColorTexture(color.r, color.g, color.g, color.a)
-      self.borders.bottom:SetColorTexture(color.r, color.g, color.g, color.a)
-      self.borders.right:SetColorTexture(color.r, color.g, color.g, color.a)
+      self.borders.top:SetColorTexture(color.r, color.g, color.b, color.a)
+      self.borders.left:SetColorTexture(color.r, color.g, color.b, color.a)
+      self.borders.bottom:SetColorTexture(color.r, color.g, color.b, color.a)
+      self.borders.right:SetColorTexture(color.r, color.g, color.b, color.a)
     end
   end
 
@@ -173,7 +173,6 @@ class "BorderFrame" (function(_ENV)
       self.frame:SetAllPoints(self:GetFrameContainer())
     end
   end
-
   ------------------------------------------------------------------------------
   --                   Refresh & Skin Methods                                 --
   ------------------------------------------------------------------------------
@@ -191,7 +190,7 @@ end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "frame"{ TYPE = Table, HANDLER = UpdateFrame }
+  property "frame" { TYPE = Table, HANDLER = UpdateFrame }
   property "containerFrame" { TYPE = Table } -- contains the borders and the content frame
   property "showBorder" { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateBorderVisibility }
   property "borderWidth" { TYPE = Number, DEFAULT = 0, HANDLER = UpdateBorderWidth }
@@ -199,6 +198,7 @@ end
   ------------------------------------------------------------------------------
   --                         Constructors                                     --
   ------------------------------------------------------------------------------
+  __Arguments__ {}
   function BorderFrame(self)
     super(self)
 
@@ -206,5 +206,13 @@ end
     self:CreateBorders()
 
     _BorderFrameCache[self] = true
+  end
+
+
+  __Arguments__ { Table }
+  function BorderFrame(self, frame)
+    this(self)
+
+    self.frame = frame
   end
 end)

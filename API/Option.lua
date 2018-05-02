@@ -103,6 +103,7 @@ class "Options" (function(_ENV)
 
     if newValue ~= oldValue then
       Frame:BroadcastOption(option, newValue, oldValue)
+      Scorpio.FireSystemEvent("EKT_OPTION_CHANGED", option, newValue, oldValue)
     end
 
     -- Call the handler if needed

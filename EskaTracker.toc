@@ -9,6 +9,12 @@
 ## OptionalDeps: LibStub, LibSharedMedia-3.0
 embeds.xml
 
+# BFA Support
+BFA.lua
+
+# Loader Files
+Loader.lua
+
 # Core API Files
 API\API.xml
 

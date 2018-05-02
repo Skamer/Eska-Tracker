@@ -39,72 +39,36 @@ class "Actions" (function(_ENV)
     return pairs(_Actions)
   end
 end)
-
-
---[[
-__AttributeUsage__ { AttributeTarget = AttributeTargets.Class, Inherited = false, RunOnce = true, BeforeDefinition = true, AllowMultiple = true }
-class "__Action__" (function(_ENV)
-  extend "IAttribute"
-
-  function __Action__:ApplyAttribute(target, targetType)
-    local id   = self[1]
-    local text = self[2]
-
-    target.id = __Static__ {
-      TYPE = String,
-      DEFAULT = id,
-      SET = false,
-    }
-
-    target.text = __Static__ {
-      TYPE = String,
-      DEFAULT = text,
-    }
-
-    Actions:Add(target)
-  end
-
-  __Arguments__{ Argument(NEString, true, nil, nil, true) }
-  function __Action__(self, ...)
-    for i = 1, select('#', ...) do
-        tinsert(self, select(i, ...))
-    end
-  end
-
-  __Arguments__ { NEString }
-  function __call(self, other)
-    tinsert(self, other)
-    return self
-  end
-
-  function __eq(self, other) return false end
-
-end)
---]]
-
-
+--------------------------------------------------------------------------------
+--                                                                            --
+--                        __Action__ Attribute                                --
+--                                                                            --
+--------------------------------------------------------------------------------
 class "__Action__" (function(_ENV)
   extend "IAttachAttribute"
-
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function AttachAttribute(self, target, targettype, owner, name, stack)
     local id   = self[1]
     local txt  = self[2] or ""
 
-    --[[class(target) {
-      id   = { STATIC = true, TYPE = String, DEFAULT = id, SET = false },
-      text = { STATIC = true, TYPE = String, DEFAULT = txt }
-    }--]]
-
-    class(target) (function(_ENV)
-      property "id" { STATIC = true, TYPE = String, DEFAULT = id, SET = false }
-      property "text" { STATIC = true, TYPE = String, DEFAULT = txt }
+    Attribute.IndependentCall(function()
+      class(target) (function(_ENV)
+        property "id" { STATIC = true, TYPE = String, DEFAULT = id, SET = false }
+        property "text" { STATIC = true, TYPE = String, DEFAULT = txt }
+      end)
     end)
 
     Actions:Add(target)
   end
-
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
   property "AttributeTarget" { DEFAULT = AttributeTargets.Class }
-
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
   __Arguments__ { Variable.Rest(NEString) }
   function __new(cls, ...)
     return { ... }, true
@@ -116,32 +80,4 @@ class "__Action__" (function(_ENV)
     return self
   end
 
-end)
-
-
-__Action__ "join-a-group" "Join a group"
-class "JoinAGroupAction" (function(ENV)
-
-  __Arguments__ { String }
-  __Static__() function Exec(msg)
-    print("Join a group with this string", msg)
-  end
-
-  __Arguments__ { Number }
-  __Static__() function Exec(id)
-    print("Join a group with this number", id)
-  end
-end)
-
-class "JoinAGroupAction" (function(_ENV)
-
-  __Arguments__ { Boolean }
-  __Static__() function Exec(bool)
-    print("Join a group with this bool", bool)
-  end
-
-  __Arguments__ { String }
-  __Static__() function Exec(msg)
-    print("[OVERRiDE]", "Join a group with this new string", msg)
-  end
 end)

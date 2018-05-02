@@ -15,6 +15,13 @@ _EKTAddon = _Addon
 __Serializable__() class "Theme" (function(_ENV)
   extend "ISerializable"
   _REGISTERED_FRAMES = {}
+
+  _SKIN_FRAME_QUEUE = List()
+  _SKIN_FRAME_PROCESS_STARTED = false
+
+  -- Skin Text Queue
+  _SKIN_TEXT_QUEUE = List()
+  _SKIN_TEXT_PROCESS_STARTED = false
   ------------------------------------------------------------------------------
   --                       Register Methods                                   --
   ------------------------------------------------------------------------------
@@ -98,7 +105,7 @@ __Serializable__() class "Theme" (function(_ENV)
 
   __Arguments__ { ClassType, Table, Variable.Optional(String) }
   __Static__() function NeedSkin(self, frame, target)
-    if target == nil then
+    if target == nil or target == "ALL" then
       return true
     end
 
@@ -110,7 +117,7 @@ __Serializable__() class "Theme" (function(_ENV)
   end
 
   __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String) }
-  __Static__() function SkinFrame(self, frame, flags, state)
+  __Static__() function ProcessSkinFrame(self, frame, flags, state)
     local theme = Themes:GetSelected()
 
     if not theme then return end -- TODO: Add error msg
@@ -134,8 +141,44 @@ __Serializable__() class "Theme" (function(_ENV)
     end
   end
 
+
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String) }
+  __Static__() function SkinFrame(self, frame, flags, state)
+    local requestInfo = {
+      obj = frame,
+      flags = flags,
+      state = state,
+    }
+
+    -- Add in the queue of skin procress
+    _SKIN_FRAME_QUEUE:Insert(requestInfo)
+
+    -- Run skin process
+    self:RunSkinFrameProcess()
+  end
+
+  __Async__()
+  __Static__() function RunSkinFrameProcess(self)
+    if _SKIN_FRAME_PROCESS_STARTED then
+      return
+    end
+
+    _SKIN_FRAME_PROCESS_STARTED = true
+    while _SKIN_FRAME_QUEUE.Count >= 1 do
+      local requestInfo = _SKIN_FRAME_QUEUE:RemoveByIndex(1)
+      if requestInfo then
+        self:ProcessSkinFrame(requestInfo.obj, requestInfo.flags, requestInfo.state)
+      end
+      Continue()
+    end
+    _SKIN_FRAME_PROCESS_STARTED = false
+  end
+
+
+
+
   __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String) }
-  __Static__() function SkinText(self, obj, flags, text, state)
+  __Static__() function ProcessSkinText(self, obj, flags, text, state)
     local theme = Themes:GetSelected()
 
     if not theme then return end -- TODO: Add error msg
@@ -190,20 +233,61 @@ __Serializable__() class "Theme" (function(_ENV)
       fontstring:SetJustifyV(theme:GetElementProperty(elementID, "text-justify-v", inheritElementID))
     end
 
+
     if Enum.ValidateFlags(flags, SkinFlags.TEXT_TRANSFORM) then
       if not text then
         text = fontstring:GetText()
       end
 
-      local transform = theme:GetElementProperty(elementID, "text-transform", inheritElementID)
-      if transform == "uppercase" then
-        text = text:upper()
-      elseif transform == "lowercase" then
-        text = text:lower()
+      if text then
+        if text == "" then
+          fontstring:SetText(text)
+        else
+          local transform = theme:GetElementProperty(elementID, "text-transform", inheritElementID)
+          if transform == "uppercase" then
+            text = text:upper()
+          elseif transform == "lowercase" then
+            text = text:lower()
+          end
+          fontstring:SetText(text)
+        end
       end
-      fontstring:SetText(text)
+    end
+  end
+
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String) }
+  __Static__() function SkinText(self, obj, flags, text, state)
+    self:ProcessSkinText(obj, flags, text, state)
+    --[[local requestInfo = {
+      obj = obj,
+      flags = flags,
+      text = text,
+      state = state,
+    }
+
+    -- Add in the queue of skin procress
+    _SKIN_TEXT_QUEUE:Insert(requestInfo)
+
+    -- Run skin process
+    self:RunSkinTextProcess()--]]
+  end
+
+  __Async__()
+  __Static__() function RunSkinTextProcess(self)
+    if _SKIN_TEXT_PROCESS_STARTED then
+      return
     end
 
+    _SKIN_TEXT_PROCESS_STARTED = true
+    while _SKIN_TEXT_QUEUE.Count >= 1 do
+      local requestInfo = _SKIN_TEXT_QUEUE:RemoveByIndex(1)
+      if requestInfo then
+        self:ProcessSkinText(requestInfo.obj, requestInfo.flags, requestInfo.text, requestInfo.state)
+      end
+      Continue()
+    end
+
+    _SKIN_TEXT_PROCESS_STARTED = false
   end
 
   __Arguments__{ ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String) }
@@ -403,8 +487,8 @@ __Serializable__() class "Theme" (function(_ENV)
   __Arguments__ { ClassType, String }
   __Static__() function GetDefaultProperty(self, property)
       local defaults = {
-        ["background-color"] = { r = 0, g = 0, b = 0, a = 0 },
-        ["border-color"] = { r = 0, g = 0, b = 0, a = 0 },
+        ["background-color"] = { r = 0, g = 0, b = 0 },
+        ["border-color"] = { r = 0, g = 0, b = 0 },
         ["border-width"] = 2,
         ["offsetX"] = 0,
         ["offsetY"] = 0,
@@ -920,10 +1004,8 @@ class "Themes" (function(_ENV)
   __Static__() function Register(self, theme)
     if not _THEMES[theme.name] then
       _THEMES[theme.name] = theme
-    end
 
-    if not _CURRENT_THEME then
-      _CURRENT_THEME = theme
+      Scorpio.FireSystemEvent("EKT_NEW_THEME_REGISTERED", theme)
     end
   end
 
@@ -934,9 +1016,7 @@ class "Themes" (function(_ENV)
       _CURRENT_THEME = theme
       Options:Set("theme-selected", themeName)
 
-      -- TODO Does the refrehsed
-      -- CallbackHandlers:CallGroup("refresher")
-      CallbackHandlers:CallGroup("refresher")
+      Frame:SkinAll()
     end
   end
 
@@ -959,6 +1039,11 @@ class "Themes" (function(_ENV)
     end
 
     return _CURRENT_THEME
+  end
+
+  __Arguments__ { ClassType }
+  __Static__() function ClearSelectedCache(self)
+    _CURRENT_THEME = nil
   end
 
   __Arguments__ { ClassType }
@@ -1135,3 +1220,10 @@ class "Themes" (function(_ENV)
 
 
 end)
+
+
+function OnLoad(self)
+  Themes:LoadFromDB()
+
+  Scorpio.FireSystemEvent("EKT_THEMES_LOADED")
+end

@@ -5,6 +5,10 @@
   <Script file="Recipes/CommonRecipes.lua"/>
   <Script file="Recipes/SpecialRecipes.lua"/>
   <Script file="Recipes/TrackerRecipes.lua"/>
+  <Script file="Recipes/ThemeRecipes.lua"/>
   <Script file="Options.lua"/>
   <Script file="Trackers.lua"/>
+  <Script file="Themes.lua"/>
+  <Script file="Profils.lua"/>
+  <Script file="Blocks.lua"/>
 </Ui>

@@ -8,8 +8,8 @@ import "EKT"
 local EskaTheme = Theme()
 EskaTheme.name    = "Eska"
 EskaTheme.author  = "Skamer"
-EskaTheme.version = "2.0.0"
-EskaTheme.stage   = "Release"
+EskaTheme.version = "1.0.0"
+EskaTheme.stage   = "Alpha"
 Themes:Register(EskaTheme)
 -- ========================================================================== --
 -- == Set Default properties

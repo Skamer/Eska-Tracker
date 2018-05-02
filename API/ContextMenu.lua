@@ -217,6 +217,7 @@ class "ContextMenu" (function(_ENV)
       self.actionsArgs[count] = { ... }
       item.onClick = function()
         if self.actionsArgs[count] then
+          print("Action", action, action.Exec)
           action.Exec(unpack(self.actionsArgs[count]))
         else
           action.Exec()

@@ -6,6 +6,7 @@
 Scorpio          "EskaTracker.Options.OptionBuilder"                          ""
 --============================================================================--
 namespace "EKT"
+_Options = _Parent
 --============================================================================--
 class "OptionBuilder" (function(_ENV)
   _RECIPES = List()
@@ -75,6 +76,7 @@ class "OptionBuilder" (function(_ENV)
       recipes = _RECIPES
     end
 
+
     if recipes then
       local index, recipe
       for i, r in recipes:GetIterator() do
@@ -83,11 +85,19 @@ class "OptionBuilder" (function(_ENV)
           recipe = r
           break
         end
-
-        if i and r then
-          recipes:RemoveByIndex(index)
-        end
       end
+
+      if index and recipe then
+        recipes:RemoveByIndex(index)
+      end
+    end
+  end
+
+  __Arguments__ { ClassType, String }
+  __Static__() function RemoveRecipes(self, group)
+    local recipes = _GROUP_RECIPES[group]
+    if recipes then
+      recipes:Clear()
     end
   end
 
@@ -103,7 +113,7 @@ class "OptionBuilder" (function(_ENV)
       context:SetVariable("url_part_"..index, part)
     end
 
-    _Parent:BuildUrl(context)
+    _Options:BuildUrl(context)
   end
 
 

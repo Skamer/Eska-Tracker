@@ -30,8 +30,8 @@ class "ObjectManager" (function(_ENV)
       local recycler = System.Recycle(type)
       recycler.OnPush = function(_, obj)
         if obj.Reset then
-          obj:Reset()
           obj._isUsed = false
+          obj:Reset()
         end
       end
 
@@ -60,13 +60,13 @@ class "__Recyclable__" (function(_ENV)
   extend "IAttachAttribute"
 
   function AttachAttribute(self, target, targettype, owner, name, stack)
-    class(target) (function(_ENV)
-      function Recycle(self)
-        ObjectManager:Recycle(self)
-      end
-
-      property "_isUsed" { TYPE = Boolean, DEFAULT = true }
-
+    Attribute.IndependentCall(function()
+      class(target) (function(_ENV)
+        function Recycle(self)
+          ObjectManager:Recycle(self)
+        end
+        property "_isUsed" { TYPE = Boolean, DEFAULT = true }
+      end)
     end)
 
     ObjectManager:Register(target)

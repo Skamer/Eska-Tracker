@@ -1,14 +1,22 @@
--- ========================================================================== --
--- 										 EskaQuestTracker                                       --
--- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
--- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
--- ========================================================================== --
-Scorpio          "EskaTracker.Options.CommonRecipes"                          ""
--- ========================================================================== --
-namespace "EKT"
 --============================================================================--
-
-class "TreeItemRecipe" inherit "OptionRecipe"
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
+--============================================================================--
+Scorpio          "EskaTracker.Options.CommonRecipes"                          ""
+--============================================================================--
+namespace                           "EKT"
+--============================================================================--
+--------------------------------------------------------------------------------
+--                                                                            --
+--                           TreeItem Recipe                                  --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "TreeItemRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     super.Build(self, context)
 
@@ -25,19 +33,32 @@ class "TreeItemRecipe" inherit "OptionRecipe"
     end
   end
 
+  __Arguments__ { String }
   function SetPath(self, path)
     self.path = path
     return self
   end
-
-
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
   property "path" { TYPE = String }
   property "icon" { TYPE = String + Number }
-
-endclass "TreeItemRecipe"
-
-
-class "TreeRecipe" inherit "OptionRecipe"
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                            Tree Recipe                                     --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "TreeRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  --- --------------------------------------------------------------------------
+  --- Fires when the user selects an item (category)
+  event "OnItemSelected"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -165,7 +186,8 @@ class "TreeRecipe" inherit "OptionRecipe"
     -- A TreeItemRecipe is considered as category.
     local function SelectCategory(id, mustChangeUrlPart)
       local useDefault = false
-      self.onSelectedCallback(self, id)
+      self:OnItemSelected(id)
+
       if id then
         --local recipe = OptionBuilder:GetRecipe(id, self:ResolveGroup())
         local recipe = self:GetRecipe(id)
@@ -221,6 +243,7 @@ class "TreeRecipe" inherit "OptionRecipe"
     end
   end
 
+  __Arguments__ { String }
   function SetDefaultBuldingGroup(self, buildingGroup)
     self.defaultBuildingGroup = buildingGroup
     return self
@@ -230,21 +253,22 @@ class "TreeRecipe" inherit "OptionRecipe"
     self.icon = icon
     return self
   end
-
-  __Arguments__ { Function }
-  function OnSelected(self, func)
-    self.onSelectedCallback = func
-    return self
-  end
-
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
   property "defaultBuildingGroup" { TYPE = String }
-  property "icon" { TYPE = String + Number }
-  property "onSelectedCallback" { TYPE = Function }
-
-endclass "TreeRecipe"
-
-
-class "TabRecipe" inherit "OptionRecipe"
+  property "icon"                 { TYPE = String + Number }
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                              Tab Recipe                                    --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "TabRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -294,12 +318,17 @@ class "TabRecipe" inherit "OptionRecipe"
 
     context.parentWidget:AddChild(widget)
   end
-
-endclass "TabRecipe"
-
-
-
-class "TabItemRecipe" inherit "OptionRecipe"
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                            TabItem Recipe                                  --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "TabItemRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -315,11 +344,17 @@ class "TabItemRecipe" inherit "OptionRecipe"
       end
     end
   end
-
-endclass "TabItemRecipe"
-
-
-class "SimpleGroupRecipe" inherit "OptionRecipe"
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                         SimpleGroup Recipe                                 --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "SimpleGroupRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -346,11 +381,21 @@ class "SimpleGroupRecipe" inherit "OptionRecipe"
     self.layout = layout
     return self
   end
-
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
   property "layout"  { TYPE = String, DEFAULT = "Flow"}
-endclass "SimpleGroupRecipe"
-
-class "InlineGroupRecipe" inherit "OptionRecipe"
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                         InlineGroup Recipe                                 --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "InlineGroupRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -379,12 +424,21 @@ class "InlineGroupRecipe" inherit "OptionRecipe"
     self.layout = layout
     return self
   end
-
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
   property "layout" { TYPE = String, DEFAULT = "Flow"}
-
-endclass "InlineGroupRecipe"
-
-class "HeadingRecipe" inherit "OptionRecipe"
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                             Heading Recipe                                 --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "HeadingRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -394,10 +448,22 @@ class "HeadingRecipe" inherit "OptionRecipe"
     heading:SetText(self.text)
     context.parentWidget:AddChild(heading)
   end
-endclass "HeadingRecipe"
-
-class "CheckBoxRecipe" inherit "OptionFrameRecipe"
-
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                             Checkbox Recipe                                --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "CheckBoxRecipe" (function(_ENV)
+  inherit "OptionFrameRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  -- Fires when the value has changed
+  event "OnValueChanged"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -407,10 +473,7 @@ class "CheckBoxRecipe" inherit "OptionFrameRecipe"
     checkbox:SetValue(self:GetOption())
     checkbox:SetCallback("OnValueChanged", function(_, _, value)
       self:SetOption(value)
-
-      if self.onValueChangedCallback then
-        self.onValueChangedCallback(self, value)
-      end
+      self:OnValueChanged(value)
     end)
 
     if self.width then
@@ -423,19 +486,22 @@ class "CheckBoxRecipe" inherit "OptionFrameRecipe"
 
     context.parentWidget:AddChild(checkbox)
   end
-
-  __Arguments__ { Function }
-  function OnValueChanged(self, func)
-    self.onValueChangedCallback = func
-    return self
-  end
-
-  property "onValueChangedCallback" { TYPE = Function }
-
-endclass "CheckBoxRecipe"
-
-
-class "ButtonRecipe" inherit "OptionFrameRecipe"
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                               Button Recipe                                --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "ButtonRecipe" (function(_ENV)
+  inherit "OptionFrameRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  --- Fires when the button has clicked
+  event "OnClick"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -443,26 +509,27 @@ class "ButtonRecipe" inherit "OptionFrameRecipe"
     local button = _AceGUI:Create("Button")
     button:SetText(self.text)
     button:SetCallback("OnClick", function()
-      if self.onClickCallback then
-        self.onClickCallback(self)
-      end
+      self:OnClick()
     end)
 
     context.parentWidget:AddChild(button)
   end
-
-  __Arguments__ { Function }
-  function OnClick(self, func)
-    self.onClickCallback = func
-    return self
-  end
-
-  property "onClickCallback" { TYPE = Function }
-
-endclass "ButtonRecipe"
-
-class "RangeRecipe" inherit "OptionRecipe"
-
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                               Range Recipe                                 --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "RangeRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  -- Fires when the value has changed
+  event "OnValueChanged"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
     super.Build(self, context)
@@ -471,7 +538,10 @@ class "RangeRecipe" inherit "OptionRecipe"
     range:SetSliderValues(self.min, self.max, self.step)
     range:SetLabel(self.text)
     range:SetValue(self:GetOption() or 0)
-    range:SetCallback("OnValueChanged", function(_, _, value) self:SetOption(value) end)
+    range:SetCallback("OnValueChanged", function(_, _, value)
+      self:SetOption(value)
+      self:OnValueChanged(value)
+    end)
     context.parentWidget:AddChild(range)
   end
 
@@ -486,10 +556,81 @@ class "RangeRecipe" inherit "OptionRecipe"
     self.step = step
     return self
   end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "min"      { TYPE = Number, DEFAULT = 0 }
+  property "max"      { TYPE = Number, DEFAULT = 100 }
+  property "step"     { TYPE = Number, DEFAULT = 1 }
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                              Select Recipe                                 --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "SelectRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  --- --------------------------------------------------------------------------
+  --- Fires when the value has changed
+  event "OnValueChanged"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
 
-  property "min" { TYPE = Number, DEFAULT = 0 }
-  property "max" { TYPE = Number, DEFAULT = 100 }
-  property "step" { TYPE = Number, DEFAULT = 1 }
+    local select = _AceGUI:Create("Dropdown")
+    select:SetLabel(self.text)
+    if self.getListFunc then
+      select:SetList(self.getListFunc())
+    end
+    select:SetValue(self:GetOption())
+    select:SetCallback("OnValueChanged", function(_, _, value) self:OnValueChanged() ; self:SetOption(value) end)
+    context.parentWidget:AddChild(select)
+  end
 
+  __Arguments__ { Function }
+  function SetList(self, func)
+    self.getListFunc = func
+    return self
+  end
 
-endclass "RangeRecipe"
+  __Arguments__ { Table }
+  function SetList(self, list)
+    return SetList(function() return list end)
+  end
+end)
+
+--------------------------------------------------------------------------------
+--                                                                            --
+--                         LineEdit Recipe                                    --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "LineEditRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  --- Fired when the value has changed
+  event "OnValueChanged"
+  --- Fired when the value has been confirmed (enter button and confirmation button)
+  event "OnValueConfirmed"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    super.Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+
+    local lineEdit = _AceGUI:Create("EditBox")
+    lineEdit:SetLabel(self.text)
+    lineEdit:SetText(self:GetOption())
+    lineEdit:SetCallback("OnTextChanged", function(_, _, value) self:OnValueChanged(value) end)
+    lineEdit:SetCallback("OnEnterPressed", function(_, _, value) self:OnValueConfirmed(value) ; self:SetOption(value) end)
+    context.parentWidget:AddChild(lineEdit)
+  end
+
+end)

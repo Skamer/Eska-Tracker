@@ -31,11 +31,10 @@ function OnLoad(self)
 
   -- Set some variables for OptionBuilder
   OptionBuilder:SetVariable("state_selected", "none")
-  OptionBuilder:SetVariable("theme_selected", Themes:GetSelected().name)
 
   OptionBuilder:SetVariable("trackers_id", "trackers")
   OptionBuilder:SetVariable("trackers_group", "RootTree")
-  OptionBuilder:SetVariable("tracker_id_format", "tracker_%s")
+  OptionBuilder:SetVariable("tracker_id_format", "%s-tracker")
 
 
   self:FireSystemEvent("EKT_OPTIONS_LOADED")
@@ -44,23 +43,36 @@ function OnLoad(self)
   --print("Recipe", treeRecipe)
   -- OptionBuilder:GetVariable("tracker_selected")
   local function OnRootTreeCategorySelected(recipe, id)
-    if id and id:find("-tracker$") then
+    if id and id:find("%-tracker$") then
       OptionBuilder:SetVariable("tracker_selected", id)
+    elseif id and id:find("%-block%-category$") then
+      OptionBuilder:SetVariable("block_category_selected", id)
     else
       OptionBuilder:SetVariable("tracker_selected", nil)
+      OptionBuilder:SetVariable("block_category_selected", nil)
     end
   end
 
-  OptionBuilder:AddRecipe(TreeRecipe():SetText("EskaTracker"):SetBuildingGroup("RootTree"):SetIcon(_EKT_ICON):SetDefaultBuldingGroup("RootTree/Default"):SetID("EKT"):OnSelected(OnRootTreeCategorySelected), "Root")
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("trackers"):SetText("Trackers"):SetBuildingGroup("Trackers/Children"), "RootTree")
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("main-tracker"):SetText("Main"):SetPath("trackers"):SetBuildingGroup("[tracker&:tracker_selected:]/children"), "RootTree")
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("quest-tracker"):SetText("Quest Tracker"):SetPath("trackers"):SetBuildingGroup("[tracker&:tracker_selected:]/children"), "RootTree")
+  -- Create the root tree
+  local rootTree = TreeRecipe()
+  rootTree:SetText("EskaTracker")
+  rootTree:SetBuildingGroup("RootTree")
+  rootTree:SetIcon(_EKT_ICON)
+  rootTree:SetDefaultBuldingGroup("RootTree/Default")
+  rootTree:SetID("EKT")
+  rootTree.OnItemSelected = rootTree.OnItemSelected + OnRootTreeCategorySelected
+  OptionBuilder:AddRecipe(rootTree, "Root")
+
+  --OptionBuilder:AddRecipe(TreeRecipe():SetText("EskaTracker"):SetBuildingGroup("RootTree"):SetIcon(_EKT_ICON):SetDefaultBuldingGroup("RootTree/Default"):SetID("EKT"):OnSelected(OnRootTreeCategorySelected), "Root")
+  --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("trackers"):SetText("Trackers"):SetBuildingGroup("Trackers/Children"), "RootTree")
+  --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("main-tracker"):SetText("Main"):SetPath("trackers"):SetBuildingGroup("[tracker&:tracker_selected:]/children"), "RootTree")
+  --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("quest-tracker"):SetText("Quest Tracker"):SetPath("trackers"):SetBuildingGroup("[tracker&:tracker_selected:]/children"), "RootTree")
 
 
 
   -- Create tracker category
   --OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffffff00Tracker Options|r"):SetOrder(1), "tracker/children")
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff5000Main Tracker Options|r"):SetOrder(2), "main-tracker/children")
+--[[  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff5000Main Tracker Options|r"):SetOrder(2), "main-tracker/children")
   OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff5000Quest Tracker  Options|r"):SetOrder(2), "quest-tracker/children")
   OptionBuilder:AddRecipe(TabRecipe():SetBuildingGroup("tracker/tabs"), "tracker/children")
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("General"):SetID("general"):SetBuildingGroup("tracker/general"), "tracker/tabs")
@@ -72,42 +84,47 @@ function OnLoad(self)
 
   OptionBuilder:AddRecipe(InlineGroupRecipe():SetText("Size"):SetBuildingGroup("tracker/general/size"), "tracker/general")
   OptionBuilder:AddRecipe(RangeRecipe():SetText("Width"), "tracker/general/size")
-  OptionBuilder:AddRecipe(RangeRecipe():SetText("Height"), "tracker/general/size")
+  OptionBuilder:AddRecipe(RangeRecipe():SetText("Height"), "tracker/general/size")--]]
 
 
-  OptionBuilder:AddRecipe(SimpleGroupRecipe():SetLayout("List"):SetBuildingGroup("tracker/blocks/categories"), "tracker/blocks")
+  --[[OptionBuilder:AddRecipe(SimpleGroupRecipe():SetLayout("List"):SetBuildingGroup("tracker/blocks/categories"), "tracker/blocks")
   OptionBuilder:AddRecipe(BlockTrackerRecipe():SetIcon("Interface\\Icons\\INV_Misc_Coin_01"):SetText("|cff0094FFEska|r Gold"), "tracker/blocks/categories")
   OptionBuilder:AddRecipe(BlockTrackerRecipe():SetText("|cff0094FFEska|r Quests"), "tracker/blocks/categories")
   OptionBuilder:AddRecipe(BlockTrackerRecipe():SetText("|cff0094FFEska|r World Quests"), "tracker/blocks/categories")
   OptionBuilder:AddRecipe(BlockTrackerRecipe():SetText("|cff0094FFEska|r Achievements"), "tracker/blocks/categories")
   OptionBuilder:AddRecipe(BlockTrackerRecipe():SetText("|cff0094FFEska|r Scenario"), "tracker/blocks/categories")
   OptionBuilder:AddRecipe(BlockTrackerRecipe():SetText("|cff0094FFEska|r Dungeon"), "tracker/blocks/categories")
-  OptionBuilder:AddRecipe(BlockTrackerRecipe():SetText("|cff0094FFEska|r Keystone"), "tracker/blocks/categories")
+  OptionBuilder:AddRecipe(BlockTrackerRecipe():SetText("|cff0094FFEska|r Keystone"), "tracker/blocks/categories")--]]
+
+  OptionBuilder:AddRecipe(SimpleGroupRecipe():SetLayout("List"):SetBuildingGroup("tracker/blocks/categories"), "tracker/blocks")
+  for categoryID, category in Blocks:IterateCategories() do
+    OptionBuilder:AddRecipe(BlockCategoryRowRecipe():SetID(categoryID):SetText(category.name), "tracker/blocks/categories")
+  end
 
 
 
   OptionBuilder:AddRecipe(TabRecipe():SetBuildingGroup("RootTree/Default/Tabs"), "RootTree/Default")
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Addon Info"):SetID("addon-info"):SetBuildingGroup("AddonInfo"), "RootTree/Default/Tabs")
 
-    OptionBuilder:AddRecipe(TreeItemRecipe():SetID("blocks"):SetText("Blocks"), "RootTree")
+    --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("blocks"):SetText("Blocks"), "RootTree")
 
   OptionBuilder:AddRecipe(TreeItemRecipe():SetID("item-bar"):SetText("Item Bar"), "RootTree")
 
   OptionBuilder:AddRecipe(TreeItemRecipe():SetID("context-menu"):SetText("Context Menu"), "RootTree")
 
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("themes"):SetText("Themes"), "RootTree")
+  --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("themes"):SetText("Themes"), "RootTree")
 
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profils"):SetText("Profils"):SetBuildingGroup("[Profils&ErrorProfil]/Children"), "RootTree")
+  --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profils"):SetText("Profils"):SetBuildingGroup("[Profils&ErrorProfil]/Children"), "RootTree")
 
 
   OptionBuilder:AddRecipe(AddonInfoRecipe(), "AddonInfo")
-  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(100):SetText("|cff00ff00Create a tracker|r"), "Trackers/Children")
-  OptionBuilder:AddRecipe(CreateTrackerRecipe():SetOrder(200), "Trackers/Children")
-  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(300):SetText("|cffff0000Delete a tracker|r"), "Trackers/Children")
-  OptionBuilder:AddRecipe(DeleteTrackerRecipe():SetOrder(400), "Trackers/Children")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(100):SetText("|cff00ff00Create a tracker|r"), "trackers/children")
+  OptionBuilder:AddRecipe(CreateTrackerRecipe():SetOrder(200), "trackers/children")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(300):SetText("|cffff0000Delete a tracker|r"), "trackers/children")
+  OptionBuilder:AddRecipe(DeleteTrackerRecipe():SetOrder(400), "trackers/children")
 
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Test Recipe"), "Profils/Children")
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff0000And this text Recipe|r"):SetOrder(1), "ErrorProfil/Children")
+  --OptionBuilder:AddRecipe(HeadingRecipe():SetText("Test Recipe"), "Profils/Children")
+  --OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff0000And this text Recipe|r"):SetOrder(1), "ErrorProfil/Children")
 
   -- [tracker&:tracker_selected:]/children
 
@@ -117,6 +134,12 @@ function OnLoad(self)
   --OptionBuilder:BuildUrl("main-tracker")
   --OptionBuilder:AddRecipe(HeadingRecipe():SetText("AddonInfo Headling 2"), "AddonInfo")
 end
+
+__SystemEvent__()
+function EKT_BLOCK_CATEGORY_REGISTERED(blockCategory)
+  OptionBuilder:AddRecipe(BlockCategoryRowRecipe():SetID(blockCategory.id):SetText(blockCategory.name), "tracker/blocks/categories")
+end
+
 
 __SlashCmd__ "ekt" "config" "- open the options"
 __SlashCmd__ "ekt" "open" "- open the options"
@@ -180,7 +203,6 @@ function BuildUrl(self, context)
   context.parentWidget = _ROOT_FRAME
 
   for index, recipe in OptionBuilder:GetRecipes("Root"):GetIterator() do
-    print("BuildUrl", index, recipe)
     recipe:Build(context)
   end
 
