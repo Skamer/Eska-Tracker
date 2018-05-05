@@ -456,11 +456,58 @@ class "Notifications" (function(_ENV)
       end
     end
   end
+
+
+  __Arguments__ { String }
+  function IsRegisteredOption(self, option)
+    if option == "link-notifications-to-a-tracker" or option == "tracker-used-for-notifications" then
+      return true
+    end
+
+    return super.IsRegisteredOption(self, option)
+  end
+
+  function GetTrackerUsed(self)
+    for _, tracker in Trackers:GetIterator() do
+      if tracker.displayNotifications then
+        return tracker
+      end
+    end
+  end
+
+  __Arguments__ { String, Variable.Optional(), Variable.Optional() }
+  function OnOption(self, option, new, old)
+    if option == "tracker-used-for-notifications" then
+      if Options:Get("link-notifications-to-a-tracker") then
+        local oldTracker = self:GetTrackerUsed()
+        if oldTracker and oldTracker.id ~= new then
+          oldTracker:DisableNotifications()
+        end
+
+        if not oldTracker or oldTracker.id ~= new then
+          local tracker = Trackers:Get(new)
+          if tracker then
+            tracker:EnableNotifications()
+          end
+        end
+      end
+    elseif option == "link-notifications-to-a-tracker" then
+      local trackerUsed = Options:Get("tracker-used-for-notifications")
+      local tracker = Trackers:Get(trackerUsed)
+
+      if new then
+        tracker:EnableNotifications()
+      else
+        tracker:DisableNotifications()
+        self:SetParent(UIParent)
+        self:SetPoint("CENTER")
+      end
+    end
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
   property "notificationsPaused" { TYPE = Boolean, DEFAULT = false }
-  property "trackerUsed"         { TYPE = String, DEFAULT = nil }
   ------------------------------------------------------------------------------
   --                         Constructor                                      --
   ------------------------------------------------------------------------------
@@ -478,6 +525,14 @@ class "Notifications" (function(_ENV)
 
     self.notifications = List()
 
+    self.OnHeightChanged = function(self, new, old)
+      if new == 0 then
+        self:Hide()
+      else
+        self:Show()
+      end
+    end
+
     _Obj = self
   end
   ------------------------------------------------------------------------------
@@ -487,6 +542,23 @@ class "Notifications" (function(_ENV)
     return _Obj
   end
 end)
+
+
+function OnLoad(self)
+  Options:Register("link-notifications-to-a-tracker", true)
+  Options:Register("tracker-used-for-notifications", "main-tracker")
+
+  --[[local linkNotificationToTracker = Options:Get("link-notifications-to-a-tracker")
+  if linkNotificationToTracker then
+    local trackerUsed = Options:Get("tracker-used-for-notifications")
+    local tracker = Trackers:Get(trackerUsed)
+    if tracker then
+      tracker:EnableNotifications()
+    end
+  end--]]
+  Notifications():LoadOption("link-notifications-to-a-tracker")
+  Notifications():LoadOption("tracker-used-for-notifications")
+end
 
 
 function OnEnable(self)

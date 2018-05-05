@@ -536,7 +536,7 @@ class "RangeRecipe" (function(_ENV)
 
     local range = _AceGUI:Create("Slider")
     range:SetSliderValues(self.min, self.max, self.step)
-    range:SetLabel(self.text)
+    range:SetLabel(self.text or "")
     range:SetValue(self:GetOption() or 0)
     range:SetCallback("OnValueChanged", function(_, _, value)
       self:SetOption(value)

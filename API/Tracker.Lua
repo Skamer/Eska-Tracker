@@ -82,19 +82,62 @@ Class "Tracker" (function(_ENV)
     self.name = name
   end
 
+
   local function PrepareNotifications(self, useNotifications)
     if useNotifications then
-      Notifications().OnHeightChanged = function(_, new, old)
+      --[[Notifications().OnHeightChanged = function(_, new, old)
         self.contentHeight = self.contentHeight + (new - old)
         if new == 0 then
           Notifications():Hide()
         elseif old == 0 then
           Notifications():Show()
         end
+      end--]]
+      self.OnNotificationHeightHandler = function(_, new, old)
+        self.contentHeight = self.contentHeight + (new - old)
       end
-      self:Layout()
+      Notifications().OnHeightChanged = Notifications().OnHeightChanged + self.OnNotificationHeightHandler
+    else
+        if self.OnNotificationHeightHandler then
+          Notifications().OnHeightChanged = Notifications().OnHeightChanged - self.OnNotificationHeightHandler
+        end
     end
+    self:Layout()
   end
+
+  function EnableNotifications(self)
+    print("Enable Notificaiton", self.id)
+    self.OnNotificationHeightHandler = function(_, new, old)
+      self.contentHeight = self.contentHeight + (new - old)
+    end
+
+    Notifications().OnHeightChanged = Notifications().OnHeightChanged + self.OnNotificationHeightHandler
+
+    Notifications():ClearAllPoints()
+    Notifications():SetParent(self.content)
+    Notifications():SetPoint("TOP")
+    Notifications():SetPoint("LEFT")
+    Notifications():SetPoint("RIGHT")
+
+    self.displayNotifications = true
+
+    self:Layout()
+  end
+
+  function DisableNotifications(self)
+    print("Disable Notification", self.id)
+    if self.OnNotificationHeightHandler then
+      Notifications().OnHeightChanged = Notifications().OnHeightChanged - self.OnNotificationHeightHandler
+    end
+
+    Notifications():ClearAllPoints()
+    Notifications():SetParent()
+
+    self.displayNotifications = false
+
+    self:Layout()
+  end
+
 
   local function Tracker_OnScrollRangeChanged(self, xrange, yrange)
     local name = self:GetName();
@@ -196,16 +239,16 @@ Class "Tracker" (function(_ENV)
     end
 
     local displayNotifications = self.displayNotifications and Notifications():IsShown()
-    if displayNotifications then
+    --[[if displayNotifications then
       Notifications():ClearAllPoints()
       Notifications():SetParent(self.content)
       Notifications():SetPoint("TOP")
       Notifications():SetPoint("LEFT")
       Notifications():SetPoint("RIGHT")
-    end
+    end--]]
 
     local previousFrame
-    for index, obj in self.blocks:GetIterator() do
+    for index, obj in self.blocks:Sort("x,y=>x.order<y.order"):GetIterator() do
       obj:Hide()
       obj:ClearAllPoints()
 
@@ -244,13 +287,17 @@ Class "Tracker" (function(_ENV)
   end
 
 
-  __Arguments__ { Number, Number, Variable.Optional(Boolean, true) }
+  __Arguments__ { Variable.Optional(Number), Variable.Optional(Number), Variable.Optional(Boolean, true) }
   function SetPosition(self, x, y, saveInDB)
-    self.xPos = x
-    self.yPos = y
-
     self:ClearAllPoints()
-    self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x, y)
+
+    if x and y then
+      self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x, y)
+      self.xPos = x
+      self.yPos = y
+    else
+      self:SetPoint("CENTER", UIParent, "CENTER")
+    end
 
     if saveInDB then
       Profils:PrepareDatabase()
@@ -271,6 +318,10 @@ Class "Tracker" (function(_ENV)
       block.OnHeightChanged = function(block, new, old)
         self.contentHeight = self.contentHeight + (new - old)
       end
+
+      block.OnOrderChanged = function(block, new, old)
+        self:Layout()
+      end
     end
 
     self:Layout()
@@ -283,6 +334,7 @@ Class "Tracker" (function(_ENV)
     block:SetParent()
     block:Hide()
     block.OnHeightChanged = nil
+    block.OnOrderChanged  = nil
 
     self:Layout()
 
@@ -341,6 +393,30 @@ Class "Tracker" (function(_ENV)
     self:SkinBorder(self.frame) -- Don't forget to skin border, feature brought by BorderFrame
     Theme:SkinFrame(self.scrollbar)
     Theme:SkinTexture(self.scrollbar.thumb)
+
+    self:SetPosition(nil, nil, false)
+  end
+
+  function LoadPropsFromDatabase(self)
+    -- Load the properties contained in the profil
+    Profils:PrepareDatabase()
+
+    local height, width, locked, showScrollbar, xPos, yPos
+    if Database:SelectTable(false, "trackers", self.id) then
+      height          = Database:GetValue("height")
+      width           = Database:GetValue("width")
+      locked          = Database:GetValue("locked")
+      showScrollbar   = Database:GetValue("showScrollbar")
+      xPos            = Database:GetValue("xPos")
+      yPos            = Database:GetValue("yPos")
+    end
+
+    -- Assign the values
+    self.height         = height or 300
+    self.width          = width or 325
+    self.locked         = locked
+    self.showScrollbar  = showScrollbar
+    self:SetPosition(xPos, yPos, false)
   end
 
   ------------------------------------------------------------------------------
@@ -352,7 +428,7 @@ Class "Tracker" (function(_ENV)
   property "yPos"                 { TYPE = Number, DEFAULT = 0 }
   property "locked"               { TYPE = Boolean, DEFAULT = false,  HANDLER = UpdateLock }
   property "contentHeight"        { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
-  property "displayNotifications" { TYPE = Boolean, DEFAULT = false, HANDLER = PrepareNotifications }
+  property "displayNotifications" { TYPE = Boolean, DEFAULT = false }
   property "showScrollbar"        { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
   --- Locations
   property "inRaid"               { TYPE = Boolean, DEFAULT = false }
@@ -365,6 +441,8 @@ Class "Tracker" (function(_ENV)
   function Tracker(self, id)
     local name = string.format("EskaTracker-%s", id)
     self.id = id
+    self.width = 300
+    self.height = 325
 
     -- Call our super constructor
     super(self, CreateFrame("Frame", name, UIParent))
@@ -480,7 +558,7 @@ class "Trackers" (function(_ENV)
       self:Register(tracker, false)
 
       if createTable then
-        Profils:PrepareDatabase()
+        Database:SelectRoot()
         if Database:SelectTable(true, "trackers") then
           Database:SetValue(id, {})
         end
@@ -520,7 +598,7 @@ class "Trackers" (function(_ENV)
       tracker:Hide()
       _TRACKERS[id] = nil
 
-      Profils:PrepareDatabase()
+      Database:SelectRoot()
       if Database:SelectTable(false, "trackers") then
         Database:SetValue(id, nil)
       end
@@ -575,8 +653,10 @@ class "Trackers" (function(_ENV)
   end--]]
 
 
+  __Arguments__ { ClassType, String, String }
   __Static__() function TransferBlock(self, categoryID, destTrackerID)
     -- Is there a source tracker ?
+
     local srcTracker = self:GetTrackerByBlockCategoryID(categoryID)
 
     if srcTracker and srcTracker.id == destTrackerID then
@@ -615,127 +695,36 @@ class "Trackers" (function(_ENV)
 end)
 
 
-
-function OnLoad()
+function OnLoad(self)
   -- We need to have at least a tracker
   local mainTracker = Trackers:New("main-tracker")
-  mainTracker.displayNotifications = true
+  --mainTracker.displayNotifications = true
 
-  -- Load the tracker created  by the user (use Global)
+  -- Register trackers created by the user (use Global)
   Database:SelectRoot()
   if Database:SelectTable(false, "trackers") then
-    for id, trackerDB in Database:IterateTable() do
-      local tracker = Trackers:Get(id)
-      if not tracker then
-        tracker = Trackers:New(id)
+    for id in Database:IterateTable() do
+      if not Trackers:Get(id) then
+        Trackers:New(id)
       end
-
-      tracker.height        = trackerDB.height
-      tracker.width         = trackerDB.width
-      tracker.locked        = trackerDB.locked
-      tracker.showScrollbar = trackerDB.showScrollbar
-      tracker:SetPosition(trackerDB.xPos or 0, trackerDB.yPos or 0, false)
     end
   end
 
-  -- Load the properties overrided
-  Profils:PrepareDatabase()
-  if Database:SelectTable(false, "trackers") then
-    for id, trackerDB in Database:IterateTable() do
-      local tracker = Trackers:Get(id)
-      if tracker then
-        tracker.height        = trackerDB.height
-        tracker.width         = trackerDB.width
-        tracker.locked        = trackerDB.locked
-        tracker.showScrollbar = trackerDB.showScrollbar
-        tracker:SetPosition(trackerDB.xPos or 0, trackerDB.yPos or 0, false)
-      end
-    end
+  -- Load the properties contained in the profil
+  for _, tracker in Trackers:GetIterator() do
+      tracker:LoadPropsFromDatabase()
   end
 
   Scorpio.FireSystemEvent("EKT_TRACKERS_LOADED")
 end
---[[
-__SystemEvent__()
-function EKT_PROFIL_CHANGED(profil)
 
-  -- 1. Keep block in memory
-  local blocks = {}
+__SystemEvent__()
+function EKT_PROFIL_CHANGED()
+  -- Update props contained in the new profils
   for _, tracker in Trackers:GetIterator() do
-    for _, block in tracker:GetBlocks():GetIterator() do
-      local blockCategory = API:GetDefaultValueFromObj(block, "category")
-      blocks[blockCategory] = block
-    end
+      tracker:LoadPropsFromDatabase()
   end
 
-  local bCategoryChanged = {}
-  -- 2. Detect a block change
-  for categoryID, b in pairs(blocks) do
-    local category = Blocks:GetCategory(categoryID)
-    local blockID  = category:TryToGetValidBlock()
-
-    if blockID ~= b.id then
-      tinsert(bCategoryChanged, category.id)
-      blocks[categoryID] = nil
-    end
-  end
-
-  Trackers:UnregisterAll()
-  -- We need to have at least a tracker
-  local mainTracker = Trackers:New("main-tracker")
-  mainTracker.displayNotifications = true
-
-  -- Load the trackers contained in the profils
-  Profils:PrepareDatabase()
-  if Database:SelectTable(false, "trackers") then
-    for id, trackerDB in Database:IterateTable() do
-      local tracker = Trackers:Get(id)
-      if not tracker then
-        tracker = Trackers:New(id)
-      end
-
-      tracker.height = trackerDB.height
-      tracker.width  = trackerDB.width
-      tracker.locked = trackerDB.locked
-      tracker:SetPosition(trackerDB.xPos or 0, trackerDB.yPos or 0, false)
-    end
-  end
-end--]]
-
-__SystemEvent__()
-function EKT_PROFIL_CHANGED(profil)
-
-  -- First loading the props in global
-  Database:SelectRoot()
-  if Database:SelectTable(false, "trackers") then
-    for id, trackerDB in Database:IterateTable() do
-      local tracker = Trackers:Get(id)
-      if tracker then
-        tracker.height        = trackerDB.height
-        tracker.width         = trackerDB.width
-        tracker.locked        = trackerDB.locked
-        tracker.showScrollbar = trackerDB.showScrollbar
-        tracker:SetPosition(trackerDB.xPos or 0, trackerDB.yPos or 0, false)
-      end
-    end
-  end
-
-  -- Load the trackers contained in the profils, and override props
-  Profils:PrepareDatabase()
-  if Database:SelectTable(false, "trackers") then
-    for id, trackerDB in Database:IterateTable() do
-      local tracker = Trackers:Get(id)
-      if not tracker then
-        tracker = Trackers:New(id)
-      end
-
-      tracker.height        = trackerDB.height
-      tracker.width         = trackerDB.width
-      tracker.locked        = trackerDB.locked
-      tracker.showScrollbar = trackerDB.showScrollbar
-      tracker:SetPosition(trackerDB.xPos or 0, trackerDB.yPos or 0, false)
-    end
-  end
 
   for id, category in Blocks:IterateCategories() do
     Trackers:TransferBlock(id, category.tracker)

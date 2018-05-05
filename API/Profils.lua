@@ -60,7 +60,7 @@ class "Profils" (function(_ENV)
 
     Database:GetChar()[_SPECS_INDEX_ID][specIndex].profile_used = profile
 
-    if GetActiveSpecGroup() == specIndex then
+    if GetSpecialization() == specIndex then
       self:CheckProfilChange()
     end
   end
@@ -77,9 +77,13 @@ class "Profils" (function(_ENV)
     end
   end
 
-  __Static__() function PrepareDatabase()
-    local profil = Database:GetSpec().profile_used
+  __Arguments__ { ClassType, Variable.Optional(String)}
+  __Static__() function PrepareDatabase(self, profil)
     if not profil then
+      profil = Database:GetSpec().profile_used
+    end
+
+    if not profil or profil == "__global" then
       Database:SelectRoot()
     elseif profil == "__spec" then
       Database:SelectRootSpec()
@@ -108,16 +112,19 @@ class "Profils" (function(_ENV)
     local oldProfil = Profils.name or "__global"
     local hasChanged = false
 
+
     if profil == "__spec" then
       hasChanged = true
     elseif profil ~= oldProfil then
       hasChanged = true
     end
 
+  print("CheckProfilChange", oldProfil, profil, hasChanged)
+
     Profils.name = profil
 
     if hasChanged  then
-      Scorpio.FireSystemEvent("EKT_PROFIL_CHANGED", profil)
+      Scorpio.FireSystemEvent("EKT_PROFIL_CHANGED", profil, oldProfil)
     end
   end
   ------------------------------------------------------------------------------

@@ -267,11 +267,12 @@ class "StateSelectRecipe" (function(_ENV)
   __Arguments__ { String }
   function AddState(self, id)
     self.statesID:Insert(id)
+    return self
   end
 
   __Arguments__ { State }
   function AddState(self, state)
-    AddState(self, state.id)
+    return AddState(self, state.id)
   end
 
   ------------------------------------------------------------------------------
@@ -285,11 +286,6 @@ class "StateSelectRecipe" (function(_ENV)
 
     self.statesID = Array[String]()
     self:AddState("none") -- Add none by default
-    self:AddState("progress")
-    self:AddState("idle")
-    self:AddState("completed")
-    self:AddState("failed")
-    self:AddState("tracked")
   end
 
 

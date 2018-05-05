@@ -12,7 +12,7 @@ class "BlockCategory" (function(_ENV)
 
 
   local function UpdateOrder(self, new)
-    Database:SelectRoot()
+    Profils:PrepareDatabase()
     if Database:SelectTable(true, "blocks", "categories", self.id) then
       if new == self._initOrder then
         Database:SetValue("order", nil)
@@ -20,10 +20,12 @@ class "BlockCategory" (function(_ENV)
         Database:SetValue("order", new)
       end
     end
+
+    self:OnOrderChanged(new)
   end
 
   local function UpdateSelected(self, new)
-    Database:SelectRoot()
+    Profils:PrepareDatabase()
     if Database:SelectTable(true, "blocks", "categories", self.id) then
       if new == self._initSelected then
         Database:SetValue("selected", nil)
@@ -34,7 +36,7 @@ class "BlockCategory" (function(_ENV)
   end
 
   local function UpdateTracker(self, new)
-    Database:SelectRoot()
+    Profils:PrepareDatabase()
     if Database:SelectTable(true, "blocks", "categories", self.id) then
       local defaultValue = API:GetDefaultValueFromObj(self, "tracker")
       if defaultValue == new then
@@ -53,7 +55,7 @@ class "BlockCategory" (function(_ENV)
 
   function GetTracker(self)
     if not self.__tracker then
-      Database:SelectRoot()
+      Profils:PrepareDatabase()
       --Database:PrepareDatabase()
       if Database:SelectTable(false, "blocks", "categories", self.id) then
         local value = Database:GetValue("tracker")
@@ -74,7 +76,7 @@ class "BlockCategory" (function(_ENV)
     end
 
     if value ~= self.tracker then
-      Database:SelectRoot()
+      Profils:PrepareDatabase()
       if Database:SelectTable(true, "blocks", "categories", self.id) then
         if useDefaultValue then
           Database:SetValue("tracker", nil)
@@ -82,8 +84,8 @@ class "BlockCategory" (function(_ENV)
           Database:SetValue("tracker", value)
         end
       end
-      self.__tracker = value
     end
+    self.__tracker = value
   end
   --[[
   function TryToGetValidBlock(self)
@@ -123,6 +125,22 @@ class "BlockCategory" (function(_ENV)
       return API:GetDefaultValueFromClass(blockClass, "id"), blockClass
     end
   end
+
+
+    function LoadPropsFromDatabase(self)
+      -- Load the properties contained in the profil
+      Profils:PrepareDatabase()
+
+      local order, tracker
+      if Database:SelectTable(false, "blocks", "categories", self.id) then
+        order = Database:GetValue("order")
+        tracker = Database:GetValue("tracker")
+      end
+
+      -- Assign the values
+      self.order   = order
+      self.tracker =  tracker
+    end
 
   property "id" { TYPE = String, FIELD = "__id" }
   property "name" { TYPE = String, FIELD = "__name" }
@@ -182,7 +200,6 @@ class "Block" (function(_ENV)
       local category = Blocks:GetCategory(self.category)
       Trackers:TransferBlock(self.category, category.tracker)
     else
-      print("Remove", self.category)
       local tracker = Trackers:GetTrackerByBlockCategoryID(self.category)
       tracker:RemoveBlockByCategoryID(self.category)
     end
@@ -290,7 +307,7 @@ class "Block" (function(_ENV)
   property "id" { TYPE = String, DEFAULT = "defaultID" }
   property "text" { TYPE = String, DEFAULT = "Default Header Text", HANDLER = SetText }
   property "isActive" { TYPE = Boolean, DEFAULT = true, HANDLER = IsActiveChanged }
-  property "order" { TYPE = Number, DEFAULT = 100 } -- is a shortcut of the category order
+  property "order" { TYPE = Number, DEFAULT = 100, EVENT = "OnOrderChanged" } -- is a shortcut of the category order
   property "category" { TYPE = String }
   property "tracker" { TYPE = String  }
   property "expanded" { TYPE = Boolean, DEFAULT = true }
@@ -569,14 +586,7 @@ Environment.RegisterGlobalKeyword{ block = GetBlock }
 
 __SystemEvent__()
 function EKT_PROFIL_CHANGED()
-  Profils:PrepareDatabase()
-
-  if Database:SelectTable(false, "blocks") then
-    for id, trackerDB in Database:IterateTable() do
-      local category = Blocks:GetCategory(id)
-      if category then
-        category.tracker = trackerDB.tracker
-      end
-    end
+  for _, category in Blocks:IterateCategories() do
+    category:LoadPropsFromDatabase()
   end
 end

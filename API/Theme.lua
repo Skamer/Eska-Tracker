@@ -116,6 +116,11 @@ __Serializable__() class "Theme" (function(_ENV)
     return false
   end
 
+  __Arguments__ { ClassType, Table }
+  __Static__() function GetElementID(self, frame)
+    return frame.elementID
+  end
+
   __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String) }
   __Static__() function ProcessSkinFrame(self, frame, flags, state)
     local theme = Themes:GetSelected()
@@ -233,12 +238,11 @@ __Serializable__() class "Theme" (function(_ENV)
       fontstring:SetJustifyV(theme:GetElementProperty(elementID, "text-justify-v", inheritElementID))
     end
 
+    if not text then
+      text = fontstring:GetText()
+    end
 
     if Enum.ValidateFlags(flags, SkinFlags.TEXT_TRANSFORM) then
-      if not text then
-        text = fontstring:GetText()
-      end
-
       if text then
         if text == "" then
           fontstring:SetText(text)
@@ -252,6 +256,8 @@ __Serializable__() class "Theme" (function(_ENV)
           fontstring:SetText(text)
         end
       end
+    else
+      fontstring:SetText(text)
     end
   end
 
@@ -1009,12 +1015,15 @@ class "Themes" (function(_ENV)
     end
   end
 
-  __Arguments__ { ClassType, String }
-  __Static__() function Select(self, themeName)
+  __Arguments__ { ClassType, String, Variable.Optional(Boolean, true) }
+  __Static__() function Select(self, themeName, saveInDB)
     local theme = _THEMES[themeName]
     if theme then
       _CURRENT_THEME = theme
-      Options:Set("theme-selected", themeName)
+
+      if saveInDB then
+        Options:Set("theme-selected", themeName)
+      end
 
       Frame:SkinAll()
     end

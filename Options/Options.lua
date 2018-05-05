@@ -19,6 +19,9 @@ _ROOT_FRAME           = nil
 _CATEGORIES_BUILDER = Dictionary()
 _CATEGORIES_INFO    = {}
 
+
+
+
 function OnLoad(self)
   _ROOT_TREE = {
     {
@@ -133,6 +136,7 @@ function OnLoad(self)
 
   --OptionBuilder:BuildUrl("main-tracker")
   --OptionBuilder:AddRecipe(HeadingRecipe():SetText("AddonInfo Headling 2"), "AddonInfo")
+  self:AddNotificationRecipes()
 end
 
 __SystemEvent__()
@@ -211,6 +215,46 @@ end
 
 
 function RegisterTrackerRecipe(self)
+end
 
 
+
+
+function AddNotificationRecipes(self)
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("notifications"):SetText("Notifications"):SetBuildingGroup("notifications/children"), "RootTree")
+
+  local linkNotificationToTrackerRecipe = CheckBoxRecipe()
+  linkNotificationToTrackerRecipe:BindOption("link-notifications-to-a-tracker")
+  linkNotificationToTrackerRecipe:SetText("Link notifications to a tracker")
+  linkNotificationToTrackerRecipe:SetWidth(1.0)
+  linkNotificationToTrackerRecipe:SetOrder(10)
+  OptionBuilder:AddRecipe(linkNotificationToTrackerRecipe, "notifications/children")
+
+  local function GetTrackerList()
+    local trackerList = {}
+    for _, tracker in Trackers:GetIterator() do
+      trackerList[tracker.id] = tracker.name
+    end
+
+    return trackerList
+  end
+
+  local selectTracker = SelectRecipe()
+  selectTracker:SetText("Select a tracker to link")
+  selectTracker:SetList(GetTrackerList)
+  selectTracker:BindOption("tracker-used-for-notifications")
+  --[[selectTracker:Get(function()
+    local tracker
+    for _, tracker in Trackers:GetIterator() do
+      if tracker.displayNotifications then
+        return tracker.id
+      end
+    end
+   end)
+  selectTracker:Set(function(_, value)
+    print("Set Tracker", value)
+    Trackers:Get(value).displayNotifications = true
+  end)--]]
+  selectTracker:SetOrder(20)
+  OptionBuilder:AddRecipe(selectTracker, "notifications/children")
 end

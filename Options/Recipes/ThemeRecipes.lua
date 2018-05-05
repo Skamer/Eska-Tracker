@@ -129,6 +129,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       or flag == Theme.SkinFlags.TEXT_SIZE then
       local value = selectedTheme:GetElementProperty(self.rElementID,
       _FLAGS_PROPERTIES[flag], self.inheritFromElementID)
+      control:SetLabel("")
       control:SetValue(value)
     elseif flag == Theme.SkinFlags.TEXT_FONT then
       local value = selectedTheme:GetElementProperty(self.rElementID,
@@ -221,6 +222,13 @@ class "ThemePropertyRecipe" (function(_ENV)
 
   function ClearFlags(self)
     self.flags = 0
+    return self
+  end
+
+  __Arguments__ { Theme.SkinFlags }
+  function SetFlags(self, flags)
+    self.flags = flags
+
     return self
   end
 

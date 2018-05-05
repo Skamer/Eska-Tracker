@@ -54,7 +54,7 @@ class "Options" (function(_ENV)
   __Arguments__ { ClassType, String }
   __Static__() function Get(self, option)
     -- select the current profile (global, char or spec)
-    self:SelectCurrentProfile()
+    Profils:PrepareDatabase()
 
     if Database:SelectTable(false, "options") then
       local value = Database:GetValue(option)
@@ -71,7 +71,7 @@ class "Options" (function(_ENV)
   __Arguments__ { ClassType, String }
   __Static__() function Exists(self, option)
       -- select the current profile (global, char or spec)
-      self:SelectCurrentProfile()
+      Profils:PrepareDatabase()
 
       if Database:SelectTable(false, "options") then
         local value = Database:GetValue(option)
@@ -85,20 +85,25 @@ class "Options" (function(_ENV)
   __Arguments__ { ClassType, String, Variable.Optional(), Variable.Optional(Boolean, true), Variable.Optional(Boolean, true)}
   __Static__() function Set(self, option, value, useHandler, passValue)
     -- select the current profile (global, char or spec)
-    self:SelectCurrentProfile()
+    Profils:PrepareDatabase()
 
     Database:SelectTable("options")
     local oldValue = Database:GetValue(option)
     local newValue = value
+    local defaultValue = OPTIONS[option] and OPTIONS[option].default
 
     if oldValue == nil then
-      oldValue = OPTIONS[option] and OPTIONS[option].default
+      oldValue = defaultValue
     end
 
-    Database:SetValue(option, value)
+    if value and value == defaultValue then
+      Database:SetValue(option, nil)
+    else
+      Database:SetValue(option, value)
+    end
 
     if newValue == nil then
-      newValue = OPTIONS[option] and OPTIONS[option].default
+      newValue = defaultValue
     end
 
     if newValue ~= oldValue then
@@ -167,3 +172,35 @@ class "Options" (function(_ENV)
   end
 
 end)
+
+
+__SystemEvent__()
+function EKT_PROFIL_CHANGED(profil, oldProfil)
+  local oldProfilData = DiffMap()
+  Profils:PrepareDatabase(oldProfil)
+
+  if Database:SelectTable(false, "options") then
+    for k, v in Database:IterateTable() do
+      oldProfilData:SetValue(k, v)
+    end
+  end
+
+  local newProfilData = DiffMap()
+  Profils:PrepareDatabase(profil)
+
+  if Database:SelectTable(false, "options") then
+    for k, v in Database:IterateTable() do
+      newProfilData:SetValue(k, v)
+    end
+  end
+
+  local diff = oldProfilData:Diff(newProfilData)
+  for index, option in ipairs(diff) do
+    local value = Options:Get(option)
+    if option == "theme-selected" then
+      Themes:Select(value, false)
+    else
+      Frame:BroadcastOption(option, value)
+    end
+  end
+end

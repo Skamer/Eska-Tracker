@@ -30,6 +30,12 @@ function OnLoad(self)
   order:SetOrder(10)
   order:SetRange(0, 500)
   order:SetText("Order")
+  order:Get(function(recipe)
+    return Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).order
+  end)
+  order:Set(function(recipe, value)
+    Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).order = value
+  end)
   OptionBuilder:AddRecipe(order, "block/general")
 end
 

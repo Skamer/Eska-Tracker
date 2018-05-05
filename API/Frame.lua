@@ -452,11 +452,6 @@ class "Frame" (function(_ENV)
     return false
   end
 
-  __Arguments__ { String, Variable.Optional() }
-  function OnOptionChanged(self, option, value)
-
-  end
-
   --- This function is called when an option event is triggered.
   -- This is called by 'HandleOption', 'LoadOption' and when the option has changed.
   __Arguments__ { String, Variable.Optional(), Variable.Optional() }
@@ -527,31 +522,6 @@ class "Frame" (function(_ENV)
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
   ------------------------------------------------------------------------------
-  __Arguments__ { ClassType, String, Variable.Optional() }
-  __Static__() function NotifyOptionChange(self, option, value)
-    for obj in pairs(_FrameCache) do
-      if obj:IsRegisteredOption(option) then
-        if not obj.isReusable then
-          obj:OnOptionChanged(option, value)
-        end
-      end
-    end
-  end
-
-  __Arguments__ { ClassType, String, Variable.Optional(), Variable.Optional(Table) }
-  __Static__() function HandleOptionChange(class, option, value, objectList)
-    local objects = objectList and objectList or _FrameCache
-    for obj in pairs(objects) do
-      if obj:IsRegisteredOption(option) then
-        if not obj.isReusable then
-          obj:OnOptionChanged(option, value)
-        else
-          obj:AddPendingOption(option)
-        end
-      end
-    end
-  end
-
   --- Broadcast the options to the frames
   __Arguments__ { ClassType, String, Variable.Optional(), Variable.Optional(), Variable.Optional(Table) }
   __Static__() function BroadcastOption(class, option, newValue, oldValue, objectList)

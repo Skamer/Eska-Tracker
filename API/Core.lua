@@ -171,9 +171,38 @@ interface "API" (function(_ENV)
     return copy
   end
 
+  function IsTableEqual(self, t1, t2, ignoreMT)
+   local ty1 = type(t1)
+   local ty2 = type(t2)
+
+      if ty1 ~= ty2 then return false end
+   -- non-table types can be directly compared
+   if ty1 ~= 'table' and ty2 ~= 'table' then return t1 == t2 end
+   -- as well as tables which have the metamethod __eq
+   local mt = getmetatable(t1)
+   if not ignoreMT and mt and mt.__eq then return t1 == t2 end
+   for k1,v1 in pairs(t1) do
+      local v2 = t2[k1]
+      if v2 == nil or not self:IsTableEqual(v1,v2) then return false end
+   end
+   for k2,v2 in pairs(t2) do
+      local v1 = t1[k2]
+      if v1 == nil or not self:IsTableEqual(v1,v2) then return false end
+   end
+   return true
+end
+
   function AddFlag(self, flags, flag)
     if not Enum.ValidateFlags(flags, flag) then
       flags = flags + flag
+    end
+
+    return flags
+  end
+
+  function RemoveFlag(self, flags, flag)
+    if Enum.ValidateFlags(flags, flag) then
+      flags = flags - flag
     end
 
     return flags
@@ -296,6 +325,78 @@ class "Stack" (function (_ENV)
     function GetIterator(self)
         return ipairs(self)
     end
+end)
+
+--------------------------------------------------------------------------------
+--                                                                            --
+--                              DiffMap                                       --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "DiffMap" (function(_ENV)
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  __Arguments__ { String + Number, Variable.Optional() }
+  function SetValue(self, key, value)
+    self.values[key] = value
+  end
+
+  __Arguments__ { DiffMap, Variable.Optional(Boolean)}
+  function Diff(self, other, ignoreTable)
+    -- Get a complete keys list to iterate
+    local keys = {}
+
+    -- Start with the self object
+    for index, key in self.values.Keys:ToList():GetIterator() do
+        keys[key] = true
+    end
+
+    -- Then with the other object
+    for index, key in other.values.Keys:ToList():GetIterator() do
+      keys[key] = true
+    end
+
+    local changes = {}
+    -- Check if there is changes
+    for key in pairs(keys) do
+      local valueA = self.values[key]
+      local valueB = other.values[key]
+      local valueChanged = true
+
+      if valueA == nil and valueB == nil then
+        valueChanged = false
+      elseif valueA ~= nil and valueB ~= nil then
+        local typeA = type(valueA)
+        local typeB = type(valueB)
+
+        if typeA == typeB then
+          if not ignoreTable and typeA == "table" then
+            if API:IsTableEqual(valueA, valueB, true) then
+              valueChanged = false
+            end
+          elseif typeA == "string" or typeA == "number" or typeA == "boolean" then
+            if valueA == valueB then
+              valueChanged = false
+            end
+          end
+        end
+      end
+
+      if valueChanged then
+        tinsert(changes, key)
+      end
+    end
+
+    -- Return changes
+    return changes
+  end
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function DiffMap(self)
+    self.values = Dictionary()
+  end
+
 end)
 
 
