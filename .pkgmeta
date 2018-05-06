@@ -2,8 +2,9 @@ package-as: EskaTracker
 
 manual-changelog:
     filename: Changelog.txt
+    markup-type: plain
 
-required-ddependencies:
+required-dependencies:
   - ploop
   - scorpio
 
