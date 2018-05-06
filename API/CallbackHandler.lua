@@ -62,8 +62,8 @@ class "CallbackHandlers"
   CALLBACK_HANDLERS = Dictionary()
   CALLBACK_HANDLERS_GROUPS = Dictionary()
 
-  __Static__() __Arguments__ { Class, String, CallbackHandler, { Type = String, Nilable = true, IsList = true }}
-  function Register(self, id, handler, ...)
+  __Arguments__ { ClassType, String, CallbackHandler, Variable.Rest(String) }
+  __Static__() function Register(self, id, handler, ...)
     local numGroup = select("#", ...)
     for i = 1, numGroup do
       local groupName = select(i, ...)
@@ -80,8 +80,8 @@ class "CallbackHandlers"
   end
 
 
-  __Static__() __Arguments__ { Class, { Type = String, Nilable = true, IsList = true } }
-  function CallGroup(self, ...)
+  __Arguments__ { ClassType, Variable.Rest(String) }
+  __Static__() function CallGroup(self, ...)
     local numGroup = select("#", ...)
     for i = 1, numGroup do
       local groupName = select(i, ...)
@@ -98,7 +98,7 @@ class "CallbackHandlers"
 
   end
 
-  __Static__() __Arguments__ { Class, String, { Type = Any, Nilable = true, IsList = true } }
+  __Static__() __Arguments__ { ClassType, String, { Type = Any, Nilable = true, IsList = true } }
   function Call(self, id, ...)
     local handler = CALLBACK_HANDLERS[id]
     if handler then

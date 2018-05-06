@@ -566,6 +566,7 @@ end --]]
   end
 
   local block = blockClass()
+  block.order = category.order
 
   local tracker = Trackers:Get(category.tracker)
 

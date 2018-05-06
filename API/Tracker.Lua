@@ -106,7 +106,6 @@ Class "Tracker" (function(_ENV)
   end
 
   function EnableNotifications(self)
-    print("Enable Notificaiton", self.id)
     self.OnNotificationHeightHandler = function(_, new, old)
       self.contentHeight = self.contentHeight + (new - old)
     end
@@ -125,7 +124,6 @@ Class "Tracker" (function(_ENV)
   end
 
   function DisableNotifications(self)
-    print("Disable Notification", self.id)
     if self.OnNotificationHeightHandler then
       Notifications().OnHeightChanged = Notifications().OnHeightChanged - self.OnNotificationHeightHandler
     end
