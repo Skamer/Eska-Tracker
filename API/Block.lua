@@ -1,7 +1,7 @@
- --============================================================================--
---                          Eska Quest Tracker                                --
--- @Author  : Skamer <https://mods.curse.com/members/DevSkamer>               --
--- @Website : https://wow.curseforge.com/projects/eska-quest-tracker          --
+--============================================================================--
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
 Scorpio                  "EskaTracker.API.Block"                              ""
 --============================================================================--
@@ -451,16 +451,30 @@ class "__Block__" (function(_ENV)
     local category = self[2]
     local prefix   = "block."..category
 
-    Attribute.IndependentCall(function()
-      class(target) (function(_ENV)
-        inherit "Block"
+    local hasSuperClass = Class.GetSuperClass(target)
 
-        property "id" { TYPE = String, DEFAULT = id }
-        property "category" { TYPE = String, DEFAULT = category }
+    if hasSuperClass then
+      Attribute.IndependentCall(function()
+        class(target) (function(_ENV)
 
-        property "_prefix" { STATIC = true, DEFAULT = prefix }
+          property "id" { TYPE = String, DEFAULT = id }
+          property "category" { TYPE = String, DEFAULT = category }
+
+          property "_prefix" { STATIC = true, DEFAULT = prefix }
+        end)
       end)
-    end)
+    else
+      Attribute.IndependentCall(function()
+        class(target) (function(_ENV)
+          inherit "Block"
+
+          property "id" { TYPE = String, DEFAULT = id }
+          property "category" { TYPE = String, DEFAULT = category }
+
+          property "_prefix" { STATIC = true, DEFAULT = prefix }
+        end)
+      end)
+    end
 
     Blocks:Register(target)
   end
@@ -482,8 +496,6 @@ class "__Block__" (function(_ENV)
     return self
   end
 end)
-
-
 
 --[[Blocks:RegisterCategory(BlockCategory("quests", "Quests", 50, "eska-quests"))
 Blocks:RegisterCategory(BlockCategory("bonus-objectives", "Bonus objectives", 12, "eska-bonus-objectives"))

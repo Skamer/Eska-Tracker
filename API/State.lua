@@ -1,8 +1,8 @@
--- ========================================================================== --
--- 										 EskaQuestTracker                                       --
--- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
--- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
--- ========================================================================== --
+--============================================================================--
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
+--============================================================================--
 Scorpio               "EskaTracker.API.State"                            ""
 --============================================================================--
 namespace "EKT"

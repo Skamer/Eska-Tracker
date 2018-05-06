@@ -1,8 +1,8 @@
--- ========================================================================== --
--- 										 EskaQuestTracker                                       --
--- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
--- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
--- ========================================================================== --
+--============================================================================--
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
+--============================================================================--
 import "EKT"
 --============================================================================--
 local TransparenceTheme = Theme()
@@ -33,5 +33,7 @@ TransparenceTheme:SetElementProperty("block.header", "border-color", { r = 0, g 
 TransparenceTheme:SetElementProperty("block.header.text", "text-color", { r = 0.18, g = 0.71, b = 1 })
 TransparenceTheme:SetElementProperty("block.header.text", "text-location", "CENTER")
 TransparenceTheme:SetElementProperty("block.header.text", "text-transform", "none")
+TransparenceTheme:SetElementProperty("block.header.text", "text-justify-h", "CENTER")
+TransparenceTheme:SetElementProperty("block.header.text", "text-justify-v", "MIDDLE")
 -- Stripe properties
 TransparenceTheme:SetElementProperty("block.header.stripe", "texture-color", { r = 0, g = 0, b = 0, a = 0})

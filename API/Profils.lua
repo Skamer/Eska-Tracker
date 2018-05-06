@@ -119,8 +119,6 @@ class "Profils" (function(_ENV)
       hasChanged = true
     end
 
-  print("CheckProfilChange", oldProfil, profil, hasChanged)
-
     Profils.name = profil
 
     if hasChanged  then
@@ -133,32 +131,7 @@ class "Profils" (function(_ENV)
   __Static__() property "name" { TYPE = String }
 end)
 
---[[
-function OnSpecChanged(self)
-  local profil = Database:GetSpec().profile_used or "__global"
-  local oldProfil = Profils.name or "__global"
-  local hasChanged = false
 
-  if profil == "__spec" then
-    hasChanged = true
-  elseif profil ~= oldProfil then
-    hasChanged = true
-  end
-
-  Profils.name = profil
-
-  if hasChanged and _FIRST_EVENT_CALL_OCCURRED then
-    Scorpio.FireSystemEvent("EKT_PROFIL_CHANGED", profil)
-  end
-
-
-end
---]]
---[[
-function OnSpecChanged(self)
-  Profils:CheckProfilChange()
-end
---]]
 __SystemEvent__()
 function PLAYER_SPECIALIZATION_CHANGED()
   Profils:CheckProfilChange()

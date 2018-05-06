@@ -1,8 +1,8 @@
--- ========================================================================== --
--- 										 EskaQuestTracker                                       --
--- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
--- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
--- ========================================================================== --
+--============================================================================--
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
+--============================================================================--
 Scorpio                "EskaTracker.Options.TrackerRecipes"                   ""
 -- ========================================================================== --
 namespace "EKT"
@@ -265,7 +265,6 @@ class "BlockCategoryRowRecipe" (function(_ENV)
     group:AddChild(checkbox)
 
     if category.tracker == trackerSelected then
-      print("Is exact", category.tracker, category.id)
       checkbox:SetValue(true)
     else
       checkbox:SetValue(false)

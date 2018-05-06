@@ -1,8 +1,8 @@
--- ========================================================================== --
--- 										 EskaQuestTracker                                       --
--- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
--- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
--- ========================================================================== --
+--============================================================================--
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
+--============================================================================--
 Scorpio             "EskaTracker.API.Theme"                              ""
 --============================================================================--
 namespace "EKT"
@@ -199,6 +199,7 @@ __Serializable__() class "Theme" (function(_ENV)
 
     local elementID = fontstring.elementID
     local inheritElementID = fontstring.inheritElementID
+
 
     if not elementID then return end  -- TODO: Add error msg
 
@@ -505,7 +506,7 @@ __Serializable__() class "Theme" (function(_ENV)
         ["text-location"] = "CENTER",
         ["text-offsetX"] = 0,
         ["text-offsetY"] = 0,
-        ["text-justify-h"] = "CENTER",
+        ["text-justify-h"] = "LEFT",
         ["text-justify-v"] = "MIDDLE",
         ["vertex-color"] = { r = 1, g = 1, b = 1},
         ["texture-color"] = { r = 1, g = 1, b = 1}

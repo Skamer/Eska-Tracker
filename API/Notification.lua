@@ -1,8 +1,8 @@
--- ========================================================================== --
--- 										 EskaQuestTracker                                       --
--- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
--- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
--- ========================================================================== --
+--============================================================================--
+--                         Eska Tracker                                       --
+-- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
+-- Website    : https://wow.curseforge.com/projects/eskatracker               --
+--============================================================================--
 Scorpio              "EskaTracker.API.Notification"                           ""
 --============================================================================--
 namespace                            "EKT"
@@ -556,11 +556,12 @@ function OnLoad(self)
       tracker:EnableNotifications()
     end
   end--]]
-  Notifications():LoadOption("link-notifications-to-a-tracker")
-  Notifications():LoadOption("tracker-used-for-notifications")
+  --Notifications()
+  --Notifications():LoadOption("link-notifications-to-a-tracker")
+  --Notifications():LoadOption("tracker-used-for-notifications")
 end
 
-
+--[[
 function OnEnable(self)
   EKT.Notifications():SetPoint("CENTER", -550, 0)
   EKT.Notifications():Add(Notification())
@@ -582,7 +583,7 @@ function PullInteractive()
 
   EKT.Notifications():Add(notif)
 
-end
+end--]]
 
 --[[
 __Async__()
