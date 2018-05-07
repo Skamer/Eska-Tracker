@@ -7,13 +7,13 @@ Scorpio         "EskaTracker.API.ContextMenu"                                 ""
 --============================================================================--
 namespace "EKT"
 --============================================================================--
+__Recyclable__()
 class "BaseMenuItem" (function(_ENV)
   inherit "Frame"
 
   function Reset(self)
     self:Hide()
     self:ClearAllPoints()
-    self:SetParent()
   end
 
   function BaseMenuItem(self)
@@ -26,6 +26,7 @@ class "BaseMenuItem" (function(_ENV)
 
 end)
 
+__Recyclable__()
 class "MenuItemSeparator" (function(_ENV)
   inherit "BaseMenuItem"
 
@@ -39,7 +40,7 @@ class "MenuItemSeparator" (function(_ENV)
   end
 end)
 
-
+__Recyclable__()
 class "MenuItem" (function(_ENV)
 
   inherit "BaseMenuItem"
@@ -119,6 +120,7 @@ class "MenuItem" (function(_ENV)
 
 end)
 
+__Recyclable__()
 class "MenuItemSeparator" (function(_ENV)
   inherit "BaseMenuItem"
   function MenuItemSeparator(self)
@@ -194,6 +196,8 @@ class "ContextMenu" (function(_ENV)
   __Arguments__ { BaseMenuItem }
   function AddItem(self, item)
     self.items:Insert(item)
+    item:SetParent(self)
+
     return item
   end
 
@@ -217,7 +221,6 @@ class "ContextMenu" (function(_ENV)
       self.actionsArgs[count] = { ... }
       item.onClick = function()
         if self.actionsArgs[count] then
-          print("Action", action, action.Exec)
           action.Exec(unpack(self.actionsArgs[count]))
         else
           action.Exec()
@@ -251,7 +254,7 @@ class "ContextMenu" (function(_ENV)
 
   function ClearItems(self)
     for index, item in self.items:GetIterator() do
-      ObjectManager:Recycle(item)
+      item:Recycle()
     end
 
     self.items:Clear()
@@ -281,8 +284,7 @@ class "ContextMenu" (function(_ENV)
 
     for index, menuItem in self.items:GetIterator() do
       menuItem:ClearAllPoints()
-      menuItem:SetParent(self:GetFrameContainer())
-      menuItem:Show()
+      menuItem:Hide()
 
       if index == 1 then
         menuItem:SetPoint("TOPLEFT")
@@ -290,6 +292,7 @@ class "ContextMenu" (function(_ENV)
         menuItem:SetPoint("TOPLEFT", previousFrame, "BOTTOMLEFT", 0, 0)
       end
       menuItem.width = self.width
+      menuItem:Show()
 
       previousFrame = menuItem.frame
       height = height + menuItem.height
@@ -400,3 +403,14 @@ function OnLoad(self)
   -- Register the class in the object manager
   ObjectManager:Register(MenuItem)
 end
+
+__Action__ "toggle-context-menu" "Toggle context menu"
+class "ToggleContextMenuAction" (function(_ENV)
+  __Arguments__ { Frame }
+  __Static__() function Exec(obj)
+    ContextMenu():Toggle()
+    if ContextMenu():IsShown() then
+      obj:PrepareContextMenu()
+    end
+  end
+end)

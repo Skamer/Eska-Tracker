@@ -1,0 +1,4 @@
+[1.0.1]
+- The database will now be correctly cleaned when login out.
+- The item of context menu will now be correctly recycled.
+- Removed an useless file.

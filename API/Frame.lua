@@ -519,6 +519,9 @@ class "Frame" (function(_ENV)
 
   --- This function is called when the object must be reloaded
   function OnReload(self) end
+
+  --- This function is called when the context menu must be parepared (add action, link to frame)
+  function PrepareContextMenu(self) end
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
   ------------------------------------------------------------------------------

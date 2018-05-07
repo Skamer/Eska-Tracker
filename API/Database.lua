@@ -55,7 +55,8 @@ class "Database" (function(_ENV)
       end
     end
 
-      ClearEmptyTables(EskaQuestTrackerDB)
+    -- NOTE: Important to use 'EskaTrackerDB' else if doesn't work
+    ClearEmptyTables(EskaTrackerDB)
   end
 
   __Arguments__ { ClassType, Variable.Rest(String) }

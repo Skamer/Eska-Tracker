@@ -569,7 +569,7 @@ end)
 --                                                                            --
 --------------------------------------------------------------------------------
 class "SelectRecipe" (function(_ENV)
-  inherit "OptionRecipe"
+  inherit "OptionFrameRecipe"
   ------------------------------------------------------------------------------
   --                              Events                                      --
   --- --------------------------------------------------------------------------
@@ -584,6 +584,15 @@ class "SelectRecipe" (function(_ENV)
 
     local select = _AceGUI:Create("Dropdown")
     select:SetLabel(self.text)
+
+    if self.width then
+      if self.width > 0 and self.width <= 1 then
+        select:SetRelativeWidth(self.width)
+      else
+        select:SetWidth(self.width)
+      end
+    end
+
     if self.getListFunc then
       select:SetList(self.getListFunc())
     end
