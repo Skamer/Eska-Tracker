@@ -111,9 +111,9 @@ function OnLoad(self)
 
     --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("blocks"):SetText("Blocks"), "RootTree")
 
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("item-bar"):SetText("Item Bar"), "RootTree")
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("item-bar"):SetText("Item Bar"):SetOrder(200), "RootTree")
 
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("context-menu"):SetText("Context Menu"), "RootTree")
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("context-menu"):SetText("Context Menu"):SetOrder(300), "RootTree")
 
   --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("themes"):SetText("Themes"), "RootTree")
 
@@ -221,7 +221,7 @@ end
 
 
 function AddNotificationRecipes(self)
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("notifications"):SetText("Notifications"):SetBuildingGroup("notifications/children"), "RootTree")
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("notifications"):SetText("Notifications"):SetBuildingGroup("notifications/children"):SetOrder(400), "RootTree")
 
   local linkNotificationToTrackerRecipe = CheckBoxRecipe()
   linkNotificationToTrackerRecipe:BindOption("link-notifications-to-a-tracker")

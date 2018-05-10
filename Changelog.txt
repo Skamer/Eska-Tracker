@@ -1,3 +1,9 @@
+[1.0.2]
+- The addon now uses natural numbers for position (will prevents some issues with frames positions).
+- Fixed an issue where the text is transformed incorrectly when other text properties are changed.
+- Updated the addon icon texture.
+- Fixed an issue where the options categories are never ordered the same way between each loading.
+
 [1.0.1]
 - The database will now be correctly cleaned when login out.
 - The item of context menu will now be correctly recycled.

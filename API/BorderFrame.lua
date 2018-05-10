@@ -142,6 +142,7 @@ class "BorderFrame" (function(_ENV)
   end
 
   function SetBorderWidth(self, width)
+    width = math.ceil(width)
     if self.borders then
       self.borders.left:SetWidth(width)
       self.borders.top:SetHeight(width)
@@ -163,7 +164,6 @@ class "BorderFrame" (function(_ENV)
 
   function UpdateBorderAnchors(self)
     if self.showBorder then
-      --self.frame:ClearAllPoints()
       self.frame:SetPoint("TOP", self.borders.top, "BOTTOM")
       self.frame:SetPoint("LEFT", self.borders.left, "RIGHT")
       self.frame:SetPoint("RIGHT", self.borders.right, "LEFT")

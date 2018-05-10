@@ -24,7 +24,7 @@ end
 -- GetNumSpecializations
 
 function OnLoad(self)
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profils"):SetText("Profils"):SetBuildingGroup("profils/childrens"), "RootTree")
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profils"):SetText("Profils"):SetBuildingGroup("profils/childrens"):SetOrder(600), "RootTree")
 
   self:AddProfilRecipes()
 end

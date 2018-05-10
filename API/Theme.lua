@@ -239,8 +239,21 @@ __Serializable__() class "Theme" (function(_ENV)
       fontstring:SetJustifyV(theme:GetElementProperty(elementID, "text-justify-v", inheritElementID))
     end
 
+    -- Check if we need to transform the text
+    local needTextTransform = true
+    local fontstringText = fontstring:GetText()
+    if not text or type(text) == "number" then
+      needTextTransform = false
+    elseif fontstringText and text:lower() == fontstringText:lower() then
+      needTextTransform = false
+    end
+
+    if needTextTransform then
+      API:AddFlag(flags, SkinFlags.TEXT_TRANSFORM)
+    end
+
     if not text then
-      text = fontstring:GetText()
+      text = fontstringText
     end
 
     if Enum.ValidateFlags(flags, SkinFlags.TEXT_TRANSFORM) then
@@ -257,8 +270,6 @@ __Serializable__() class "Theme" (function(_ENV)
           fontstring:SetText(text)
         end
       end
-    else
-      fontstring:SetText(text)
     end
   end
 

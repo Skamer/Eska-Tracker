@@ -300,11 +300,18 @@ class "TabRecipe" (function(_ENV)
       local function SelectTab(id)
         --local recipe = OptionBuilder:GetRecipe(id, self:ResolveGroup())
         local recipe = self:GetRecipe(id)
+
+        if self.saveChoiceVariable then
+          self.context:SetVariable(self.saveChoiceVariable, id)
+        end
+
         if recipe then
           widget:ReleaseChildren()
           recipe:Build(OptionContext(widget, self, self.context))
           widget:DoLayout()
         end
+
+        self.context.parentWidget:DoLayout()
       end
 
       widget:SetCallback("OnGroupSelected", function(_, _, group)
@@ -318,6 +325,16 @@ class "TabRecipe" (function(_ENV)
 
     context.parentWidget:AddChild(widget)
   end
+
+  __Arguments__ { String }
+  function SetSaveChoiceVariable(self, variableName)
+    self.saveChoiceVariable = variableName
+    return self
+  end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "saveChoiceVariable" { TYPE = String }
 end)
 --------------------------------------------------------------------------------
 --                                                                            --

@@ -206,6 +206,7 @@ Class "Tracker" (function(_ENV)
       end
     end
   end
+
   ------------------------------------------------------------------------------
   --                             Methods                                      --
   ------------------------------------------------------------------------------
@@ -287,9 +288,14 @@ Class "Tracker" (function(_ENV)
 
   __Arguments__ { Variable.Optional(Number), Variable.Optional(Number), Variable.Optional(Boolean, true) }
   function SetPosition(self, x, y, saveInDB)
+
     self:ClearAllPoints()
 
     if x and y then
+      -- Ceil the values for avoiding some position issue
+      x = math.ceil(x)
+      y = math.ceil(y)
+
       self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x, y)
       self.xPos = x
       self.yPos = y
@@ -399,7 +405,7 @@ Class "Tracker" (function(_ENV)
     -- Load the properties contained in the profil
     Profils:PrepareDatabase()
 
-    local height, width, locked, showScrollbar, xPos, yPos
+    local height, width, locked, showScrollbar, xPos, yPos, show
     if Database:SelectTable(false, "trackers", self.id) then
       height          = Database:GetValue("height")
       width           = Database:GetValue("width")
@@ -407,7 +413,19 @@ Class "Tracker" (function(_ENV)
       showScrollbar   = Database:GetValue("showScrollbar")
       xPos            = Database:GetValue("xPos")
       yPos            = Database:GetValue("yPos")
+      show            = Database:GetValue("show")
     end
+
+    if show == nil or show ~= false then
+      show = true
+    end
+
+    if show and not self:IsShown() then
+      self:Show()
+    elseif not show and self:IsShown() then
+      self:Hide()
+    end
+
 
     -- Assign the values
     self.height         = height or 300
@@ -417,6 +435,23 @@ Class "Tracker" (function(_ENV)
     self:SetPosition(xPos, yPos, false)
   end
 
+  function OnHide(self)
+    super.OnHide(self)
+
+    Profils:PrepareDatabase()
+    if Database:SelectTable("trackers", self.id) then
+      Database:SetValue("show", false)
+    end
+  end
+
+  function OnShow(self)
+    super.OnShow(self)
+
+    Profils:PrepareDatabase()
+    if Database:SelectTable(false, "trackers", self.id) then
+      Database:SetValue("show", nil)
+    end
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -481,8 +516,6 @@ Class "Tracker" (function(_ENV)
     scrollFrame:SetPoint("LEFT")
     scrollFrame:SetPoint("RIGHT")
     scrollFrame:SetPoint("BOTTOM")
-    scrollFrame:SetBackdrop(_Backdrops.Common)
-    scrollFrame:SetBackdropColor(1, 1, 0, 0)
     scrollFrame:SetBackdropBorderColor(0, 0, 0, 0)
     scrollFrame:SetScript("OnScrollRangeChanged", Tracker_OnScrollRangeChanged)
     scrollFrame:SetClipsChildren(true)
@@ -519,6 +552,8 @@ Class "Tracker" (function(_ENV)
     content:SetPoint("RIGHT", scrollbar, "LEFT")
     content:SetPoint("TOP")
     content:SetHeight(self.contentHeight)
+    content:SetBackdrop(_Backdrops.Common)
+    content:SetBackdropColor(0, 1, 0, 0)
 
     self.content = content
     self.scrollFrame = scrollFrame

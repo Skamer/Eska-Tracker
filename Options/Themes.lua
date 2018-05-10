@@ -8,7 +8,7 @@ Scorpio               "EskaTracker.Options.Themes"                            ""
 import                           "EKT"
 -- ========================================================================== --
 function OnLoad(self)
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("themes"):SetText("Themes"):SetBuildingGroup("themes/children"):SetOrder(110), "RootTree")
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("themes"):SetText("Themes"):SetBuildingGroup("themes/children"):SetOrder(500), "RootTree")
 end
 
 

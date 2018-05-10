@@ -2,7 +2,7 @@ package-as: EskaTracker
 
 manual-changelog:
     filename: Changelog.txt
-    markup-type: html
+    markup-type: markdown
 
 required-dependencies:
   - ploop

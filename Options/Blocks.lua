@@ -19,7 +19,7 @@ function OnLoad(self)
     self:AddCategoryRecipes(category, true)
   end
 
-  OptionBuilder:AddRecipe(TabRecipe():SetBuildingGroup("block/tabs"), "block/children")
+  OptionBuilder:AddRecipe(TabRecipe():SetBuildingGroup("[block&:block_category_selected:]/tabs"), "block/children")
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("General"):SetID("general"):SetBuildingGroup("[block&:block_category_selected:]/general"), "block/tabs")
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Header"):SetID("header"):SetBuildingGroup("[block&:block_category_selected:]/header"), "block/tabs")
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Content"):SetID("content"):SetBuildingGroup("[block&:block_category_selected:]/content"), "block/tabs")
