@@ -2,7 +2,7 @@ package-as: EskaTracker
 
 manual-changelog:
     filename: Changelog.txt
-    markup-type: markdown
+    markup-type: creole
 
 required-dependencies:
   - ploop
@@ -26,5 +26,5 @@ externals:
     url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceConfig-3.0
   Libs/AceGUI-3.0:
     url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceGUI-3.0
-  Libs/LibDDI-1.0:
-    url: https://repos.wowace.com/wow/libddi-1-0/trunk
+  Libs/AceGUI-3.0-SharedMediaWidgets:
+    url: https://repos.wowace.com/wow/libsharedmedia-3-0/trunk
