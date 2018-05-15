@@ -54,7 +54,7 @@ class "Options" (function(_ENV)
   __Arguments__ { ClassType, String }
   __Static__() function Get(self, option)
     -- select the current profile (global, char or spec)
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
 
     if Database:SelectTable(false, "options") then
       local value = Database:GetValue(option)
@@ -71,7 +71,7 @@ class "Options" (function(_ENV)
   __Arguments__ { ClassType, String }
   __Static__() function Exists(self, option)
       -- select the current profile (global, char or spec)
-      Profils:PrepareDatabase()
+      Profiles:PrepareDatabase()
 
       if Database:SelectTable(false, "options") then
         local value = Database:GetValue(option)
@@ -85,7 +85,7 @@ class "Options" (function(_ENV)
   __Arguments__ { ClassType, String, Variable.Optional(), Variable.Optional(Boolean, true), Variable.Optional(Boolean, true)}
   __Static__() function Set(self, option, value, useHandler, passValue)
     -- select the current profile (global, char or spec)
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
 
     Database:SelectTable("options")
     local oldValue = Database:GetValue(option)
@@ -175,26 +175,26 @@ end)
 
 
 __SystemEvent__()
-function EKT_PROFIL_CHANGED(profil, oldProfil)
-  local oldProfilData = DiffMap()
-  Profils:PrepareDatabase(oldProfil)
+function EKT_PROFILE_CHANGED(profile, oldProfile)
+  local oldProfileData = DiffMap()
+  Profiles:PrepareDatabase(oldProfile)
 
   if Database:SelectTable(false, "options") then
     for k, v in Database:IterateTable() do
-      oldProfilData:SetValue(k, v)
+      oldProfileData:SetValue(k, v)
     end
   end
 
-  local newProfilData = DiffMap()
-  Profils:PrepareDatabase(profil)
+  local newProfileData = DiffMap()
+  Profiles:PrepareDatabase(profile)
 
   if Database:SelectTable(false, "options") then
     for k, v in Database:IterateTable() do
-      newProfilData:SetValue(k, v)
+      newProfileData:SetValue(k, v)
     end
   end
 
-  local diff = oldProfilData:Diff(newProfilData)
+  local diff = oldProfileData:Diff(newProfileData)
   for index, option in ipairs(diff) do
     local value = Options:Get(option)
     if option == "theme-selected" then
@@ -202,5 +202,12 @@ function EKT_PROFIL_CHANGED(profil, oldProfil)
     else
       Frame:BroadcastOption(option, value)
     end
+  end
+end
+
+__SystemEvent__()
+function EKT_COPY_PROFILE_PROCESS(sourceDB, destDB, destProfile)
+  if sourceDB["options"] then
+    destDB["options"] = sourceDB["options"]
   end
 end

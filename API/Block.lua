@@ -12,7 +12,7 @@ class "BlockCategory" (function(_ENV)
 
 
   local function UpdateOrder(self, new)
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(true, "blocks", "categories", self.id) then
       if new == self._initOrder then
         Database:SetValue("order", nil)
@@ -25,7 +25,7 @@ class "BlockCategory" (function(_ENV)
   end
 
   local function UpdateSelected(self, new)
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(true, "blocks", "categories", self.id) then
       if new == self._initSelected then
         Database:SetValue("selected", nil)
@@ -36,7 +36,7 @@ class "BlockCategory" (function(_ENV)
   end
 
   local function UpdateTracker(self, new)
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(true, "blocks", "categories", self.id) then
       local defaultValue = API:GetDefaultValueFromObj(self, "tracker")
       if defaultValue == new then
@@ -55,7 +55,7 @@ class "BlockCategory" (function(_ENV)
 
   function GetTracker(self)
     if not self.__tracker then
-      Profils:PrepareDatabase()
+      Profiles:PrepareDatabase()
       --Database:PrepareDatabase()
       if Database:SelectTable(false, "blocks", "categories", self.id) then
         local value = Database:GetValue("tracker")
@@ -76,7 +76,7 @@ class "BlockCategory" (function(_ENV)
     end
 
     if value ~= self.tracker then
-      Profils:PrepareDatabase()
+      Profiles:PrepareDatabase()
       if Database:SelectTable(true, "blocks", "categories", self.id) then
         if useDefaultValue then
           Database:SetValue("tracker", nil)
@@ -128,8 +128,8 @@ class "BlockCategory" (function(_ENV)
 
 
     function LoadPropsFromDatabase(self)
-      -- Load the properties contained in the profil
-      Profils:PrepareDatabase()
+      -- Load the properties contained in the profile
+      Profiles:PrepareDatabase()
 
       local order, tracker
       if Database:SelectTable(false, "blocks", "categories", self.id) then
@@ -389,6 +389,8 @@ class "Blocks"
 
     _CATEGORIES[category.id] = category
 
+    category:LoadPropsFromDatabase()
+
     category.OnOrderChanged = function(self, new)
       for _, tracker in Trackers:GetIterator() do
         for _, block in tracker:GetBlocks():GetIterator() do
@@ -398,6 +400,7 @@ class "Blocks"
         end
       end
     end
+
   end
 
   __Arguments__ { ClassType, -Block }
@@ -595,11 +598,17 @@ _G.EKT_BLOCK = GetBlock
 --- [[ Experimental ]]
 Environment.RegisterGlobalKeyword{ block = GetBlock }
 
+__SystemEvent__()
+function EKT_PROFILE_CHANGED()
+  for _, category in Blocks:IterateCategories() do
+    category:LoadPropsFromDatabase()
+  end
+end
 
 
 __SystemEvent__()
-function EKT_PROFIL_CHANGED()
-  for _, category in Blocks:IterateCategories() do
-    category:LoadPropsFromDatabase()
+function EKT_COPY_PROFILE_PROCESS(sourceDB, destDB, destProfile)
+  if sourceDB["blocks"] then
+    destDB["blocks"] = sourceDB["blocks"]
   end
 end

@@ -30,6 +30,7 @@ function EKT_TRACKERS_LOADED()
     -- Add the tracker property recipes
     OptionBuilder:AddRecipe(ThemePropertyRecipe()
     :SetElementID(string.format("tracker.%s.frame", tracker.id))
+    :SetElementParentID("tracker.frame")
     :AddFlag(Theme.SkinFlags.FRAME_BORDER_COLOR)
     :AddFlag(Theme.SkinFlags.FRAME_BORDER_WIDTH), string.format("%s/general/states", tracker.id))
 

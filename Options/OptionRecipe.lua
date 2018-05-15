@@ -327,6 +327,22 @@ class "OptionRecipe" (function(_ENV)
   --- This function may be overrided
   function Refresh(self) end
 
+  __Arguments__ { String }
+  function RefreshOnEvent(self, event)
+    self:RegisterEvent(event)
+    self.refreshOnEvent[event] = true
+
+    return self
+  end
+
+  __Arguments__ { String }
+  function RefreshOnRecipeEvent(self, event)
+    self:RegisterRecipeEvent(event)
+    self.refreshOnRecipeEvent[event] = true
+
+    return self
+  end
+
   --- This function is called when an event (Scorpio) registered has triggered.
   -- This may be overrided if needed
   __Arguments__ { String, Variable.Rest() }
@@ -383,6 +399,10 @@ class "OptionRecipe" (function(_ENV)
       _Module:RegisterEvent(event, function(...)
         for o in pairs(t) do
           o:OnEvent(event, ...)
+
+          if o.refreshOnEvent[event] then
+            o:Refresh()
+          end
         end
       end)
     end
@@ -399,6 +419,9 @@ class "OptionRecipe" (function(_ENV)
       for o in pairs(t) do
         if not obj or obj ~= o then
           o:OnRecipeEvent(event, obj, ...)
+          if o.refreshOnRecipeEvent[event] then
+            o:Refresh()
+          end
         end
       end
     end
@@ -421,7 +444,9 @@ class "OptionRecipe" (function(_ENV)
   --                            Constructors                                  --
   ------------------------------------------------------------------------------
   function OptionRecipe(self)
-
+    self.cache                = setmetatable({}, { __mode = "v" })
+    self.refreshOnEvent       = {}
+    self.refreshOnRecipeEvent = {}
   end
 end)
 --------------------------------------------------------------------------------

@@ -9,6 +9,6 @@
   <Script file="Options.lua"/>
   <Script file="Trackers.lua"/>
   <Script file="Themes.lua"/>
-  <Script file="Profils.lua"/>
+  <Script file="Profiles.lua"/>
   <Script file="Blocks.lua"/>
 </Ui>

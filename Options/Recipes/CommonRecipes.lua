@@ -614,8 +614,11 @@ class "SelectRecipe" (function(_ENV)
       select:SetList(self.getListFunc())
     end
     select:SetValue(self:GetOption())
-    select:SetCallback("OnValueChanged", function(_, _, value) self:OnValueChanged() ; self:SetOption(value) end)
+    select:SetCallback("OnValueChanged", function(_, _, value) self:OnValueChanged(value) ; self:SetOption(value) end)
     context.parentWidget:AddChild(select)
+
+    -- Register the frame in the cache
+    self.cache["select"] = select
   end
 
   __Arguments__ { Function }
@@ -628,8 +631,14 @@ class "SelectRecipe" (function(_ENV)
   function SetList(self, list)
     return SetList(function() return list end)
   end
-end)
 
+  function Refresh(self)
+    if self.cache["select"] then
+      self.cache["select"]:SetValue(self:GetOption())
+      self.cache["select"]:SetList(self.getListFunc())
+    end
+  end
+end)
 --------------------------------------------------------------------------------
 --                                                                            --
 --                         LineEdit Recipe                                    --

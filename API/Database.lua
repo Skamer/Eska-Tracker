@@ -9,10 +9,37 @@ namespace "EKT"
 --============================================================================--
 class "Database" (function(_ENV)
 
-  CURRENT_TABLE = nil
-  CURRENT_PARENT_TABLE = nil
-  CURRENT_LEVEL = 0
-  CURRENT_TABLE_NAME = nil
+  CURRENT_TABLE         = nil
+  CURRENT_PARENT_TABLE  = nil
+  CURRENT_LEVEL         = 0
+  CURRENT_TABLE_NAME    = nil
+  CURRENT_DB            = nil
+
+  __Default__("global")
+  enum "Type" {
+    "global",
+    "char",
+    "spec"
+  }
+
+  class "Path" (function(_ENV)
+
+
+    property "relativeDB" { TYPE = Database.Type }
+
+    __Arguments__ { Database.Type }
+    function SetRelativeDB(self, type)
+      self.relativeDB = type
+      return self
+    end
+
+    __Arguments__ { Variable.Rest(String + Number )}
+    function Table(self, ...)
+      self.path = { ... }
+    end
+  end)
+
+
 
 
   class "Migration" (function(_ENV)
@@ -92,34 +119,31 @@ class "Database" (function(_ENV)
     end
   end
 
-  __Arguments__ { ClassType, Variable.Rest(String) }
-  __Static__() function CopyTable(self, ...)
-    local function deepcopy(orig)
-      local orig_type = type(orig)
-      local copy
-      if orig_type == 'table' then
-          copy = {}
-          for orig_key, orig_value in next, orig, nil do
-              copy[deepcopy(orig_key)] = deepcopy(orig_value)
-          end
-          setmetatable(copy, deepcopy(getmetatable(orig)))
-      else -- number, string, boolean, etc
-          copy = orig
+  __Arguments__ { ClassType, Path}
+  __Static__() function GetCopyTable(self, sourcePath)
+    local sourceDB
+    if not sourcePath.path then
+      if sourcePath.relativeDB == "global" then
+        sourceDB = self:GetRaw()
+      elseif sourcePath.relativeDB == "char" then
+        sourceDB = self:GetRawChar()
+      elseif sourcePath.relativeDB == "spec" then
+        sourceDB = self:GetRawSpec()
       end
-      return copy
+    else
+      if sourcePath.relativeDB == "GLOBAL" then
+        self:SelectRoot()
+      elseif sourcePath.relativeDB == "CHAR" then
+        self:SelectRootChar()
+      elseif sourcePath.relativeDB == "SPEC" then
+        self:SelectRootSpec()
+      end
+
+      self:SelectTable(true, unpack(sourcePath.path))
+      sourceDB = self:GetCurrentTable()
     end
 
-    local copy = deepcopy(CURRENT_TABLE)
-    local tables = { ... }
-    local destName = tables[#tables]
-    tables[#tables] = nil
-
-    self:SelectRoot()
-    if #tables > 0 then
-      if self:SelectTable(true, unpack(tables)) then
-        Database:SetValue(destName, copy)
-      end
-    end
+    return API:DeepCopy(sourceDB)
   end
 
 __Arguments__ { ClassType }
@@ -168,18 +192,21 @@ end
   __Static__() function SelectRoot(self)
     CURRENT_TABLE = self:Get()
     CURRENT_LEVEL = 0
+    CURRENT_DB    = "global"
   end
 
   __Arguments__{ ClassType }
   __Static__() function SelectRootChar(self)
     CURRENT_TABLE = self:GetChar()
     CURRENT_LEVEL = 0
+    CURRENT_DB    = "char"
   end
 
   __Arguments__ { ClassType }
   __Static__() function SelectRootSpec(self)
     CURRENT_TABLE = self:GetSpec()
     CURRENT_LEVEL = 0
+    CURRENT_DB    = "spec"
   end
 
   __Arguments__ { ClassType, Number }
@@ -193,6 +220,7 @@ end
   __Static__() function GetVersion(self)
     if self:Get() then return self:Get().dbVersion end
   end
+
 
   __Arguments__ { ClassType }
   __Static__() function Get(self)
@@ -209,12 +237,46 @@ end
     return _DB.Char.Spec
   end
 
+  __Arguments__ { ClassType }
+  __Static__() function GetRaw(self)
+    return EskaTrackerDB
+  end
+
+  __Arguments__{ ClassType }
+  __Static__() function GetRawChar(self)
+    local name = GetRealmName() .. "-" .. UnitName("player")
+
+    if self:GetRaw().__ScorpioChars and self:GetRaw().__ScorpioChars[name] then
+      return self:GetRaw().__ScorpioChars[name]
+    end
+  end
+
+  __Arguments__ { ClassType }
+  __Static__() function GetRawSpec(self)
+    local charDB =  self:GetRawChar()
+    if not charDB then
+      return
+    end
+
+    local spec = GetSpecialization()
+    if charDB.__ScorpioSpecs and charDB.__ScorpioSpecs[spec] then
+      return charDB.__ScorpioSpecs[spec]
+    end
+  end
+
+  __Arguments__ { ClassType }
+  __Static__() function GetCurrentTable(self)
+    if CURRENT_TABLE == 0 then
+      if CURRENT_DB == nil or CURRENT_DB == "global" then
+        return self:GetRaw()
+      elseif CURRENT_DB == "char" then
+        return self:GetRawChar()
+      elseif CURRENT_DB == "spec" then
+        return self:GetRawSpec()
+      end
+    end
+
+    return CURRENT_TABLE
+  end
+
 end)
-
-
-function OnLoad(self)
-  --Database:GetSpec().profile_test = "Salut profile"
-  --Database:GetChar().profile_char = "Salut char"
-
-  --print("Spec profile", Database:GetChar()["__ScorpioSpecs"][1].profile_test)
-end

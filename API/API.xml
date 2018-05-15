@@ -3,7 +3,7 @@
   <Script file="Core.lua"/>
   <Script file="CallbackHandler.lua"/>
   <Script file="Database.lua"/>
-  <Script file="Profils.lua"/>
+  <Script file="Profiles.lua"/>
   <Script file="Option.lua"/>
   <Script file="State.lua"/>
   <Script file="Theme.lua"/>

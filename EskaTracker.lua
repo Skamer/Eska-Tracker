@@ -36,7 +36,6 @@ _EKT_ICON            = [[Interface\AddOns\EskaTracker\Media\icon]]
 -- ===========================================================================--
 BLOCK                = EKT_BLOCK
 --============================================================================--
-
 -- IMPORTANT !
 -- Don't set stuffs related to DB (this causes error if the user doesn't have the save veriables created)
 -- Set theme to OnEnable instead
@@ -178,32 +177,36 @@ end
 -- == Register the fonts
 -- ========================================================================== --
 -- PT Sans Family Font
-_LibSharedMedia:Register("font", "PT Sans", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\PTSans-Regular.ttf]])
-_LibSharedMedia:Register("font", "PT Sans Bold", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\PTSans-Bold.ttf]])
-_LibSharedMedia:Register("font", "PT Sans Bold Italic", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\PTSans-Bold-Italic.ttf]])
-_LibSharedMedia:Register("font", "PT Sans Narrow", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\PTSans-Narrow.ttf]])
-_LibSharedMedia:Register("font", "PT Sans Narrow Bold", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\PTSans-Narrow-Bold.ttf]])
-_LibSharedMedia:Register("font", "PT Sans Caption", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\PTSans-Caption.ttf]])
-_LibSharedMedia:Register("font", "PT Sans Caption Bold", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\PTSans-Caption-Bold.ttf]])
+_LibSharedMedia:Register("font", "PT Sans", [[Interface\AddOns\EskaTracker\Media\Fonts\PTSans-Regular.ttf]])
+_LibSharedMedia:Register("font", "PT Sans Bold", [[Interface\AddOns\EskaTracker\Media\Fonts\PTSans-Bold.ttf]])
+_LibSharedMedia:Register("font", "PT Sans Bold Italic", [[Interface\AddOns\EskaTracker\Media\Fonts\PTSans-Bold-Italic.ttf]])
+_LibSharedMedia:Register("font", "PT Sans Narrow", [[Interface\AddOns\EskaTracker\Media\Fonts\PTSans-Narrow.ttf]])
+_LibSharedMedia:Register("font", "PT Sans Narrow Bold", [[Interface\AddOns\EskaTracker\Media\Fonts\PTSans-Narrow-Bold.ttf]])
+_LibSharedMedia:Register("font", "PT Sans Caption", [[Interface\AddOns\EskaTracker\Media\Fonts\PTSans-Caption.ttf]])
+_LibSharedMedia:Register("font", "PT Sans Caption Bold", [[Interface\AddOns\EskaTracker\Media\Fonts\PTSans-Caption-Bold.ttf]])
 -- DejaVuSans Family Font
-_LibSharedMedia:Register("font", "Deja Vu Sans", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\DejaVuSans.ttf]])
-_LibSharedMedia:Register("font", "Deja Vu Sans Bold", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\DejaVuSans-Bold.ttf]])
-_LibSharedMedia:Register("font", "Deja Vu Sans Bold Italic", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\DejaVuSans-BoldOblique.ttf]])
-_LibSharedMedia:Register("font", "DejaVuSansCondensed", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\DejaVuSansCondensed.ttf]])
-_LibSharedMedia:Register("font", "DejaVuSansCondensed Bold", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\DejaVuSansCondensed-Bold.ttf]])
-_LibSharedMedia:Register("font", "DejaVuSansCondensed Bold Italic", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\DejaVuSansCondensed-BoldOblique.ttf]])
-_LibSharedMedia:Register("font", "DejaVuSansCondensed Italic", [[Interface\AddOns\EskaQuestTracker\Media\Fonts\DejaVuSansCondensed-Oblique.ttf]])
+_LibSharedMedia:Register("font", "Deja Vu Sans", [[Interface\AddOns\EskaTracker\Media\Fonts\DejaVuSans.ttf]])
+_LibSharedMedia:Register("font", "Deja Vu Sans Bold", [[Interface\AddOns\EskaTracker\Media\Fonts\DejaVuSans-Bold.ttf]])
+_LibSharedMedia:Register("font", "Deja Vu Sans Bold Italic", [[Interface\AddOns\EskaTracker\Media\Fonts\DejaVuSans-BoldOblique.ttf]])
+_LibSharedMedia:Register("font", "DejaVuSansCondensed", [[Interface\AddOns\EskaTracker\Media\Fonts\DejaVuSansCondensed.ttf]])
+_LibSharedMedia:Register("font", "DejaVuSansCondensed Bold", [[Interface\AddOns\EskaTracker\Media\Fonts\DejaVuSansCondensed-Bold.ttf]])
+_LibSharedMedia:Register("font", "DejaVuSansCondensed Bold Italic", [[Interface\AddOns\EskaTracker\Media\Fonts\DejaVuSansCondensed-BoldOblique.ttf]])
+_LibSharedMedia:Register("font", "DejaVuSansCondensed Italic", [[Interface\AddOns\EskaTracker\Media\Fonts\DejaVuSansCondensed-Oblique.ttf]])
+-- ========================================================================== --
+-- == Register the background
+-- ========================================================================== --
+_LibSharedMedia:Register("background", "EskaTracker Background", [[Interface\AddOns\EskaTracker\Media\Textures\Frame-Background]])
 -- ========================================================================== --
 -- Backdrops
 -- ========================================================================== --
 _Backdrops = {
   Common = {
-    bgFile = [[Interface\AddOns\EskaQuestTracker\Media\Textures\Frame-Background]],
+    bgFile = [[Interface\AddOns\EskaTracker\Media\Textures\Frame-Background]],
     insets = { left = 0, right = 0, top = 0, bottom = 0}
   },
   CommonWithBiggerBorder = {
-    bgFile = [[Interface\AddOns\EskaQuestTracker\Media\Textures\Frame-Background]],
-    edgeFile = [[Interface\AddOns\EskaQuestTracker\Media\Textures\Frame-Border]],
+    bgFile = [[Interface\AddOns\EskaTracker\Media\Textures\Frame-Background]],
+    edgeFile = [[Interface\AddOns\EskaTracker\Media\Textures\Frame-Border]],
     tile = false, tileSize = 32, edgeSize = 6,
     insets = { left = 0, right = 0, top = 0, bottom = 0}
   }

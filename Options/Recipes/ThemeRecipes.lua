@@ -26,16 +26,17 @@ _TextJustifyVertical = {
 class "ThemePropertyRecipe" (function(_ENV)
   inherit "OptionRecipe"
   _FLAGS_PROPERTIES = {
-    [Theme.SkinFlags.FRAME_BACKGROUND_COLOR]  = "background-color",
-    [Theme.SkinFlags.FRAME_BORDER_COLOR]      = "border-color",
-    [Theme.SkinFlags.FRAME_BORDER_WIDTH]      = "border-width",
-    [Theme.SkinFlags.TEXT_SIZE]               = "text-size",
-    [Theme.SkinFlags.TEXT_FONT]               = "text-font",
-    [Theme.SkinFlags.TEXT_COLOR]              = "text-color",
-    [Theme.SkinFlags.TEXT_TRANSFORM]          = "text-transform",
-    [Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL] = "text-justify-h",
-    [Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL]   = "text-justify-v",
-    [Theme.SkinFlags.TEXTURE_COLOR]           = "texture-color",
+    [Theme.SkinFlags.FRAME_BACKGROUND_COLOR]    = "background-color",
+    [Theme.SkinFlags.FRAME_BORDER_COLOR]        = "border-color",
+    [Theme.SkinFlags.FRAME_BORDER_WIDTH]        = "border-width",
+    [Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE]  = "background-texture",
+    [Theme.SkinFlags.TEXT_SIZE]                 = "text-size",
+    [Theme.SkinFlags.TEXT_FONT]                 = "text-font",
+    [Theme.SkinFlags.TEXT_COLOR]                = "text-color",
+    [Theme.SkinFlags.TEXT_TRANSFORM]            = "text-transform",
+    [Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL]   = "text-justify-h",
+    [Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL]     = "text-justify-v",
+    [Theme.SkinFlags.TEXTURE_COLOR]             = "texture-color",
   }
 
   ------------------------------------------------------------------------------
@@ -147,6 +148,11 @@ class "ThemePropertyRecipe" (function(_ENV)
       _FLAGS_PROPERTIES[flag], self.inheritFromElementID)
       control:SetValue(value)
       control:SetText(value)
+    elseif flag == Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE then
+      local value = selectedTheme:GetElementProperty(self.rElementID,
+      _FLAGS_PROPERTIES[flag], self.inheritFromElementID)
+      control:SetValue(value)
+      control:SetText(value)
     end
   end
 
@@ -188,7 +194,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       end)
     elseif flag == Theme.SkinFlags.TEXT_FONT then
       control:SetCallback("OnValueChanged", function(_, _, value)
-        selectedTheme:SetElementPropertyToDB(self.rElementID, _FLAGS_PROPERTIES[flag], _Fonts[value])
+        selectedTheme:SetElementPropertyToDB(self.rElementID, _FLAGS_PROPERTIES[flag], value)
         self:ShowReset(row, control, flag)
         self:RefreshControl(control, flag)
         Frame:SkinAll(flag, self.elementID)
@@ -208,6 +214,13 @@ class "ThemePropertyRecipe" (function(_ENV)
           self:RefreshControl(control, flag)
           Frame:SkinAll(flag, self.elementID)
         end)
+    elseif flag == Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE then
+      control:SetCallback("OnValueChanged", function(_, _, value)
+        selectedTheme:SetElementPropertyToDB(self.rElementID, _FLAGS_PROPERTIES[flag], value)
+        self:ShowReset(row, control, flag)
+        self:RefreshControl(control, flag)
+        Frame:SkinAll(flag, self.elementID)
+      end)
     end
   end
 
@@ -280,7 +293,25 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, backgroundColor, flag)
     end
 
-    -- 2. [FRAME] Border Color
+    -- 2. [FRAME] Background texture
+    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE) then
+      local flag = Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE
+      local backgroundTexture = _AceGUI:Create("LSM30_Background")
+
+      backgroundTexture:SetList(_Backgrounds)
+
+      local row = CreateRow("Background Texture", backgroundTexture)
+      group:AddChild(row)
+
+      -- if there is a value in the DB,  add a reset button
+      if selectedTheme:GetElementPropertyFromDB(self.rElementID , _FLAGS_PROPERTIES[flag]) then
+        self:ShowReset(row, backgroundTexture, flag)
+      end
+      self:RefreshControl(backgroundTexture, flag)
+      self:InstallCallbacks(row, backgroundTexture, flag)
+    end
+
+    -- 3. [FRAME] Border Color
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BORDER_COLOR) then
       local flag = Theme.SkinFlags.FRAME_BORDER_COLOR
       local borderColor = _AceGUI:Create("ColorPicker")
@@ -297,7 +328,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, borderColor, flag)
     end
 
-    -- 3. [FRAME] Border Width
+    -- 4. [FRAME] Border Width
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BORDER_WIDTH) then
       local flag = Theme.SkinFlags.FRAME_BORDER_WIDTH
       local borderWidth = _AceGUI:Create("Slider")
@@ -314,7 +345,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, borderWidth, flag)
     end
 
-    -- 4. [TEXT] Text Size
+    -- 5. [TEXT] Text Size
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_SIZE) then
       local flag = Theme.SkinFlags.TEXT_SIZE
       local textSize = _AceGUI:Create("Slider")
@@ -331,7 +362,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, textSize, flag)
     end
 
-    -- 5. [TEXT] Text Color
+    -- 6. [TEXT] Text Color
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_COLOR) then
       local flag = Theme.SkinFlags.TEXT_COLOR
       local textColor = _AceGUI:Create("ColorPicker")
@@ -347,11 +378,11 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, textColor, flag)
     end
 
-    -- 6. [TEXT] Text Font
+    -- 7. [TEXT] Text Font
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_FONT) then
       local flag = Theme.SkinFlags.TEXT_FONT
-      local textFont = _AceGUI:Create("Dropdown")
-      textFont:SetList(_Fonts, nil, "DDI-Font")
+      local textFont = _AceGUI:Create("LSM30_Font")
+      textFont:SetList(_Fonts)
 
       local row = CreateRow("Text Font", textFont)
       group:AddChild(row)
@@ -364,7 +395,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, textFont, flag)
     end
 
-    -- 7. [TEXT] Text Transform
+    -- 8. [TEXT] Text Transform
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_TRANSFORM) then
       local flag = Theme.SkinFlags.TEXT_TRANSFORM
       local textTransform = _AceGUI:Create("Dropdown")
@@ -381,7 +412,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, textTransform, flag)
     end
 
-    -- 8. [TEXT] Text Justify Horizontal
+    -- 9. [TEXT] Text Justify Horizontal
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL) then
       local flag = Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL
       local textJustifyH = _AceGUI:Create("Dropdown")
@@ -398,7 +429,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, textJustifyH, flag)
     end
 
-    -- 9. [TEXT] Text Justify Vertical
+    -- 10. [TEXT] Text Justify Vertical
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL) then
       local flag = Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL
       local textJustifyV = _AceGUI:Create("Dropdown")
@@ -415,7 +446,7 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, textJustifyV, flag)
     end
 
-    -- 10. [TEXTURE] Texture Color
+    -- 11. [TEXTURE] Texture Color
     if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXTURE_COLOR) then
       local flag = Theme.SkinFlags.TEXTURE_COLOR
       local textureColor = _AceGUI:Create("ColorPicker")
@@ -466,7 +497,7 @@ class "ThemePropertyRecipe" (function(_ENV)
 
   property "elementID"              { TYPE = String }
   property "inheritFromElementID"   { TYPE = String }
-  property "flags"                  { TYPE = Theme.SkinFlags, DEFAULT = Theme.SkinFlags.FRAME_BACKGROUND_COLOR }
+  property "flags"                  { TYPE = Theme.SkinFlags, DEFAULT = Theme.SkinFlags.FRAME_BACKGROUND_COLOR + Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE }
   property "rElementID"             { TYPE = String }
   property "rInheritFromElementID"  { TYPE = String }
 

@@ -82,7 +82,8 @@ __Serializable__() class "Theme" (function(_ENV)
     TEXT_TRANSFORM = 64,
     TEXT_JUSTIFY_HORIZONTAL = 128,
     TEXT_JUSTIFY_VERTICAL = 256,
-    TEXTURE_COLOR = 512
+    TEXTURE_COLOR = 512,
+    FRAME_BACKGROUND_TEXTURE = 1024,
   }
 
   DefaultSkinFlags = SkinFlags.FRAME_BACKGROUND_COLOR   +
@@ -94,7 +95,8 @@ __Serializable__() class "Theme" (function(_ENV)
                       SkinFlags.TEXT_TRANSFORM          +
                       SkinFlags.TEXT_JUSTIFY_HORIZONTAL +
                       SkinFlags.TEXT_JUSTIFY_VERTICAL   +
-                      SkinFlags.TEXTURE_COLOR;
+                      SkinFlags.TEXTURE_COLOR           +
+                      SkinFlags.FRAME_BACKGROUND_TEXTURE;
 
   __Static__() property "DefaultSkinFlags" {
     TYPE    = SkinFlags,
@@ -142,6 +144,19 @@ __Serializable__() class "Theme" (function(_ENV)
       if frame.SetBackdropColor and Enum.ValidateFlags(flags, SkinFlags.FRAME_BACKGROUND_COLOR) then
         color = theme:GetElementProperty(elementID, "background-color", inheritElementID)
         frame:SetBackdropColor(color.r, color.g, color.b, color.a)
+      end
+
+      -- Background texture
+      if Enum.ValidateFlags(flags, SkinFlags.FRAME_BACKGROUND_TEXTURE) then
+        local background = _LibSharedMedia:Fetch("background", theme:GetElementProperty(elementID, "background-texture", inheritElementID))
+        --color = theme:GetElementProperty(elementID, "background-color", inheritElementID)
+        --print("background", background, theme:GetElementProperty(elementID, "background-texture", inheritElementID))
+        local r,g,b,a = frame:GetBackdropColor()
+        frame:SetBackdrop({
+          bgFile = background,
+          insets = { left = 0, right = 0, top = 0, bottom = 0}
+        })
+        frame:SetBackdropColor(r, g, b, a)
       end
     end
   end
@@ -506,6 +521,7 @@ __Serializable__() class "Theme" (function(_ENV)
   __Static__() function GetDefaultProperty(self, property)
       local defaults = {
         ["background-color"] = { r = 0, g = 0, b = 0 },
+        ["background-texture"] = "EskaTracker Background",
         ["border-color"] = { r = 0, g = 0, b = 0 },
         ["border-width"] = 2,
         ["offsetX"] = 0,

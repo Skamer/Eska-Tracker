@@ -1,3 +1,13 @@
+[1.0.3]
+- Corrected paths for some media files.
+- Registered the default background in LibSharedMedia as 'EskaTracker Background'
+- Implemented 'Copy profile' and 'Delete profile' features.
+- Added a new theme property 'background-texture' which can be edited from options.
+- Fixed an issue where the tracker frame doesn't display the parent value when nothing has been set in options.
+- Fixed an issue where blocks order was not saved.
+
+
+
 [1.0.2]
 - The addon now uses natural numbers for position (will prevents some issues with frames positions).
 - Fixed an issue where the text is transformed incorrectly when other text properties are changed.

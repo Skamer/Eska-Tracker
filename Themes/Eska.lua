@@ -15,8 +15,6 @@ Themes:Register(EskaTheme)
 -- == Set Default properties
 -- ========================================================================== --
 EskaTheme:SetElementProperty("text-size", 10)
-EskaTheme:SetElementProperty("text-offsetX", 0)
-EskaTheme:SetElementProperty("text-offsetY", 0)
 EskaTheme:SetElementProperty("text-location", "CENTER")
 EskaTheme:SetElementProperty("background-color", { r = 0, g = 0, b = 0, a = 0})
 -- ========================================================================== --
@@ -32,8 +30,7 @@ EskaTheme:SetElementProperty("tracker.frame", "border-color", { r = 0.1, g = 0.1
 -- ========================================================================== --
 -- == Set Default block properties
 -- ========================================================================== --
--- EskaTheme:SetElementProperty("block.*", "background-color", { r = 0, g = 0, b = 0, a = 0})
-EskaTheme:SetElementProperty("block.*", "border-color", { r = 0, g = 0, b = 0, a = 0 })
+EskaTheme:SetElementProperty("block.*", "background-texture", "EskaTracker Background")
 -- Header properties
 EskaTheme:SetElementProperty("block.header", "background-color", { r = 0, g = 0, b = 0, a = 0.5 })
 EskaTheme:SetElementProperty("block.header", "border-color", { r = 0, g = 0, b = 0, a = 1})

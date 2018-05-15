@@ -298,19 +298,19 @@ end)
 --                          Spec Profil                                       --
 --                                                                            --
 --------------------------------------------------------------------------------
-class "SpecProfilRecipe" (function(_ENV)
+class "SpecProfileRecipe" (function(_ENV)
   inherit "OptionRecipe"
 
   ------------------------------------------------------------------------------
   --                              Events                                      --
   ------------------------------------------------------------------------------
-  --- Fired when a profil has changed
-  event "OnProfilChanged"
+  --- Fired when a profile has changed
+  event "OnProfileChanged"
   ------------------------------------------------------------------------------
   --                             Handlers                                     --
   ------------------------------------------------------------------------------
-  local function OnProfilChangedHandler(self, new)
-    Profils:SelectForSpec(self.specIndex, new)
+  local function OnProfileChangedHandler(self, new)
+    Profiles:SelectForSpec(self.specIndex, new)
   end
   ------------------------------------------------------------------------------
   --                             Methods                                      --
@@ -335,29 +335,41 @@ class "SpecProfilRecipe" (function(_ENV)
     specName:SetRelativeWidth(0.3)
     row:AddChild(specName)
 
-
-    local list = {
-      ["__global"] = "Global profil",
-      ["__char"]   = "Character profil",
-      ["__spec"]   = "Specialization profil",
-    }
-
-    for profilName in pairs(Profils:GetUserProfilsList()) do
-      list[profilName] = profilName
-    end
-
-    local profilList = _AceGUI:Create("Dropdown")
-    profilList:SetList(list)
-    profilList:SetValue(Profils:GetProfileForSpec(self.specIndex) or "__global")
-    profilList:SetCallback("OnValueChanged", function(_, _,value) self:OnProfilChanged(value) end)
-    row:AddChild(profilList)
+    local profileList = _AceGUI:Create("Dropdown")
+    profileList:SetList(self:GetAllProfilesList())
+    profileList:SetValue(Profiles:GetProfileForSpec(self.specIndex) or "__global")
+    profileList:SetCallback("OnValueChanged", function(_, _,value) self:OnProfileChanged(value) end)
+    row:AddChild(profileList)
 
     context.parentWidget:AddChild(row)
+
+    -- Register frames in the cache
+    self.cache["dropdown"] = profileList
   end
 
   function SetSpecIndex(self, index)
     self.specIndex = index
     return self
+  end
+
+  function GetAllProfilesList(self)
+    local list = {
+      ["__global"] = "Global profile",
+      ["__char"]   = "Character profile",
+      ["__spec"]   = "Specialization profile",
+    }
+
+    for profileName in pairs(Profiles:GetUserProfilesList()) do
+      list[profileName] = profileName
+    end
+
+    return list
+  end
+
+  function Refresh(self)
+    if self.cache["dropdown"] then
+      self.cache["dropdown"]:SetList(self:GetAllProfilesList())
+    end
   end
 
   ------------------------------------------------------------------------------
@@ -367,10 +379,14 @@ class "SpecProfilRecipe" (function(_ENV)
   ------------------------------------------------------------------------------
   --                            Constructors                                  --
   ------------------------------------------------------------------------------
-  function SpecProfilRecipe(self)
+  function SpecProfileRecipe(self)
     super(self)
 
     -- Link event
-    self.OnProfilChanged = OnProfilChangedHandler
+    self.OnProfileChanged = OnProfileChangedHandler
+
+    -- Refresh when a profile is created
+    self:RefreshOnRecipeEvent("PROFILE_CREATED")
+    self:RefreshOnRecipeEvent("PROFILE_DELETED")
   end
 end)

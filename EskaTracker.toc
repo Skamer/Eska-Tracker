@@ -3,7 +3,7 @@
 ## Author: Skamer
 ## Notes: EskaTracker
 ## SavedVariables: EskaTrackerDB
-## Version: 1.0.2
+## Version: 1.0.3
 ## X-Stage: Alpha
 ## Dependencies: PLoop, Scorpio
 ## OptionalDeps: LibStub, LibSharedMedia-3.0
@@ -18,11 +18,11 @@ Loader.lua
 # Core API Files
 API\API.xml
 
-# Localization files
-Locales\locales.xml
-
 # Main files
 EskaTracker.lua
+
+# Localization files
+Locales\locales.xml
 
 # Theme files
 Themes\themes.xml

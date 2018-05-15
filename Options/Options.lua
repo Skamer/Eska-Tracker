@@ -9,7 +9,8 @@ import "EKT"
 -- ========================================================================== --
 _AceGUI               = LibStub("AceGUI-3.0")
 --============================================================================--
-_Fonts                = _LibSharedMedia:List("font")
+_Fonts                = _LibSharedMedia:HashTable("font")
+_Backgrounds          = _LibSharedMedia:HashTable("background")
 --============================================================================--
 _OPTIONS_FRAME_WIDTH  = 1024
 _OPTIONS_FRAME_HEIGHT = 600
@@ -117,7 +118,7 @@ function OnLoad(self)
 
   --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("themes"):SetText("Themes"), "RootTree")
 
-  --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profils"):SetText("Profils"):SetBuildingGroup("[Profils&ErrorProfil]/Children"), "RootTree")
+  --OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profils"):SetText("Profiles"):SetBuildingGroup("[Profiles&ErrorProfil]/Children"), "RootTree")
 
 
   OptionBuilder:AddRecipe(AddonInfoRecipe(), "AddonInfo")
@@ -126,7 +127,7 @@ function OnLoad(self)
   OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(300):SetText("|cffff0000Delete a tracker|r"), "trackers/children")
   OptionBuilder:AddRecipe(DeleteTrackerRecipe():SetOrder(400), "trackers/children")
 
-  --OptionBuilder:AddRecipe(HeadingRecipe():SetText("Test Recipe"), "Profils/Children")
+  --OptionBuilder:AddRecipe(HeadingRecipe():SetText("Test Recipe"), "Profiles/Children")
   --OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff0000And this text Recipe|r"):SetOrder(1), "ErrorProfil/Children")
 
   -- [tracker&:tracker_selected:]/children

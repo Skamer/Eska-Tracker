@@ -30,7 +30,7 @@ Class "Tracker" (function(_ENV)
   local function OnWidthChanged(self, new, old)
     self:Layout()
 
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(true, "trackers", self.id) then
       Database:SetValue("width", new)
     end
@@ -40,14 +40,14 @@ Class "Tracker" (function(_ENV)
     -- Update the scroll bar visibility
     self:UpdateScrollbarVisibility()
 
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(true, "trackers", self.id) then
       Database:SetValue("height", new)
     end
   end
 
   local function UpdateLock(self, new)
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(true, "trackers", self.id) then
       Database:SetValue("locked", new)
     end
@@ -57,7 +57,7 @@ Class "Tracker" (function(_ENV)
   end
 
   local function UpdateShowScrollbar(self, new)
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(true, "trackers", self.id) then
       if new then
         Database:SetValue("showScrollbar", true)
@@ -304,7 +304,7 @@ Class "Tracker" (function(_ENV)
     end
 
     if saveInDB then
-      Profils:PrepareDatabase()
+      Profiles:PrepareDatabase()
       if Database:SelectTable(true, "trackers", self.id) then
         Database:SetValue("xPos", x)
         Database:SetValue("yPos", y)
@@ -402,8 +402,8 @@ Class "Tracker" (function(_ENV)
   end
 
   function LoadPropsFromDatabase(self)
-    -- Load the properties contained in the profil
-    Profils:PrepareDatabase()
+    -- Load the properties contained in the profile
+    Profiles:PrepareDatabase()
 
     local height, width, locked, showScrollbar, xPos, yPos, show
     if Database:SelectTable(false, "trackers", self.id) then
@@ -438,7 +438,7 @@ Class "Tracker" (function(_ENV)
   function OnHide(self)
     super.OnHide(self)
 
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable("trackers", self.id) then
       Database:SetValue("show", false)
     end
@@ -447,7 +447,7 @@ Class "Tracker" (function(_ENV)
   function OnShow(self)
     super.OnShow(self)
 
-    Profils:PrepareDatabase()
+    Profiles:PrepareDatabase()
     if Database:SelectTable(false, "trackers", self.id) then
       Database:SetValue("show", nil)
     end
@@ -743,7 +743,7 @@ function OnLoad(self)
     end
   end
 
-  -- Load the properties contained in the profil
+  -- Load the properties contained in the profile
   for _, tracker in Trackers:GetIterator() do
       tracker:LoadPropsFromDatabase()
   end
@@ -752,7 +752,7 @@ function OnLoad(self)
 end
 
 __SystemEvent__()
-function EKT_PROFIL_CHANGED()
+function EKT_PROFILE_CHANGED()
   -- Update props contained in the new profils
   for _, tracker in Trackers:GetIterator() do
       tracker:LoadPropsFromDatabase()
@@ -761,5 +761,20 @@ function EKT_PROFIL_CHANGED()
 
   for id, category in Blocks:IterateCategories() do
     Trackers:TransferBlock(id, category.tracker)
+  end
+end
+
+__SystemEvent__()
+function EKT_COPY_PROFILE_PROCESS(sourceDB, destDB, destProfile)
+  if sourceDB["trackers"] then
+    for trackerID, trackerDB in pairs(sourceDB["trackers"]) do
+      if not destDB["trackers"] then
+        destDB["trackers"] = {}
+      end
+      if (Profiles:IsGlobal(destProfile) and destDB["trackers"][trackerID]) or not Profiles:IsGlobal(destProfile) then
+        destDB["trackers"][trackerID] = trackerDB
+      end
+
+    end
   end
 end
