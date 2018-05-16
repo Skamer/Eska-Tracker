@@ -27,4 +27,4 @@ externals:
   Libs/AceGUI-3.0:
     url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceGUI-3.0
   Libs/AceGUI-3.0-SharedMediaWidgets:
-    url: https://repos.wowace.com/wow/libsharedmedia-3-0/trunk
+    url: https://repos.wowace.com/wow/ace-gui-3-0-shared-media-widgets/trunk/AceGUI-3.0-SharedMediaWidgets

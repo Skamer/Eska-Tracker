@@ -1,3 +1,6 @@
+[1.0.3.1]
+- Fixed an issue where the last build isn't correctly packaged (a lib wasn't well installed).
+
 [1.0.3]
 - Corrected paths for some media files.
 - Registered the default background in LibSharedMedia as 'EskaTracker Background'
