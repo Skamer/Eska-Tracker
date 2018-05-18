@@ -61,7 +61,7 @@ end
 
 function OnQuit(self)
   -- Do a clean in the Database (remove empty tables) when the player log out
-  Database:Clean()
+  -- Database:Clean()
 end
 
 

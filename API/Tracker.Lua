@@ -121,7 +121,10 @@ Class "Tracker" (function(_ENV)
     self.displayNotifications = true
 
     self:Layout()
+
+    Notifications():CalculateHeight()
   end
+
 
   function DisableNotifications(self)
     if self.OnNotificationHeightHandler then
@@ -238,13 +241,6 @@ Class "Tracker" (function(_ENV)
     end
 
     local displayNotifications = self.displayNotifications and Notifications():IsShown()
-    --[[if displayNotifications then
-      Notifications():ClearAllPoints()
-      Notifications():SetParent(self.content)
-      Notifications():SetPoint("TOP")
-      Notifications():SetPoint("LEFT")
-      Notifications():SetPoint("RIGHT")
-    end--]]
 
     local previousFrame
     for index, obj in self.blocks:Sort("x,y=>x.order<y.order"):GetIterator() do

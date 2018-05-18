@@ -1,3 +1,7 @@
+[1.0.4]
+- The notifications system has been enabled and can now be used by extensions.
+- The database is no longer cleaned automatically when the player quits the game.
+
 [1.0.3.1]
 - Fixed an issue where the last build isn't correctly packaged (a lib wasn't well installed).
 

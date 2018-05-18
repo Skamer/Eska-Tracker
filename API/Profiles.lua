@@ -174,12 +174,26 @@ class "Profiles" (function(_ENV)
   __Static__() property "name" { TYPE = String }
 end)
 
+function OnLoad(self)
+  local spec = GetSpecialization()
+  if not spec then
+    TryToLoadProfiles()
+  else
+    Profiles:CheckProfileChange()
+    Scorpio.FireSystemEvent("EKT_PROFILES_LOADED")
+  end
+
+end
+
+__Async__()
+function TryToLoadProfiles()
+  NextEvent("PLAYER_LOGIN")
+
+  Profiles:CheckProfileChange()
+  Scorpio.FireSystemEvent("EKT_PROFILES_LOADED")
+end
 
 __SystemEvent__()
 function PLAYER_SPECIALIZATION_CHANGED()
-  Profiles:CheckProfileChange()
-end
-
-function OnLoad(self)
   Profiles:CheckProfileChange()
 end

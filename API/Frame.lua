@@ -37,6 +37,12 @@ class "Frame" (function(_ENV)
 
   __WidgetEvent__()
   event "OnSizeChanged"
+
+  __WidgetEvent__()
+  event "OnEnter"
+
+  __WidgetEvent__()
+  event "OnLeave"
   ------------------------------------------------------------------------------
   --                             Handlers                                     --
   --- --------------------------------------------------------------------------

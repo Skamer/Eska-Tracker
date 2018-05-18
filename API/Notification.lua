@@ -87,14 +87,55 @@ class "BaseNotification" (function(_ENV)
       end
     elseif prop == "finished" then
       self:OnFinished()
+    elseif prop == "text" then
+      self:SetText(new)
+    elseif prop == "title" then
+      self:SetTitle(new)
     end
+  end
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function SetColor(self, r, g, b)
+    self.frame:SetBackdropColor(r, g, b, 0.65)
+    return self
+  end
+
+  __Arguments__ { String }
+  function SetTitle(self, title)
+    if self.frame.title then
+      self.frame.title:SetText(title)
+    end
+  end
+
+  __Arguments__ { String }
+  function SetText(self, text)
+    if self.frame.text then
+      self.frame.text:SetText(text)
+    end
+  end
+
+  __Static__() function Success()
+    return Notification():SetColor(0, 148/255, 0)
+  end
+
+  __Static__() function Warn()
+    return Notification():SetColor(1.0, 106/255, 0)
+  end
+
+  __Static__() function Critical()
+    return Notification():SetColor(1.0, 0, 0)
+  end
+
+  __Static__() function Info()
+    return Notification():SetColor(0, 1, 1)
   end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "id"           { TYPE = String }
-  property "title"        { TYPE = String }
-  property "text"         { TYPE = String }
+  property "id"           { TYPE = String + Number }
+  property "title"        { TYPE = String, HANDLER = UpdateProps }
+  property "text"         { TYPE = String, HANDLER = UpdateProps }
   property "icon"         { TYPE = String + Number }
   property "category"     { TYPE = Category }
   property "duration"     { TYPE = Number, DEFAULT = 7 }
@@ -134,27 +175,6 @@ class "Notification" (function(_ENV)
           break
         end
     end
-  end
-
-  function SetColor(self, r, g, b)
-    self.frame:SetBackdropColor(r, g, b, 0.65)
-    return self
-  end
-
-  __Static__() function Success()
-    return Notification():SetColor(0, 148/255, 0)
-  end
-
-  __Static__() function Warn()
-    return Notification():SetColor(1.0, 106/255, 0)
-  end
-
-  __Static__() function Critical()
-    return Notification():SetColor(1.0, 0, 0)
-  end
-
-  __Static__() function Info()
-    return Notification():SetColor(0, 1, 1)
   end
   ------------------------------------------------------------------------------
   --                         Constructor                                      --
@@ -229,7 +249,7 @@ class "Notification" (function(_ENV)
     text:SetPoint("LEFT", fIcon:GetWidth() + 4, 0)
     text:SetJustifyH("LEFT")
     text:SetFont(fontName, 10)
-    text:SetText("This is notification text")
+    text:SetText("This is a notification text")
     self.frame.text = text
 
     self.height = 40
@@ -247,6 +267,16 @@ class "InteractiveNotification" (function(_ENV)
   --- Fire when the player has confirmed its anwser
   --- (e.g, clicking on the 'ok' button)
   event "OnConfirmedAnswer"
+
+  --- Fired when the player has clicked the frame
+  __WidgetEvent__()
+  event "OnClick"
+  ------------------------------------------------------------------------------
+  --                                Handlers                                  --
+  ------------------------------------------------------------------------------
+  local function OnClickHandler(self)
+    Notifications():Remove(self)
+  end
   ------------------------------------------------------------------------------
   --                         Methods                                          --
   ------------------------------------------------------------------------------
@@ -277,10 +307,31 @@ class "InteractiveNotification" (function(_ENV)
   function GetButtonRow(self)
     return self.buttonRow
   end
+
+  __Arguments__ { String }
+  function SetText(self, text)
+    super.SetText(self, text)
+    self:CalculateHeight()
+  end
+
+  function CalculateHeight(self)
+    local height = self.baseHeight
+
+    -- Important ! This is needed to update the text box height
+    self.frame.text:SetHeight(0)
+
+    local textHeight = self.frame.text:GetHeight()
+
+    local diff = (textHeight + 22) - self.baseHeight
+    if diff < 0 then diff = 0 end
+    height = height + diff
+
+    self.height = height
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "interactive"    { TYPE = Boolean, DEFAULT = true }
+  property "interactive"        { TYPE = Boolean, DEFAULT = true }
   -- Buttons Settings
   --- The spacing between each button (x positio)
   property "buttonsOffsetY"      { TYPE = Number, DEFAULT = 2}
@@ -299,6 +350,10 @@ class "InteractiveNotification" (function(_ENV)
     --self.frame = CreateFrame("Button")
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 148/255, 1, 0.65)
+    self.frame:RegisterForClicks("LeftButtonUp")
+    --[[self.frame:SetScript("OnClick", function()
+
+    end)--]]
 
     local fIcon = CreateFrame("Frame", nil, self.frame)
     fIcon:SetBackdrop(_Backdrops.Common)
@@ -344,26 +399,30 @@ class "InteractiveNotification" (function(_ENV)
     local content = CreateFrame("Frame", nil, self.frame)
     content:SetPoint("LEFT", 1, 0)
     content:SetPoint("RIGHT", -1, 0)
-    content:SetHeight(24)
+    content:SetPoint("BOTTOM")
     content:SetPoint("TOP", headerFrame, "BOTTOM", 0, -1)
     content:SetBackdrop(_Backdrops.Common)
     content:SetBackdropColor(0, 0, 0, 0.15)
+    content:HookScript("OnSizeChanged", function() self:CalculateHeight() end)
     self.frame.content = content
 
     local text = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    text:SetPoint("TOP", 0, -2)
-    text:SetPoint("BOTTOM")
-    text:SetPoint("RIGHT")
-    text:SetPoint("LEFT", fIcon:GetWidth() + 4, 0)
-    text:SetJustifyH("LEFT")
     text:SetFont(fontName, 10)
-    text:SetText("This is notification text")
+    text:SetPoint("LEFT", fIcon:GetWidth(), 0)
+    text:SetPoint("RIGHT")
+    text:SetPoint("TOP", 0, -2)
+    text:SetJustifyH("LEFT")
+    text:SetText("This is a notification text")
+    text:SetWordWrap(true)
+    text:SetNonSpaceWrap(false)
     self.frame.text = text
 
-    self.height = 40
+    self.height = 20
     self.baseHeight = self.height
 
     self.buttons = List()
+
+    self.OnClick = OnClickHandler
   end
 end)
 
@@ -394,11 +453,13 @@ class "Notifications" (function(_ENV)
     self:Draw()
   end
 
-  __Arguments__ { String }
+  __Arguments__ { Number + String }
   function Get(self, id)
     for index, notification in self.notifications:GetIterator() do
-      if notification.id == id then
-        return notification
+      if type(notification.id) == type(id) then
+        if notification.id == id then
+          return notification
+        end
       end
     end
   end
@@ -414,10 +475,18 @@ class "Notifications" (function(_ENV)
     self:Layout()
   end
 
+  __Arguments__ { Number + String }
+  function Remove(self, id)
+    local notification = self:Get(id)
+    if notification then
+      self:Remove(notification)
+    end
+  end
+
   function OnLayout(self)
     local previousFrame
     for index, notification in self.notifications:GetIterator() do
-      notification:Show()
+      notification:Hide()
       notification:ClearAllPoints()
 
       if index == 1 then
@@ -429,6 +498,7 @@ class "Notifications" (function(_ENV)
         notification:SetPoint("TOPRIGHT", previousFrame, "BOTTOMRIGHT")
       end
       previousFrame = notification.frame
+      notification:Show()
     end
 
     self:CalculateHeight()
@@ -438,7 +508,6 @@ class "Notifications" (function(_ENV)
   function CalculateHeight(self)
     local height = self.baseHeight
     for index, notification in self.notifications:GetIterator() do
-
       local offset = index > 1 and 5 or 0
       height = height + notification.height + offset
     end
@@ -456,6 +525,7 @@ class "Notifications" (function(_ENV)
       end
     end
   end
+
 
 
   __Arguments__ { String }
@@ -516,7 +586,7 @@ class "Notifications" (function(_ENV)
 
     self.frame = CreateFrame("Frame", nil, UIParent)
     self.frame:SetBackdrop(_Backdrops.Common)
-    self.frame:SetBackdropColor(0, 0, 0, 0.5)
+    self.frame:SetBackdropColor(0, 0, 0, 0)
     self.frame:SetScript("OnUpdate", function(_, delta) self:UpdateNotifications(delta) end)
 
     self.baseHeight = 0
@@ -533,6 +603,8 @@ class "Notifications" (function(_ENV)
       end
     end
 
+    self:Hide()
+
     _Obj = self
   end
   ------------------------------------------------------------------------------
@@ -547,65 +619,10 @@ end)
 function OnLoad(self)
   Options:Register("link-notifications-to-a-tracker", true)
   Options:Register("tracker-used-for-notifications", "main-tracker")
-
-  --[[local linkNotificationToTracker = Options:Get("link-notifications-to-a-tracker")
-  if linkNotificationToTracker then
-    local trackerUsed = Options:Get("tracker-used-for-notifications")
-    local tracker = Trackers:Get(trackerUsed)
-    if tracker then
-      tracker:EnableNotifications()
-    end
-  end--]]
-  --Notifications()
-  --Notifications():LoadOption("link-notifications-to-a-tracker")
-  --Notifications():LoadOption("tracker-used-for-notifications")
 end
 
---[[
-function OnEnable(self)
-  EKT.Notifications():SetPoint("CENTER", -550, 0)
-  EKT.Notifications():Add(Notification())
-  EKT.Notifications():Add(Notification:Success())
-  self:PullInteractive()
+__SystemEvent__()
+function EKT_PROFILES_LOADED()
+  Notifications():LoadOption("link-notifications-to-a-tracker")
+  Notifications():LoadOption("tracker-used-for-notifications")
 end
-__Async__()
-function PullInteractive()
-  local notif = InteractiveNotification()
-  notif:AddButton(NotificationButton("yes", "Yes !"))
-  notif:AddButton(NotificationButton("no", "No !"))
-  notif:AddButton(NotificationButton("cancel", "Cancel"))
-  --notif:GetButtonRow().layout = "Flow"
-
-
-  notif.OnConfirmedAnswer = function(...)  end
-
-  --local row = notif:AddButtonRow()
-
-  EKT.Notifications():Add(notif)
-
-end--]]
-
---[[
-__Async__()
-function Pull()
-  Delay(1)
-  EKT.Notifications():Add(Notification())
-  Delay(2)
-  EKT.Notifications():Add(Notification:Warn())
-  Delay(3)
-  EKT.Notifications():Add(Notification:Info())
-  Delay(4)
-  EKT.Notifications():Add(Notification:Critical())
-end
---]]
-
-
---[[
-function DesignTest(self)
-  local row = notification:AddButtonRow()
-  row:AddButton()
-  row.buttonAlignment  = "CENTERED"
-  row.buttonAutoSized  =
-  row.onSelectedAnswer =
-end
---]]
