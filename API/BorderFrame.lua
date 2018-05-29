@@ -39,10 +39,14 @@ class "BorderFrame" (function(_ENV)
   local function UpdateBorderWidth(self, new, old)
     if not self.borders then return end
 
+    if new > 0 then
+      self.showBorder = true
+      self:SetBorderWidth(new)
+    else
+      self.showBorder = false
+    end
 
-    self:SetBorderWidth(new)
     OnBorderWidthChanged(self, new, old)
-
   end
 
   local function UpdateBorderColor(self, new, old)
@@ -198,20 +202,24 @@ end
   ------------------------------------------------------------------------------
   --                         Constructors                                     --
   ------------------------------------------------------------------------------
-  __Arguments__ {}
-  function BorderFrame(self)
+  __Arguments__ { Variable.Optional(Boolean, false)}
+  function BorderFrame(self, isSecure)
     super(self)
 
-    self.containerFrame = CreateFrame("Frame")
+    if isSecure then
+      self.containerFrame = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
+    else
+      self.containerFrame = CreateFrame("Frame")
+    end
     self:CreateBorders()
 
     _BorderFrameCache[self] = true
   end
 
 
-  __Arguments__ { Table }
-  function BorderFrame(self, frame)
-    this(self)
+  __Arguments__ { Table, Variable.Optional(Boolean, false) }
+  function BorderFrame(self, frame, isSecure)
+    this(self, isSecure)
 
     self.frame = frame
   end

@@ -16,4 +16,5 @@
   <Script file="Tracker.lua"/>
   <Script file="ContextMenu.lua"/>
   <Script file="Notification.lua"/>
+  <Script file="ActionBar.lua"/>
 </Ui>

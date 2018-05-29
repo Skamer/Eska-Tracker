@@ -8,6 +8,7 @@
   <Script file="Recipes/ThemeRecipes.lua"/>
   <Script file="Options.lua"/>
   <Script file="Trackers.lua"/>
+  <Script file="ActionBars.lua"/>
   <Script file="Themes.lua"/>
   <Script file="Profiles.lua"/>
   <Script file="Blocks.lua"/>

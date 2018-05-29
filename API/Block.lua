@@ -146,7 +146,7 @@ class "BlockCategory" (function(_ENV)
   property "name" { TYPE = String, FIELD = "__name" }
   property "order" { TYPE = Number, HANDLER = UpdateOrder, DEFAULT = function(self) return self._initOrder end, FIELD = "__order" }
   property "selected" { TYPE = String, HANDLER = UpdateSelected, DEFAULT = function(self) return self._initSelected end, FIELD = "__selected" }
-  property "tracker" { TYPE = String, HANDLER = UpdateTracker, DEFAULT = "main-tracker", GET = "GetTracker", SET = "SetTracker" }
+  property "tracker" { TYPE = String, HANDLER = UpdateTracker, DEFAULT = "main", GET = "GetTracker", SET = "SetTracker" }
   property "_initOrder" { TYPE = Number, DEFAULT = 100 }
   property "_initSelected" { TYPE = String }
 

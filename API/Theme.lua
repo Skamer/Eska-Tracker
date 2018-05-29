@@ -156,6 +156,7 @@ __Serializable__() class "Theme" (function(_ENV)
           bgFile = background,
           insets = { left = 0, right = 0, top = 0, bottom = 0}
         })
+
         frame:SetBackdropColor(r, g, b, a)
       end
     end
@@ -401,7 +402,7 @@ __Serializable__() class "Theme" (function(_ENV)
 
 
   function SetElementPropertyLink(self, elementID, property, destElementID)
-    elementID = elementID:gsub("%s+", "") -- Remove the space
+    --elementID = elementID:gsub("%s+", "") -- Remove the space
       -- Get the possible element Ids
       local IDs =  { Theme:GetPossibleElementIDs(elementID) }
       for _, id in ipairs(IDs) do
@@ -417,7 +418,7 @@ __Serializable__() class "Theme" (function(_ENV)
 
   __Arguments__ { String, String, Variable.Optional(String), Variable.Optional(ElementFlags, 15)}
   function GetElementProperty(self, elementID, property, inheritElementID, flags)
-      elementID = elementID:gsub("%s+", "") -- Remove the space
+      --elementID = elementID:gsub("%s+", "") -- Remove the space
 
       local value
       if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_DATABASE) then
@@ -476,7 +477,7 @@ __Serializable__() class "Theme" (function(_ENV)
   __Arguments__{ String, String, Variable.Optional() }
   function SetElementProperty(self, elementID, property, value)
     -- NOTE Make the *
-    elementID = elementID:gsub("%s+", "") -- Remove the space
+    --elementID = elementID:gsub("%s+", "") -- Remove the space
       -- Get the possible element Ids
       local IDs =  { Theme:GetPossibleElementIDs(elementID) }
       for _, id in ipairs(IDs) do
@@ -503,8 +504,6 @@ __Serializable__() class "Theme" (function(_ENV)
   function ElementHasState(self, elementID, state, inheritElementID, flags)
     flags = flags + ElementFlags.IGNORE_WITHOUT_STATE + ElementFlags.INCLUDE_STATE
     elementID = string.format("%s[%s]", elementID, state)
-
-    --print("ElementHasState", elementID, state, inheritElementID)
 
     for _, id in Theme:GetReadingIDList(elementID, inheritElementID, flags):GetIterator() do
       if Enum.ValidateFlags(flags, INCLUDE_DATABASE) and self:ElementExistsFromDB(id) then

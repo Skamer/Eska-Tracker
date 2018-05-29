@@ -217,6 +217,14 @@ class "Frame" (function(_ENV)
     end
   end
 
+  function ForceToggle(self)
+    if self:IsShown() then
+      self:ForceHide()
+    else
+      self:ForceShow()
+    end
+  end
+
   --- Request the object to be drawn.
   -- The object will be shown and layout its frame.
   -- The method uses 'Show' and 'Layout' so it's safe to use even in combat.

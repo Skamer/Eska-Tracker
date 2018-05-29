@@ -38,24 +38,24 @@ local function GetAllProfilesList(self)
 end
 
 function OnLoad(self)
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profiles"):SetText("Profiles"):SetBuildingGroup("profiles/childrens"):SetOrder(600), "RootTree")
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("profiles"):SetText("Profiles"):SetBuildingGroup("profiles/children"):SetOrder(600), "RootTree")
 
   self:AddProfilRecipes()
 end
 
 function AddProfilRecipes(self)
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Select a profile for your specialization"):SetOrder(10), "profiles/childrens")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Select a profile for your specialization"):SetOrder(10), "profiles/children")
   for i = 1, GetNumSpec() do
-    OptionBuilder:AddRecipe(SpecProfileRecipe():SetSpecIndex(i):SetOrder(20 + 10 * i), "profiles/childrens")
+    OptionBuilder:AddRecipe(SpecProfileRecipe():SetSpecIndex(i):SetOrder(20 + 10 * i), "profiles/children")
   end
 
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cff00ff00Create a profile|r"):SetOrder(90), "profiles/childrens")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cff00ff00Create a profile|r"):SetOrder(90), "profiles/children")
   --- [PART] Create a profile
   local lineEdit = LineEditRecipe()
   lineEdit:SetText("Enter the name of your new profile")
   lineEdit:SetOrder(100)
   lineEdit.OnValueConfirmed = lineEdit.OnValueConfirmed + function(self, profileName) OptionBuilder:SetVariable("create_profile_name", profileName)  end
-  OptionBuilder:AddRecipe(lineEdit, "profiles/childrens")
+  OptionBuilder:AddRecipe(lineEdit, "profiles/children")
 
   local createButton = ButtonRecipe()
   createButton:SetText("Create")
@@ -67,10 +67,10 @@ function AddProfilRecipes(self)
       self:FireRecipeEvent("PROFILE_CREATED", profileName)
     end
   end
-  OptionBuilder:AddRecipe(createButton, "profiles/childrens")
+  OptionBuilder:AddRecipe(createButton, "profiles/children")
 
   -- [PART] Copy a profile
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Copy from another profile"):SetOrder(110), "profiles/childrens")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Copy from another profile"):SetOrder(110), "profiles/children")
 
   local selectProfileToCopy = SelectRecipe()
   selectProfileToCopy:SetText("Select the profile you want copy")
@@ -79,7 +79,7 @@ function AddProfilRecipes(self)
   selectProfileToCopy:RefreshOnRecipeEvent("PROFILE_CREATED")
   selectProfileToCopy:RefreshOnRecipeEvent("PROFILE_DELETED")
   selectProfileToCopy.OnValueChanged = selectProfileToCopy.OnValueChanged + function(self, profileName) OptionBuilder:SetVariable("copy_profile_name", profileName) end
-  OptionBuilder:AddRecipe(selectProfileToCopy, "profiles/childrens")
+  OptionBuilder:AddRecipe(selectProfileToCopy, "profiles/children")
 
   -- Copy POPUP
   StaticPopupDialogs["EKT_COPY_PROFILE_RELOAD_UI"] = {
@@ -98,10 +98,10 @@ function AddProfilRecipes(self)
       StaticPopup_Show("EKT_COPY_PROFILE_RELOAD_UI")
     end
   end
-  OptionBuilder:AddRecipe(copyButton, "profiles/childrens")
+  OptionBuilder:AddRecipe(copyButton, "profiles/children")
 
   -- [Part] Delete a profile
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff0000Delete a profile|r"):SetOrder(120), "profiles/childrens")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff0000Delete a profile|r"):SetOrder(120), "profiles/children")
 
   local selectProfileToDelete = SelectRecipe()
   selectProfileToDelete:SetText("Select the profile to delete")
@@ -110,7 +110,7 @@ function AddProfilRecipes(self)
   selectProfileToDelete:RefreshOnRecipeEvent("PROFILE_CREATED")
   selectProfileToDelete:SetList(GetProfilesCreated)
   selectProfileToDelete.OnValueChanged = selectProfileToDelete.OnValueChanged + function(self, profileName)  OptionBuilder:SetVariable("delete_profile_name", profileName) end
-  OptionBuilder:AddRecipe(selectProfileToDelete, "profiles/childrens")
+  OptionBuilder:AddRecipe(selectProfileToDelete, "profiles/children")
 
 
   local deleteButton = ButtonRecipe()
@@ -123,6 +123,6 @@ function AddProfilRecipes(self)
       self:FireRecipeEvent("PROFILE_DELETED", profileName)
     end
   end
-  OptionBuilder:AddRecipe(deleteButton, "profiles/childrens")
+  OptionBuilder:AddRecipe(deleteButton, "profiles/children")
 
 end

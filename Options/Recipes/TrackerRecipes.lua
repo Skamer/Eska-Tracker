@@ -214,6 +214,10 @@ class "BlockCategoryRowRecipe" (function(_ENV)
   event "CategorySelected"
   --- Fired when a block has been unchecked
   event "CategoryUnchecked"
+
+  local function RemoveTrackerSuffix(id)
+    return id:gsub("(%-tracker)$", "")
+  end
   ------------------------------------------------------------------------------
   --                             Handlers                                     --
   ------------------------------------------------------------------------------
@@ -241,7 +245,7 @@ class "BlockCategoryRowRecipe" (function(_ENV)
   --                             Methods                                      --
   ------------------------------------------------------------------------------
   function Build(self, context)
-    local trackerSelected = context("tracker_selected")
+    local trackerSelected = RemoveTrackerSuffix(context("tracker_selected"))
     local category = Blocks:GetCategory(self.id)
 
     if not category then

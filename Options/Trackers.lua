@@ -1,202 +1,245 @@
 --============================================================================--
---                         Eska Tracker                                       --
+--                          EskaTracker                                       --
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
 Scorpio            "EskaTracker.Options.Trackers"                             ""
 --============================================================================--
-import "EKT"
+import                              "EKT"
 --============================================================================--
-function OnLoad(self)
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("trackers"):SetText("Trackers"):SetBuildingGroup("trackers/children"):SetOrder(10), "RootTree")
+function AddSuffix(id)
+  return string.format("%s-tracker", id)
+end
+
+function RemoveSuffix(id)
+  return id:gsub("(%-tracker)$", "")
+end
+
+function GetCurrentTracker(recipe)
+  return Trackers:Get(RemoveSuffix(recipe.context("tracker_selected")))
+end
+
+local function GetTrackerList()
+  local list = {}
+  for id, tracker in Trackers:GetIterator() do
+    if tracker.id ~= "main" then
+      list[id] = tracker.name
+    end
+  end
+  return list
 end
 
 
-__SystemEvent__()
-function EKT_TRACKERS_LOADED()
-  for trackerID, tracker in Trackers:GetIterator() do
-    local recipe = TreeItemRecipe()
-    recipe:SetID(tracker.id)
-    recipe:SetText(tracker.name)
-    recipe:SetPath("trackers")
-    recipe:SetBuildingGroup(string.format("[tracker&%s]/children", tracker.id))
-    --recipe:SetBuildingGroup("[tracker&:tracker_selected:]/children")
-    OptionBuilder:AddRecipe(recipe, "RootTree")
 
-    -- Add the heading recipe
-    local headingText = string.format("|cffff5000%s tracker Options|r", tracker.name)
-    OptionBuilder:AddRecipe(HeadingRecipe():SetText(headingText):SetOrder(1), string.format("%s/children", tracker.id))
+function OnLoad(self)
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("trackers"):SetText("Trackers"):SetBuildingGroup("trackers/children"):SetOrder(10), "RootTree")
 
-    -- Add the tracker property recipes
-    OptionBuilder:AddRecipe(ThemePropertyRecipe()
-    :SetElementID(string.format("tracker.%s.frame", tracker.id))
-    :SetElementParentID("tracker.frame")
-    :AddFlag(Theme.SkinFlags.FRAME_BORDER_COLOR)
-    :AddFlag(Theme.SkinFlags.FRAME_BORDER_WIDTH), string.format("%s/general/states", tracker.id))
+  -- Create an tracker
+  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(100):SetText("|cff00ff00Create a tracker|r"), "trackers/children")
 
-
-    -- Scrollbar theme property
-    OptionBuilder:AddRecipe(ThemePropertyRecipe():SetElementID(string.format("tracker.%s.scrollbar", tracker.id)):SetOrder(20), string.format("%s/scrollbar", tracker.id))
-    OptionBuilder:AddRecipe(ThemePropertyRecipe()
-    :SetElementID(string.format("tracker.%s.scrollbar.thumb", tracker.id))
-    :SetElementParentID("tracker.scrollbar.thumb")
-    :ClearFlags()
-    :AddFlag(Theme.SkinFlags.TEXTURE_COLOR)
-    :SetOrder(40), string.format("%s/scrollbar", tracker.id))
-
+  local lineEdit = LineEditRecipe()
+  lineEdit:SetText("Enter the name of your new tracker")
+  lineEdit:SetOrder(110)
+  lineEdit.OnValueChanged = lineEdit.OnValueChanged + function(recipe, name)
+    OptionBuilder:SetVariable("create_tracker_name", name)
   end
+  OptionBuilder:AddRecipe(lineEdit, "trackers/children")
 
-  -- Create the tabs
-  OptionBuilder:AddRecipe(TabRecipe():SetBuildingGroup("tracker/tabs"), "tracker/children")
+  local createButton = ButtonRecipe()
+  createButton:SetText("Create")
+  createButton:SetOrder(111)
+  createButton.OnClick = createButton.OnClick + function(recipe)
+    local name = OptionBuilder:GetVariable("create_tracker_name")
+    print("OnClick", name)
+    if name then
+      local id = Tracker:GetIDFromName(name)
+      Trackers:New(id, true)
+      -- Redirect the user to new
+      local idWithSuffix = AddSuffix(id)
+      OptionBuilder:SetVariable("tracker_selected", idWithSuffix)
+      OptionBuilder:BuildUrl(idWithSuffix)
+    end
+  end
+  OptionBuilder:AddRecipe(createButton, "trackers/children")
 
-  AddGeneralTabRecipes()
-  AddScrollbarRecipes()
+  -- Delete an tracker
+  OptionBuilder:AddRecipe(HeadingRecipe():SetText("|cffff0000Delete a tracker|r"):SetOrder(120), "trackers/children")
 
-  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Blocks"):SetID("blocks"):SetBuildingGroup("[tracker&:tracker_selected:]/blocks"):SetOrder(20), "tracker/tabs")
-  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Scrollbar"):SetID("scrollbar"):SetBuildingGroup("[tracker&:tracker_selected:]/scrollbar"):SetOrder(30), "tracker/tabs")
-  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Advanced"):SetID("advanced"):SetBuildingGroup("[tracker&:tracker_selected:]/advanced"):SetOrder(40), "tracker/tabs")
+  local selectTrackerToDelete = SelectRecipe()
+  selectTrackerToDelete:SetText("Select the tracker to delete")
+  selectTrackerToDelete:SetOrder(121)
+  selectTrackerToDelete:SetList(GetTrackerList)
+  selectTrackerToDelete.OnValueChanged = selectTrackerToDelete.OnValueChanged + function(recipe, id)
+    OptionBuilder:SetVariable("delete_tracker_id", id)
+  end
+  OptionBuilder:AddRecipe(selectTrackerToDelete, "trackers/children")
+
+  local deleteButton = ButtonRecipe()
+  deleteButton:SetText("Delete")
+  deleteButton:SetOrder(122)
+  deleteButton.OnClick = deleteButton.OnClick + function(recipe)
+    local trackerID = OptionBuilder:GetVariable("delete_tracker_id")
+    if trackerID then
+      Trackers:Delete(trackerID)
+    end
+  end
+  OptionBuilder:AddRecipe(deleteButton, "trackers/children")
 end
 
 
 function AddGeneralTabRecipes(self)
-    OptionBuilder:AddRecipe(TabItemRecipe():SetText("General"):SetID("general"):SetBuildingGroup("tracker/general"):SetOrder(10), "tracker/tabs")
-  -- General tabs
+  -- Create the tab item
+  OptionBuilder:AddRecipe(TabItemRecipe():SetText("General"):SetID("general"):SetBuildingGroup("tracker/general"):SetOrder(10), "tracker/tabs")
+
+  -- Top options group
   OptionBuilder:AddRecipe(SimpleGroupRecipe():SetBuildingGroup("tracker/general/top-options"), "tracker/general")
-  -- lock
+
+  -- Lock
   local lockRecipe = CheckBoxRecipe()
   lockRecipe:SetWidth(150)
   lockRecipe:SetText("Lock")
   lockRecipe:Get(function(recipe)
-    return Trackers:Get(recipe.context("tracker_selected")).locked
+    return GetCurrentTracker(recipe).locked
   end)
   lockRecipe:Set(function(recipe, value)
-    Trackers:Get(recipe.context("tracker_selected")).locked = value
+    GetCurrentTracker(recipe).locked = value
   end)
   OptionBuilder:AddRecipe(lockRecipe, "tracker/general/top-options")
+
   -- Show
   local showRecipe = ButtonRecipe()
   showRecipe:SetText("Show/Hide")
   showRecipe.OnClick = showRecipe.OnClick + function(recipe)
-    Trackers:Get(recipe.context("tracker_selected")):Toggle()
+    GetCurrentTracker(recipe):Toggle()
   end
-
   OptionBuilder:AddRecipe(showRecipe, "tracker/general/top-options")
-  -- Size
+
+
+  -- Size options group
   OptionBuilder:AddRecipe(InlineGroupRecipe():SetText("Size"):SetBuildingGroup("tracker/general/size"), "tracker/general")
-    -- width
-    local widthRecipe = RangeRecipe()
-    widthRecipe:SetText("Width")
-    widthRecipe:SetRange(175, 750)
-    widthRecipe:Set(function(recipe, value)
-      Trackers:Get(recipe.context("tracker_selected")).width = value
-    end)
-    widthRecipe:Get(function(recipe)
-      return Trackers:Get(recipe.context("tracker_selected")).width
-    end)
-    OptionBuilder:AddRecipe(widthRecipe, "tracker/general/size")
-    -- height
-    local heightRecipe = RangeRecipe()
-    heightRecipe:SetText("Height")
-    heightRecipe:SetRange(175, 1024)
-    heightRecipe:Set(function(recipe, value)
-      Trackers:Get(recipe.context("tracker_selected")).height = value
-    end)
-    heightRecipe:Get(function(recipe)
-      return Trackers:Get(recipe.context("tracker_selected")).height
-    end)
 
-    OptionBuilder:AddRecipe(heightRecipe, "tracker/general/size")
+  -- Width
+  local widthRecipe = RangeRecipe()
+  widthRecipe:SetText("Width")
+  widthRecipe:SetRange(175, 750)
+  widthRecipe:Get(function(recipe)
+    return GetCurrentTracker(recipe).width
+  end)
+  widthRecipe:Set(function(recipe, value)
+    GetCurrentTracker(recipe).width = value
+  end)
+  OptionBuilder:AddRecipe(widthRecipe, "tracker/general/size")
 
-    OptionBuilder:AddRecipe(StateSelectRecipe():SetBuildingGroup("[tracker&:tracker_selected:]/general/states"), "tracker/general")
-    OptionBuilder:AddRecipe(ThemePropertyRecipe()
-    :AddFlag(Theme.SkinFlags.FRAME_BORDER_COLOR)
-    :AddFlag(Theme.SkinFlags.FRAME_BORDER_WIDTH)
-    :AddFlag(Theme.SkinFlags.TEXT_SIZE)
-    :AddFlag(Theme.SkinFlags.TEXT_COLOR)
-    :AddFlag(Theme.SkinFlags.TEXT_FONT)
-    :AddFlag(Theme.SkinFlags.TEXT_TRANSFORM)
-    :AddFlag(Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL)
-    :AddFlag(Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL)
-    :AddFlag(Theme.SkinFlags.TEXTURE_COLOR),
-    "tracker/general/states")
+  -- height
+  local heightRecipe = RangeRecipe()
+  heightRecipe:SetText("Height")
+  heightRecipe:SetRange(175, 1024)
+  heightRecipe:Get(function(recipe)
+    return GetCurrentTracker(recipe).height
+  end)
+  heightRecipe:Set(function(recipe, value)
+    GetCurrentTracker(recipe).height = value
+  end)
+  OptionBuilder:AddRecipe(heightRecipe, "tracker/general/size")
+
+  OptionBuilder:AddRecipe(StateSelectRecipe():SetBuildingGroup("[tracker&:tracker_selected:]/general/states"), "tracker/general")
 end
 
 function AddBlocksTabRecipes(self)
+  -- Create tab item
+  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Blocks"):SetID("blocks"):SetBuildingGroup("[tracker&:tracker_selected:]/blocks"):SetOrder(20), "tracker/tabs")
 
+
+  OptionBuilder:AddRecipe(SimpleGroupRecipe():SetLayout("List"):SetBuildingGroup("tracker/blocks/categories"), "tracker/blocks")
+  for categoryID, category in Blocks:IterateCategories() do
+    OptionBuilder:AddRecipe(BlockCategoryRowRecipe():SetID(categoryID):SetText(category.name), "tracker/blocks/categories")
+  end
 end
 
-function AddScrollbarRecipes(self)
+function AddScrollbarTabRecipes(self)
+  -- Create tab item
+  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Scrollbar"):SetID("scrollbar"):SetBuildingGroup("[tracker&:tracker_selected:]/scrollbar"):SetOrder(30), "tracker/tabs")
+
+  -- Show Scroll bar
   local showRecipe = CheckBoxRecipe()
   showRecipe:SetText("Show")
   showRecipe:SetOrder(10)
   showRecipe:Get(function(recipe)
-    return Trackers:Get(recipe.context("tracker_selected")).showScrollbar
+    return GetCurrentTracker(recipe).showScrollbar
   end)
   showRecipe:Set(function(recipe, value)
-    Trackers:Get(recipe.context("tracker_selected")).showScrollbar = value
+    GetCurrentTracker(recipe).showScrollbar = value
   end)
   OptionBuilder:AddRecipe(showRecipe, "tracker/scrollbar")
 
+  -- Thumb Heading
   OptionBuilder:AddRecipe(HeadingRecipe():SetText("Thumb"):SetOrder(30), "tracker/scrollbar")
-  --OptionBuilder:AddRecipe(InlineGroupRecipe():SetBuildingGroup("[tracker&:tracker_selected:]/scrollbar/thumb"):SetText("Thumb"):SetOrder(30), "tracker/scrollbar")
+
+end
+
+function AddAdvancedTabRecipes(self)
+  -- Create advanced item
+  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Advanced"):SetID("advanced"):SetBuildingGroup("[tracker&:tracker_selected:]/advanced"):SetOrder(40), "tracker/tabs")
 end
 
 
 
-function AddTrackersRecipes(self)
-  --OptionBuilder:AddRecipe(TreeItemRecipe("Trackers", "Trackers/Children"):SetID("trackers"):SetOrder(10), "RootTree")
+--- Register the recipes related to tracker registered
+__SystemEvent__()
+function EKT_TRACKER_REGISTERED(tracker)
+  local idWithSuffix = AddSuffix(tracker.id)
+  local commonGroup  = string.format("[tracker&%s]/children", idWithSuffix)
+  local privateGroup = string.format("%s/children", idWithSuffix)
 
-  -- Trackers:GetIterator()
-  --OptionBuilder:AddRecipe(TreeItemRecipe("Main", "Trackers/Main/Children"):SetID("main"):SetPath("trackers"):SetOrder(10), "RootTree")
+  --- Add specific recipes
+  -- Create the heading text
+  local headingText = string.format("|cffff5000%s Tracker Options|r", tracker.name)
+  OptionBuilder:AddRecipe(HeadingRecipe():SetText(headingText):SetOrder(10), privateGroup)
+  -- Create the Tree item
+  OptionBuilder:AddRecipe(TreeItemRecipe():SetID(idWithSuffix):SetText(tracker.name):SetPath("trackers"):SetBuildingGroup(commonGroup), "RootTree")
+
+  --- Theme properties
+  -- Frame properties
+  OptionBuilder:AddRecipe(ThemePropertyRecipe()
+  :SetElementID(string.format("tracker.%s.frame", tracker.id))
+  :AddFlag(Theme.SkinFlags.FRAME_BORDER_COLOR)
+  :AddFlag(Theme.SkinFlags.FRAME_BORDER_WIDTH), string.format("%s/general/states", idWithSuffix))
+
+  -- Scrollbar properties
+  OptionBuilder:AddRecipe(ThemePropertyRecipe():SetElementID(string.format("tracker.%s.scrollbar", tracker.id)):SetOrder(20), string.format("%s/scrollbar", idWithSuffix))
+
+  -- Scrollbar thumb properies
+  OptionBuilder:AddRecipe(ThemePropertyRecipe()
+  :SetElementID(string.format("tracker.%s.scrollbar.thumb", tracker.id))
+  :SetElementParentID("tracker.scrollbar.thumb")
+  :ClearFlags()
+  :AddFlag(Theme.SkinFlags.TEXTURE_COLOR)
+  :SetOrder(40), string.format("%s/scrollbar", idWithSuffix))
+
+end
+
+--- Remove the recipes related to tracker which has been deleted
+__SystemEvent__()
+function EKT_TRACKER_DELETED(tracker)
+  local idWithSuffix = AddSuffix(tracker.id)
+
+  OptionBuilder:RemoveRecipe(idWithSuffix, "RootTree")
+  OptionBuilder:RemoveRecipes(string.format("%s/children", idWithSuffix))
+
+  -- Redirect the user when it's done
+  OptionBuilder:BuildUrl("trackers")
 end
 
 
+-- Register the generic recipes
+__SystemEvent__()
+function EKT_TRACKERS_LOADED()
+  -- Create the tabs
+  OptionBuilder:AddRecipe(TabRecipe():SetBuildingGroup("tracker/tabs"), "tracker/children")
 
+  AddGeneralTabRecipes()
+  AddBlocksTabRecipes()
+  AddScrollbarTabRecipes()
+  AddAdvancedTabRecipes()
 
---OptionRecipe
-
-
--- Trackers - [Create a tracker] - [Delete a tracker]
-
---[[
-  General
-    Width, Height
-
-  Blocks
-    Choose some blocks you want display
-
-  Display Rules
-    Hide when no block is linked
-    Hide when i'm in combat
-    Hide when i'm in raid
-
-
-  OptionBuilder:SetLink()
-
-
-  local OptionRecipe
-
-  OptionRecipe:Build(parent)
-
-  SimpleFrameRecipe
-
-  [Main]
-
-
-  SetLink(url, variables)
-
-
-  OptionRecipe
-
-  id
-  parent
-
-  OptionBuilder:Rebuild()
-
-
-
-
-  TreeItemRecipe
-
-
--]]
+end

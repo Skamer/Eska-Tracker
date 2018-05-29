@@ -1,3 +1,14 @@
+[1.0.5]
+- Re-enabled the automatic clean of the database.
+- The border of any frame will now be correctly hidden when setting its value to 0.
+- Fixed an error with notifications.
+- The theme system will now accept the ids with space.
+- Setup localization files for linking the addon with localization system provided by Curse.
+- Implemented the actionbars (EskaTracker : Objectives will use it for displaying the quest items buttons).
+
+IMPORTANT:
+- Made final changes on how the tracker settings are saved. As a consequences, they won't be lost. I apologize about that, there won't no more change of this type.
+
 [1.0.4]
 - The notifications system has been enabled and can now be used by extensions.
 - The database is no longer cleaned automatically when the player quits the game.

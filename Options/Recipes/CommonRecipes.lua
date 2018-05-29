@@ -488,6 +488,7 @@ class "CheckBoxRecipe" (function(_ENV)
     local checkbox = _AceGUI:Create("CheckBox")
     checkbox:SetLabel(self.text)
     checkbox:SetValue(self:GetOption())
+    checkbox:SetType(self.type)
     checkbox:SetCallback("OnValueChanged", function(_, _, value)
       self:SetOption(value)
       self:OnValueChanged(value)
@@ -502,6 +503,198 @@ class "CheckBoxRecipe" (function(_ENV)
     end
 
     context.parentWidget:AddChild(checkbox)
+  end
+
+  __Arguments__ { String }
+  function SetType(self, type)
+    self.type = type
+    return self
+  end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "type" { TYPE = String, DEFAULT = "checkbox"}
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                             RadioRow Recipe                                --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "RadioRowRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  event "OnValueChanged"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
+
+    local radioSelected
+    local optionValue = self:GetOption()
+    local first
+    for value, display in self.choices:GetIterator() do
+      local radio = _AceGUI:Create("CheckBox")
+      radio:SetLabel(display)
+      radio:SetType("radio")
+      radio:SetUserData("value", value)
+      radio:SetCallback("OnValueChanged", function(r, _, value)
+        if radioSelected then
+          radioSelected:SetValue(false)
+        end
+        radioSelected = r
+      end)
+
+      if optionValue and optionValue == value then
+        radio:SetValue(true)
+        radioSelected = radio
+      end
+
+      if not first then
+        first = radio
+      end
+
+      context.parentWidget:AddChild(radio)
+    end
+
+    if not radioSelected then
+      radioSelected = first
+      first:SetValue(true)
+    end
+  end
+
+  __Arguments__ { Any, Any}
+  function AddChoice(self, value, display)
+    self.choices[value] = display
+    return self
+  end
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function RadioRowRecipe(self)
+    super(self)
+
+    self.choices = Dictionary()
+  end
+
+end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                           RadioGroup Recipe                                --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "RadioGroupRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
+
+    -- Avoid to continue if there is no building group
+    if not self.buildingGroup then
+      return
+    end
+
+    local radioSelected
+    local optionValue = self:GetOption()
+    local first
+    for value, display in self.choices:GetIterator() do
+      local radio = _AceGUI:Create("CheckBox")
+      radio:SetLabel(display)
+      radio:SetType("radio")
+      radio:SetUserData("value", value)
+      radio:SetCallback("OnValueChanged", function(r, _, value)
+        if radioSelected then
+          radioSelected:SetValue(false)
+        end
+        radioSelected = r
+
+        if self.saveChoiceVariable then
+          context:SetVariable(self.saveChoiceVariable, radioSelected:GetUserData("value"))
+        end
+
+        self:RebuildChildren()
+      end)
+
+      -- Select the radio if it's defined by the user
+      if optionValue and optionValue == value then
+        radio:SetValue(true)
+        radioSelected = radio
+      end
+
+      if not first then
+        first = radio
+      end
+
+      context.parentWidget:AddChild(radio)
+    end
+
+    -- if no radio is slected, select the first
+    if not radioSelected then
+      radioSelected = first
+      first:SetValue(true)
+
+      if self.saveChoiceVariable then
+        context:SetVariable(self.saveChoiceVariable, radioSelected:GetUserData("value"))
+      end
+    end
+
+    -- Create the group
+    local group = _AceGUI:Create("SimpleGroup")
+    group:SetLayout("Flow")
+    group:SetFullWidth(true)
+    context.parentWidget:AddChild(group)
+    -- Set it in the cache for rebuilding its children
+    self.cache["group"] = group
+
+    -- Build the first time its children
+    local recipes = self:GetRecipes()
+    if recipes then
+      for index, recipe in recipes:GetIterator() do
+        recipe:Build(OptionContext(group, self, context))
+      end
+    end
+  end
+
+  function RebuildChildren(self)
+    local group = self.cache["group"]
+    group:ReleaseChildren()
+
+    local recipes = self:GetRecipes()
+    if recipes then
+      for index, recipe in recipes:GetIterator() do
+        recipe:Build(OptionContext(group, self, self.context))
+      end
+    end
+  end
+
+  __Arguments__ { Any, Any }
+  function AddChoice(self, value, display)
+    self.choices[value] = display
+    return self
+  end
+
+  __Arguments__ { String }
+  function SetSaveChoiceVariable(self, variableName)
+    self.saveChoiceVariable = variableName
+    return self
+  end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "saveChoiceVariable" { TYPE = String }
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function RadioGroupRecipe(self)
+    super(self)
+
+    self.choices = Dictionary()
   end
 end)
 --------------------------------------------------------------------------------
@@ -627,9 +820,9 @@ class "SelectRecipe" (function(_ENV)
     return self
   end
 
-  __Arguments__ { Table }
+  __Arguments__ {  RawTable + Table }
   function SetList(self, list)
-    return SetList(function() return list end)
+    return SetList(self, function() return list end)
   end
 
   function Refresh(self)

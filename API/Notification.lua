@@ -565,10 +565,12 @@ class "Notifications" (function(_ENV)
       local trackerUsed = Options:Get("tracker-used-for-notifications")
       local tracker = Trackers:Get(trackerUsed)
 
-      if new then
+      if new and tracker then
         tracker:EnableNotifications()
       else
-        tracker:DisableNotifications()
+        if tracker then
+          tracker:DisableNotifications()
+        end
         self:SetParent(UIParent)
         self:SetPoint("CENTER")
       end

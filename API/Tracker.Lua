@@ -16,6 +16,8 @@ Class "Tracker" (function(_ENV)
 
   __WidgetEvent__()
   event "OnMouseUp"
+
+  event "OnMove"
   ------------------------------------------------------------------------------
   --                             Handlers                                     --
   ------------------------------------------------------------------------------
@@ -74,8 +76,6 @@ Class "Tracker" (function(_ENV)
   local function UpdateID(self, new)
     -- Build name from id
     local name = new
-    -- Remove '-tracker'
-    name = name:gsub("(-tracker)$", "")
     -- Upper the first letter of each word
     name = API:UpperFirstOfEach(name)
 
@@ -448,6 +448,10 @@ Class "Tracker" (function(_ENV)
       Database:SetValue("show", nil)
     end
   end
+
+  __Static__() function GetIDFromName(self, name)
+    return name:lower()
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -491,12 +495,14 @@ Class "Tracker" (function(_ENV)
     self.OnMouseDown = function(_, button)
       if button == "LeftButton" and not self.locked then
         self:GetFrameContainer():StartMoving()
+        self:OnMove()
       end
     end
 
     self.OnMouseUp = function(_, button)
       if button == "LeftButton" and not self.locked then
         self:GetFrameContainer():StopMovingOrSizing()
+        self:OnMove()
 
         local xPos = self:GetFrameContainer():GetLeft()
         local yPos = self:GetFrameContainer():GetBottom()
@@ -588,8 +594,8 @@ class "Trackers" (function(_ENV)
 
       if createTable then
         Database:SelectRoot()
-        if Database:SelectTable(true, "trackers") then
-          Database:SetValue(id, {})
+        if Database:SelectTable(true, "list", "tracker") then
+          Database:SetValue(id, true)
         end
       end
 
@@ -613,6 +619,8 @@ class "Trackers" (function(_ENV)
     end
 
     _TRACKERS[tracker.id] = tracker
+
+    Scorpio.FireSystemEvent("EKT_TRACKER_REGISTERED", tracker)
   end
 
   __Arguments__ { ClassType }
@@ -620,7 +628,7 @@ class "Trackers" (function(_ENV)
     return _TRACKERS:GetIterator()
   end
 
-  __Arguments__ { ClassType, string }
+  __Arguments__ { ClassType, String }
   __Static__() function Delete(self, id)
     local tracker = self:Get(id)
     if tracker then
@@ -628,9 +636,11 @@ class "Trackers" (function(_ENV)
       _TRACKERS[id] = nil
 
       Database:SelectRoot()
-      if Database:SelectTable(false, "trackers") then
+      if Database:SelectTable(false, "list", "tracker") then
         Database:SetValue(id, nil)
       end
+
+      Scorpio.FireSystemEvent("EKT_TRACKER_DELETED", tracker)
     end
   end
 
@@ -650,37 +660,6 @@ class "Trackers" (function(_ENV)
     end
     print("---------------")
   end
-
-  --[[
-  __Static__() function TransferBlock(self, blockCategoryID, destTrackerID)
-    local srcTracker = self:GetTrackerByBlockCategoryID(blockCategoryID)
-    if not srcTracker or srcTracker.id == destTrackerID then
-      return
-    end
-
-    local block = srcTrackerID:RemoveBlockByCategoryID(blockCategoryID)
-
-    local srcTrackerID = self:GetTrackerByBlockCategoryID(blockCategoryID)
-    if srcTrackerID and srcTrackerID == destTrackerID then
-      return
-    end
-
-    local block
-    if srcTracker then
-      block = srcTracker:RemoveBlockByCategoryID(blockCategoryID)
-    else
-      block = Blocks:Get()
-    end
-
-
-
-    local destTracker = Trackers:Get(destTrackerID)
-    print("destTracker", destTracker)
-    if destTracker then
-      destTracker:AddBlock(block)
-    end
-  end--]]
-
 
   __Arguments__ { ClassType, String, String }
   __Static__() function TransferBlock(self, categoryID, destTrackerID)
@@ -726,12 +705,11 @@ end)
 
 function OnLoad(self)
   -- We need to have at least a tracker
-  local mainTracker = Trackers:New("main-tracker")
-  --mainTracker.displayNotifications = true
+  local mainTracker = Trackers:New("main")
 
   -- Register trackers created by the user (use Global)
   Database:SelectRoot()
-  if Database:SelectTable(false, "trackers") then
+  if Database:SelectTable(false, "list", "tracker") then
     for id in Database:IterateTable() do
       if not Trackers:Get(id) then
         Trackers:New(id)

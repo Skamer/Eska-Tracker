@@ -3,7 +3,7 @@
 -- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
 -- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
 -- ========================================================================== --
-Scorpio                 "EskaTracker"                                    "1.0.1"
+Scorpio                 "EskaTracker"                                    "1.0.5"
 --============================================================================--
 import "EKT"
 -- =======================[[ Localization ]}====================================
@@ -61,7 +61,7 @@ end
 
 function OnQuit(self)
   -- Do a clean in the Database (remove empty tables) when the player log out
-  -- Database:Clean()
+  Database:Clean()
 end
 
 

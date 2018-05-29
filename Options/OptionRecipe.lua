@@ -127,7 +127,7 @@ class "OptionRecipe" (function(_ENV)
     -- 1. We check if there is a class/and/or/order delimiter
     --print(ResolveGroup, self.buildingGroup, self.__buildingGroup, self._buildingGroup)
     -- TODO: Adding new character if needed here: %-
-    local result = string.gsub(self.buildingGroup, "%[([:_&%w%-]*)%]", function(var)
+    local result = string.gsub(self.buildingGroup, "%[([:_&%w%- ]*)%]", function(var)
       needCache = true -- so if we are here, we need to use cache for speeding up things
       if not list then
         list = {  strsplit("&", var) }
