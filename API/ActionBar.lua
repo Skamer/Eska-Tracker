@@ -26,6 +26,17 @@ class "ActionButton" (function(_ENV)
   function BindAction(self, actionID, ...)
     self.actionArgs = { ... }
   end
+
+  function Reset(self)
+    self:SetParent()
+    self:ClearAllPoints()
+    self:Hide()
+
+    self.id       = nil
+    self.order    = nil
+    self.category = nil
+    self.action   = nil
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -507,21 +518,46 @@ class "ActionBars" (function(_ENV)
         actionBar:Layout()
       end
     end
+
   end
 
-  --[[function HasButton(self, id, categoryID)
-    local bar = self:Get("quests item")
-    return bar:HasButton(id)
-  end--]]
-
-  __Static__() function HasButton(self, id, category)
-    for index, button in _BUTTONS:Filter(function(button) return button.category == category end):GetIterator() do
+  __Arguments__ {  ClassType, String + Number, String }
+  __Static__() function GetButton(self, id, categoryID)
+    for index, button in _BUTTONS:Filter(function(button) return button.category == categoryID end):GetIterator() do
       if button.id == id then
-        return true
+        return button
       end
     end
+  end
 
-    return false
+  __Arguments__ { ClassType, String + Number , String }
+  __Static__() function HasButton(self, id, categoryID)
+    local button = self:GetButton(id, categoryID)
+    if button then
+      return true
+    else
+      return false
+    end
+  end
+
+  __Arguments__ { ClassType, String + Number, String }
+  __Static__() function RemoveButton(self, id, categoryID)
+    local button = self:GetButton(id, categoryID)
+
+    if not button then
+      return
+    end
+
+    _BUTTONS:Remove(button)
+    button:Recycle()
+
+    local category = self:GetButtonCategory(categoryID)
+    if category and category.actionBar then
+      local actionBar = self:Get(category.actionBar)
+      if actionBar then
+        actionBar:Layout()
+      end
+    end
   end
 
   __Arguments__ { ClassType, List }
@@ -531,8 +567,6 @@ class "ActionBars" (function(_ENV)
 
   __Arguments__ { ClassType, Variable.Rest(String) }
   __Static__() function GetButtons(self, ...)
-    --local categories = List(...)
-    --return _BUTTONS:Filter(function(button) return categories:Contains(button.category) end)
     return self:GetButtons(List(...))
   end
 
@@ -572,13 +606,23 @@ class "ItemButton" (function(_ENV)
     if prop == "texture" then
       self.frame.texture:SetTexture(new)
     elseif prop == "link" then
-      self.frame:SetAttribute("item", new)
-      self.frame:SetScript("OnEnter", function(btn)
-        GameTooltip:SetOwner(btn, "ANCHOR_LEFT")
-        GameTooltip:SetHyperlink(new)
-        GameTooltip:Show()
-      end)
+      self:SetItemAttribute(new)
+      if new then
+        self.frame:SetScript("OnEnter", function(btn)
+          GameTooltip:SetOwner(btn, "ANCHOR_LEFT")
+          GameTooltip:SetHyperlink(new)
+          GameTooltip:Show()
+        end)
+      else
+        self.frame:SetScript("OnEnter", nil)
+      end
     end
+  end
+
+  __NoCombat__()
+  function SetItemAttribute(self, itemLink)
+    self.frame:SetAttribute("type", "item")
+    self.frame:SetAttribute("item", itemLink)
   end
 
   function SetCooldown(self, start, duration)
@@ -601,6 +645,13 @@ class "ItemButton" (function(_ENV)
   __Static__() function GetIterator()
     return pairs(_ItemButtonCache)
   end
+
+  function Reset(self)
+    super.Reset(self)
+
+    self.link     = nil
+    self.texture  = nil
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -611,8 +662,6 @@ class "ItemButton" (function(_ENV)
   function ItemButton(self)
     local name = "EKT-ItemButton"..ItemButton.index
     super(self, CreateFrame("Button", name, nil, "SecureActionButtonTemplate"))
-
-    self.frame:SetAttribute("type", "item")
 
     local texture = self.frame:CreateTexture()
     texture:SetAllPoints()
@@ -655,16 +704,6 @@ function OnLoad(self)
   Scorpio.FireSystemEvent("EKT_ACTION_BARS_LOADED")
 end
 
---[[
-DESIGN DOC
--- ActionBars:AddButton("quest-items", ItemButton(1500))
--- ActionBars:RemoveButton("quest-items", 1500)
--- ActionBars:RegisterButtonCategory("quests-items", "Quest Items")
-
-
-
-
---]]
 
 __SystemEvent__()
 function BAG_UPDATE_COOLDOWN(...)

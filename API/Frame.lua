@@ -270,7 +270,15 @@ class "Frame" (function(_ENV)
 
   __Arguments__ { Variable.Optional(Table) }
   function SetParent(self, parent)
+    if self:GetFrameContainer():IsProtected() then
+      NoCombat(function() self:OnParent(parent) end)
+    else
+      self:OnParent(parent)
+    end
+  end
 
+  __Arguments__ { Variable.Optional(Table) }
+  function OnParent(self, parent)
     -- Uninstall our obj if it's alreayd register for the layout system
     local oldParent = self:GetFrameContainer():GetParent()
     if oldParent and oldParent._ekt_objects then
@@ -298,7 +306,6 @@ class "Frame" (function(_ENV)
       end
       parent._ekt_objects[self] = true
     end
-
     self:GetFrameContainer():SetParent(parent)
   end
   ------------------------------------------------------------------------------
