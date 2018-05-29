@@ -50,7 +50,6 @@ function OnLoad(self)
   createButton:SetOrder(111)
   createButton.OnClick = createButton.OnClick + function(recipe)
     local name = OptionBuilder:GetVariable("create_tracker_name")
-    print("OnClick", name)
     if name then
       local id = Tracker:GetIDFromName(name)
       Trackers:New(id, true)
