@@ -1,3 +1,6 @@
+[1.0.5.1]
+- Fixed the localization files error.
+
 [1.0.5]
 - Re-enabled the automatic clean of the database.
 - The border of any frame will now be correctly hidden when setting its value to 0.
