@@ -298,6 +298,12 @@ class "OptionRecipe" (function(_ENV)
     return self
   end
 
+  __Arguments__ { Variable.Optional(Number) }
+  function SetWidth(self, width)
+    self.width = width
+    return self
+  end
+
   --- Set the order where this recipes will be built.
   __Arguments__ { Number }
   function SetOrder(self, order)
@@ -432,12 +438,14 @@ class "OptionRecipe" (function(_ENV)
   property "order"            { TYPE = Number, DEFAULT = 100 }
   property "id"               { TYPE = String, DEFAULT = nil }
   property "text"             { TYPE = String, DEFAULT = "" }
+  property "width"            { TYPE = Number  }
   property "option"           { TYPE = String, DEFAULT = nil }
   property "context"          { TYPE = OptionContext, DEFAULT = nil }
   property "buildingGroup"    { TYPE = String, DEFAULT = nil, SET = "SetBuildingGroup",  FIELD = "__buildingGroup" }
   property "needResolveGroup" { TYPE = Boolean, DEFAULT = false }
   property "setFunc"          { TYPE = Function }
   property "getFunc"          { TYPE = Function }
+
   -- Use internally by delimiters (don't edit this property)
   property "_buildingGroupDelimiterType" { TYPE = BuildingGroupDelimiterType }
   ------------------------------------------------------------------------------

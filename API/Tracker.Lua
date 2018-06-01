@@ -54,8 +54,33 @@ Class "Tracker" (function(_ENV)
       Database:SetValue("locked", new)
     end
 
-    self:GetFrameContainer():EnableMouse(not new)
+    --self:GetFrameContainer():EnableMouse(true)
     self:GetFrameContainer():SetMovable(not new)
+  end
+
+  local function UpdateIdleMode(self, new, old, prop)
+    if new then
+      self:OnEnterIdleMode()
+    else
+      self:OnLeaveIdleMode()
+      self:RunInactivityTimer()
+    end
+  end
+
+  local function UpdateIdleModeProps(self, new, old, prop)
+    Profiles:PrepareDatabase()
+    if prop == "idleModeAlpha" then
+      if self.isInIdleMode then
+        self:SetAlpha(new)
+      end
+      Database:SetValue("idle-mode-alpha", new)
+    elseif prop == "idleModePreventMouseover" then
+      Database:SetValue("idle-mode-prevent-mouseover", new)
+    elseif prop == "idleModeResumeAfterMouseover" then
+      Database:SetValue("idle-mode-resume-after-mouseover", new)
+    elseif prop == "idleModeTimer" then
+      Database:SetValue("idle-mode-timer", new)
+    end
   end
 
   local function UpdateShowScrollbar(self, new)
@@ -70,7 +95,6 @@ Class "Tracker" (function(_ENV)
 
     -- Update the scroll bar visibility
     self:UpdateScrollbarVisibility()
-
   end
 
   local function UpdateID(self, new)
@@ -81,7 +105,6 @@ Class "Tracker" (function(_ENV)
 
     self.name = name
   end
-
 
   local function PrepareNotifications(self, useNotifications)
     if useNotifications then
@@ -322,6 +345,9 @@ Class "Tracker" (function(_ENV)
       block.OnOrderChanged = function(block, new, old)
         self:Layout()
       end
+
+      -- Add Block in the child object list for message broacast system and IWakeUpTracker
+      self:AddChildObject(block)
     end
 
     self:Layout()
@@ -335,6 +361,7 @@ Class "Tracker" (function(_ENV)
     block:Hide()
     block.OnHeightChanged = nil
     block.OnOrderChanged  = nil
+    self:RemoveBlockObject(block)
 
     self:Layout()
 
@@ -359,26 +386,32 @@ Class "Tracker" (function(_ENV)
     return self.blocks
   end
 
-
-
-
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
   function OnSkin(self, flags, target)
+    -- Call our super 'OnSkin'
     super.OnSkin(self, flags, target)
+    -- Get the current state
+    local state = self:GetCurrentState()
 
     if Theme:NeedSkin(self.frame, target) then
-      Theme:SkinFrame(self.frame, flags)
-      self:SkinBorder(self.frame, flags)
+      Theme:SkinFrame(self.frame, flags, state)
+      self:SkinBorder(self.frame, flags, state)
     end
 
     if Theme:NeedSkin(self.scrollbar, target) then
-      Theme:SkinFrame(self.scrollbar, flags)
+      Theme:SkinFrame(self.scrollbar, flags, state)
     end
 
     if Theme:NeedSkin(self.scrollbar.thumb, target) then
-      Theme:SkinTexture(self.scrollbar.thumb, flags)
+      Theme:SkinTexture(self.scrollbar.thumb, flags, state)
     end
 
+  end
+
+  function GetCurrentState(self)
+    if self.isInIdleMode then
+      return "idle"
+    end
   end
 
   --- Init the frame (register frames in the theme system and skin them)
@@ -402,14 +435,19 @@ Class "Tracker" (function(_ENV)
     Profiles:PrepareDatabase()
 
     local height, width, locked, showScrollbar, xPos, yPos, show
+    local idleModeAlpha, idleModeTimer, idleModePreventMouseover, idleModeResumeAfterMouseover
     if Database:SelectTable(false, "trackers", self.id) then
-      height          = Database:GetValue("height")
-      width           = Database:GetValue("width")
-      locked          = Database:GetValue("locked")
-      showScrollbar   = Database:GetValue("showScrollbar")
-      xPos            = Database:GetValue("xPos")
-      yPos            = Database:GetValue("yPos")
-      show            = Database:GetValue("show")
+      height                        = Database:GetValue("height")
+      width                         = Database:GetValue("width")
+      locked                        = Database:GetValue("locked")
+      showScrollbar                 = Database:GetValue("showScrollbar")
+      xPos                          = Database:GetValue("xPos")
+      yPos                          = Database:GetValue("yPos")
+      show                          = Database:GetValue("show")
+      idleModeAlpha                 = Database:GetValue("idle-mode-alpha")
+      idleModeTimer                 = Database:GetValue("idle-mode-timer")
+      idleModePreventMouseover      = Database:GetValue("idle-mode-prevent-mouseover")
+      idleModeResumeAfterMouseover  = Database:GetValue("idle-mode-resume-after-mouseover")
     end
 
     if show == nil or show ~= false then
@@ -424,10 +462,14 @@ Class "Tracker" (function(_ENV)
 
 
     -- Assign the values
-    self.height         = height or 300
-    self.width          = width or 325
-    self.locked         = locked
-    self.showScrollbar  = showScrollbar
+    self.height                       = height or 300
+    self.width                        = width or 325
+    self.locked                       = locked
+    self.showScrollbar                = showScrollbar
+    self.idleModeAlpha                = idleModeAlpha
+    self.idleModeTimer                = idleModeTimer
+    self.idleModePreventMouseover     = idleModePreventMouseover
+    self.idleModeResumeAfterMouseover = idleModeResumeAfterMouseover
     self:SetPosition(xPos, yPos, false)
   end
 
@@ -452,17 +494,69 @@ Class "Tracker" (function(_ENV)
   __Static__() function GetIDFromName(self, name)
     return name:lower()
   end
+
+  __Async__()
+  function RunInactivityTimer(self)
+    if self.idleModeTimer <= 0 then
+      return
+    end
+
+    self._inactivityTimer = 0
+    while not self.isInIdleMode and self.idleModeTimer > 0 do
+      Delay(1)
+      self._inactivityTimer = self._inactivityTimer + 1
+
+      if self._inactivityTimer >= self.idleModeTimer then
+        self.isInIdleMode = true
+      end
+    end
+  end
+
+  function OnEnterIdleMode(self)
+    self:SetAlpha(self.idleModeAlpha)
+    self:Skin()
+  end
+
+  function OnLeaveIdleMode(self)
+    self:SetAlpha(1.0)
+    self:Skin()
+  end
+
+  function WakeUp(self)
+    self._inactivityTimer   = 0
+    self.isInIdleMode       = false
+  end
+
+  __Arguments__ { String, Variable.Rest() }
+  function OnChildMessage(self, msg, ...)
+    if msg == "WakeUpTrackerRequest" then
+      self:WakeUp()
+    elseif msg == "OnFrameEnter" then
+      self:OnEnter()
+    elseif msg == "OnFrameLeave" then
+      self:OnLeave()
+    elseif msg == "OnMouseDown" then
+      self:OnMouseDown()
+    elseif msg == "OnMouseUp" then
+      self:OnMouseUp()
+    end
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "id"                   { TYPE = String, DEFAULT = "", HANDLER = UpdateID }
-  property "name"                 { TYPE = String }
-  property "xPos"                 { TYPE = Number, DEFAULT = 0 }
-  property "yPos"                 { TYPE = Number, DEFAULT = 0 }
-  property "locked"               { TYPE = Boolean, DEFAULT = false,  HANDLER = UpdateLock }
-  property "contentHeight"        { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
-  property "displayNotifications" { TYPE = Boolean, DEFAULT = false }
-  property "showScrollbar"        { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
+  property "id"                           { TYPE = String, DEFAULT = "", HANDLER = UpdateID }
+  property "name"                         { TYPE = String }
+  property "xPos"                         { TYPE = Number, DEFAULT = 0 }
+  property "yPos"                         { TYPE = Number, DEFAULT = 0 }
+  property "locked"                       { TYPE = Boolean, DEFAULT = false,  HANDLER = UpdateLock }
+  property "contentHeight"                { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
+  property "displayNotifications"         { TYPE = Boolean, DEFAULT = false }
+  property "showScrollbar"                { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
+  property "isInIdleMode"                 { TYPE = Boolean, DEFAULT = false, HANDLER =  UpdateIdleMode }
+  property "idleModeTimer"                { TYPE = Number, DEFAULT = 0, HANDLER = UpdateIdleModeProps }
+  property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.3, HANDLER = UpdateIdleModeProps }
+  property "idleModePreventMouseover"     { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateIdleModeProps }
+  property "idleModeResumeAfterMouseover" { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateIdleModeProps }
   --- Locations
   property "inRaid"               { TYPE = Boolean, DEFAULT = false }
   property "inKeystone"           { TYPE = Boolean, DEFAULT = false }
@@ -489,7 +583,7 @@ Class "Tracker" (function(_ENV)
     self:GetFrameContainer():SetHeight(200)
     self:GetFrameContainer():SetWidth(200)
     self:SetPoint("CENTER")
-    self:GetFrameContainer():EnableMouse(not self.locked)
+    --self:GetFrameContainer():EnableMouse(not self.locked)
     self:GetFrameContainer():SetMovable(not self.locked)
 
     self.OnMouseDown = function(_, button)
@@ -575,11 +669,32 @@ Class "Tracker" (function(_ENV)
       Scorpio.FireSystemEvent("EKT_TRACKER_CONTENT_SIZE_CHANGED", self.id, new)
     end
 
+    self.OnEnter = function()
+      if not self.idleModePreventMouseover then
+        if self.idleModeResumeAfterMouseover then
+          self:OnLeaveIdleMode()
+        else
+          self:WakeUp()
+        end
+      end
+    end
+
+    self.OnLeave = function()
+      if not self.idleModePreventMouseover then
+        if self.idleModeResumeAfterMouseover then
+          if self.isInIdleMode then
+            self:OnEnterIdleMode()
+          end
+        end
+      end
+    end
+
     self.blocks = Array[Block]()
+
+    self:RunInactivityTimer()
   end
 
 end)
-
 
 class "Trackers" (function(_ENV)
   _TRACKERS = Dictionary()

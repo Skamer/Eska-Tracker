@@ -209,7 +209,6 @@ class "Block" (function(_ENV)
   ------------------------------------------------------------------------------
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
   function OnSkin(self, flags, target)
-
       -- Call our super 'OnSkin'
       super.OnSkin(self, flags, target)
       -- Get the current state
@@ -274,6 +273,10 @@ class "Block" (function(_ENV)
     Theme:SkinFrame(self.frame.content)
     Theme:SkinText(self.frame.header.text)
     Theme:SkinTexture(self.frame.header.stripe)
+  end
+
+  function WakeUpTracker(self)
+    self:BroadcastObjectMessage("WakeUpTrackerRequest")
   end
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --

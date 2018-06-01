@@ -29,8 +29,68 @@ class "__WidgetEvent__" (function(_ENV)
 end)
 
 
+__Abstract__()
+class "BaseObject" (function(_ENV)
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  __Arguments__ { BaseObject }
+  function AddChildObject(self, object)
+    if not self._childrenObject then
+      self._childrenObject = setmetatable({}, { __mode = "k"} )
+    end
+
+    self._childrenObject[object] = true
+
+    object:SetParentObject(self)
+  end
+
+  __Arguments__ { BaseObject }
+  function RemoveChildObject(self, obj)
+    if self._childrenObject then
+      self._childrenObject[obj] = nil
+      obj:SetParentObject()
+    end
+  end
+
+  function RemoveChildrens(self)
+    if self._childrenObject then
+      for child in pairs(self._childrenObject) do
+        child:SetParentObject(nil)
+        self._childrenObject[child] = nil
+      end
+    end
+  end
+
+  __Arguments__ { Variable.Optional(BaseObject) }
+  function SetParentObject(self, obj)
+    self._parentObject = obj
+  end
+
+  function GetParentObject(self)
+    return self._parentObject
+  end
+
+  __Arguments__ { String, Variable.Rest() }
+  function BroadcastObjectMessage(self, msg, ...)
+    local parent = self:GetParentObject()
+    local continue = true
+    while parent and continue do
+      continue = not parent:OnChildMessage(msg, ...)
+      parent = parent:GetParentObject()
+    end
+  end
+
+  __Arguments__ { String, Variable.Rest() }
+  function OnChildMessage(self, event, ...) end
+
+end)
+
+
 
 class "Frame" (function(_ENV)
+  inherit "BaseObject"
+
   _FrameCache = setmetatable({}, { __mode = "k"})
   event "OnWidthChanged"
   event "OnHeightChanged"
@@ -74,7 +134,6 @@ class "Frame" (function(_ENV)
   local function UpdateLayout(self)
     self:Layout()
   end
-
   ------------------------------------------------------------------------------
   --                        Size Methods                                      --
   ------------------------------------------------------------------------------

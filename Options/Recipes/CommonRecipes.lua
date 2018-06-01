@@ -752,6 +752,15 @@ class "RangeRecipe" (function(_ENV)
       self:SetOption(value)
       self:OnValueChanged(value)
     end)
+
+    if self.width then
+      if self.width <= 1 then
+        range:SetRelativeWidth(self.width)
+      else
+        range:SetWidth(self.width)
+      end
+    end
+
     context.parentWidget:AddChild(range)
   end
 
@@ -850,8 +859,8 @@ class "LineEditRecipe" (function(_ENV)
   --                             Methods                                      --
   ------------------------------------------------------------------------------
   function Build(self, context)
-    super.Build(self, context)
     -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
 
     local lineEdit = _AceGUI:Create("EditBox")
     lineEdit:SetLabel(self.text)
@@ -861,4 +870,33 @@ class "LineEditRecipe" (function(_ENV)
     context.parentWidget:AddChild(lineEdit)
   end
 
+end)
+
+
+--------------------------------------------------------------------------------
+--                                                                            --
+--                         Text Recipe                                    --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "TextRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
+
+    local text = _AceGUI:Create("Label")
+    text:SetText(self.text)
+    context.parentWidget:AddChild(text)
+
+    if self.width then
+      if self.width > 0 and self.width <= 1 then
+        text:SetRelativeWidth(self.width)
+      else
+        text:SetWidth(self.width)
+      end
+    end
+  end
 end)
