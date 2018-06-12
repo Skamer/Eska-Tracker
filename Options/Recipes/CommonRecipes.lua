@@ -603,11 +603,11 @@ class "RadioGroupRecipe" (function(_ENV)
     local radioSelected
     local optionValue = self:GetOption()
     local first
-    for value, display in self.choices:GetIterator() do
+    for index, info in self.choices:GetIterator() do
       local radio = _AceGUI:Create("CheckBox")
-      radio:SetLabel(display)
+      radio:SetLabel(info.display)
       radio:SetType("radio")
-      radio:SetUserData("value", value)
+      radio:SetUserData("value", info.value)
       radio:SetCallback("OnValueChanged", function(r, _, value)
         if radioSelected then
           radioSelected:SetValue(false)
@@ -618,11 +618,13 @@ class "RadioGroupRecipe" (function(_ENV)
           context:SetVariable(self.saveChoiceVariable, radioSelected:GetUserData("value"))
         end
 
+        self:SetOption(info.value)
+
         self:RebuildChildren()
       end)
 
       -- Select the radio if it's defined by the user
-      if optionValue and optionValue == value then
+      if optionValue and optionValue == info.value then
         radio:SetValue(true)
         radioSelected = radio
       end
@@ -675,7 +677,7 @@ class "RadioGroupRecipe" (function(_ENV)
 
   __Arguments__ { Any, Any }
   function AddChoice(self, value, display)
-    self.choices[value] = display
+    self.choices:Insert({ value = value, display = display })
     return self
   end
 
@@ -694,7 +696,7 @@ class "RadioGroupRecipe" (function(_ENV)
   function RadioGroupRecipe(self)
     super(self)
 
-    self.choices = Dictionary()
+    self.choices = List()
   end
 end)
 --------------------------------------------------------------------------------

@@ -58,28 +58,47 @@ Class "Tracker" (function(_ENV)
     self:GetFrameContainer():SetMovable(not new)
   end
 
-  local function UpdateIdleMode(self, new, old, prop)
-    if new then
-      self:OnEnterIdleMode()
-    else
-      self:OnLeaveIdleMode()
-      self:RunInactivityTimer()
+  __Arguments__ { Number }
+  function OnInactivityTimerChange(self, timer)
+    Profiles:PrepareDatabase()
+    if Database:SelectTable(true, "trackers", self.id) then
+      Database:SetValue("inactivity-timer", timer)
     end
+
+    self:AddIdleTimer(self, timer)
+    self:SendMessageToChildren("CHANGE_IDLE_MODE_TIMER", new)
+    self:SendMessageToChildren("ADD_IDLE_TIMER", self, timer)
   end
 
-  local function UpdateIdleModeProps(self, new, old, prop)
+  __Arguments__ { Number }
+  function OnIdleModeAlphaChange(self, alpha)
     Profiles:PrepareDatabase()
-    if prop == "idleModeAlpha" then
-      if self.isInIdleMode then
-        self:SetAlpha(new)
-      end
-      Database:SetValue("idle-mode-alpha", new)
-    elseif prop == "idleModePreventMouseover" then
-      Database:SetValue("idle-mode-prevent-mouseover", new)
-    elseif prop == "idleModeResumeAfterMouseover" then
-      Database:SetValue("idle-mode-resume-after-mouseover", new)
-    elseif prop == "idleModeTimer" then
-      Database:SetValue("idle-mode-timer", new)
+    if Database:SelectTable(true, "trackers", self.id) then
+      Database:SetValue("idle-mode-alpha", alpha)
+    end
+
+    if self.isInIdleMode then
+      self:SetAlpha(alpha)
+    else
+      self:SetAlpha(1)
+    end
+    self:SendMessageToChildren("CHANGE_IDLE_MODE_ALPHA", alpha)
+  end
+
+  __Arguments__ { String }
+  function OnIdleModeTypeChange(self, type)
+    Profiles:PrepareDatabase()
+    if Database:SelectTable(true, "trackers", self.id) then
+      Database:SetValue("idle-mode-type", type)
+    end
+
+    self:SendMessageToChildren("GET_IDLE_MODE_INFO", self.idleModeEnabled, self.idleModeTimer, self.idleModeAlpha, self.idleModeType)
+  end
+
+  __Arguments__ { BaseObject, String, Variable.Rest() }
+  function OnChildRequest(self, child, msg, ...)
+    if msg == "GET_IDLE_MODE_INFO" then
+      child:OnConfirmedRequest(msg, self.idleModeEnabled, self.idleModeTimer, self.idleModeAlpha, self.idleModeType)
     end
   end
 
@@ -232,7 +251,170 @@ Class "Tracker" (function(_ENV)
       end
     end
   end
+  ------------------------------------------------------------------------------
+  --                        Comm. Methods                                     --
+  ------------------------------------------------------------------------------
+  __Arguments__ { BaseObject }
+  function AddChildObject(self, object)
+    super.AddChildObject(self, object)
 
+    self:RegisterContainedFrame(object)
+  end
+
+  function RegisterContainedFrame(self, frame)
+    if not self._frameContained then
+      self._frameContained = setmetatable({}, { __mode = "k"})
+    end
+
+    self._frameContained[frame] = true
+
+    frame:OnRetrieveIdleModeInfo(self.idleModeEnabled, self.idleModeTimer, self.idleModeAlpha, self.idleModeType)
+
+    frame:AddIdleTimer(self, self.idleModeTimer)
+    frame:OnWakeUp()
+
+    local subChildren = frame:GetChildObjects()
+    if subChildren then
+      for subChild in pairs(subChildren) do
+        self:RegisterContainedFrame(subChild)
+      end
+    end
+  end
+
+  function UnregisterContainedFrame(self, frame)
+    if self._frameContained then
+      self._frameContained[frame] = nil
+      local subChildren = frame:GetChildObjects()
+      if subChildren then
+        for subChild in pairs(subChildren) do
+          self:UnregisterContainedFrame(subChild)
+        end
+      end
+    end
+
+    frame.idleModeType    = nil
+    frame.idleModeTimer   = nil
+    frame.idleModeEnabled = nil
+    frame.idleModeAlpha   = nil
+  end
+  ------------------------------------------------------------------------------
+  --                        Idle. Methods                                     --
+  ------------------------------------------------------------------------------
+  function OnChildMessage(self, msg, ...)
+    if msg == "REGISTER_FRAME" then
+      local obj = ...
+      self:RegisterContainedFrame(obj)
+    elseif msg == "UNREGISTER_FRAME" then
+      local obj = ...
+      self:UnregisterContainedFrame(obj)
+    elseif msg == "ADD_IDLE_TIMER" then
+      local ownerTimer, timer = ...
+      self:AddIdleTimer(ownerTimer, timer)
+    elseif msg == "REMOVE_IDLE_TIMER" then
+      local ownerTimer = ...
+      self:RemoveIdleTimer(self)
+    elseif msg == "OnEnter" then
+      self:LeaveTemporalyIdleMode()
+      self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
+    elseif msg == "OnLeave" then
+      self:EnterInIdleModeFromTemporarly()
+      self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
+    elseif msg == "WAKE_UP" then
+      if self.idleModeType == "basic-type" then
+        self:AddIdleTimer(self, self.idleModeTimer)
+        self:SendMessageToChildren("WAKE_UP", self, self.idleModeTimer)
+        self:OnWakeUp()
+      else
+        local ownerTimer, timer = ...
+        self:AddIdleTimer(ownerTimer, timer)
+        self:OnWakeUp()
+      end
+    end
+  end
+
+  __Arguments__ { Boolean }
+  function OnIdleModeEnabledChange(self, enabled)
+    -- 1. Save the change in the database
+    Profiles:PrepareDatabase()
+    if Database:SelectTable(true, "trackers", self.id) then
+      Database:SetValue("idle-mode-enabled", enabled)
+    end
+
+
+    -- 2. Notify the children
+    self:SendMessageToChildren("CHANGE_IDLE_MODE_ENABLED", enabled)
+
+    -- 3. Start the timers if enabled/ Remove the timer and transparency if disabled
+    if enabled then
+      self:AddIdleTimer(self, self.idleModeTimer)
+      self:SendMessageToChildren("WAKE_UP", self, self.idleModeTimer)
+
+      self.__isInIdleMode = false
+      self:StartInactivityTimers()
+    else
+      -- Remove the transparency
+      self:SetAlpha(1.0)
+      -- Clear all Timers
+      self:ClearIdleTimers()
+      -- Set the idle mode to false without triggered the handler system
+      self.__isInIdleMode = false
+    end
+  end
+
+  function LeaveTemporalyIdleMode(self)
+    self.idleModePaused = true
+    self:SetAlpha(1.0)
+    self:Skin()
+  end
+
+  function EnterInIdleModeFromTemporarly(self)
+    self.idleModePaused = false
+    if self.isInIdleMode and self.idleModeEnabled then
+      self:SetAlpha(self.idleModeAlpha)
+    end
+    self:Skin()
+  end
+
+  __Async__()
+  function StartInactivityTimers(self)
+    if self._inactivityTimerStarted then
+      return
+    end
+
+    self._inactivityTimerStarted = true
+    local updateRate = 0.1
+
+    while self.idleModeEnabled do
+      Delay(updateRate)
+
+      if not self.isInIdleMode then
+        local timerToUse = self:GetEffectiveIdleTimer()
+        if timerToUse <= 0 then
+          self.isInIdleMode = true
+        else
+          --print(timerToUse)
+        end
+
+        self:UpdateIdleTimers(updateRate)
+
+        if self._frameContained then
+          for obj in pairs(self._frameContained) do
+            if not obj.isInIdleMode then
+              local timerToUse = obj:GetEffectiveIdleTimer()
+
+              if timerToUse <= 0 then
+                obj.isInIdleMode = true
+              end
+
+              obj:UpdateIdleTimers(updateRate)
+            end
+          end
+        end
+      end
+    end
+
+    self._inactivityTimerStarted = nil
+  end
   ------------------------------------------------------------------------------
   --                             Methods                                      --
   ------------------------------------------------------------------------------
@@ -361,7 +543,7 @@ Class "Tracker" (function(_ENV)
     block:Hide()
     block.OnHeightChanged = nil
     block.OnOrderChanged  = nil
-    self:RemoveBlockObject(block)
+    self:RemoveChildObject(block)
 
     self:Layout()
 
@@ -409,7 +591,7 @@ Class "Tracker" (function(_ENV)
   end
 
   function GetCurrentState(self)
-    if self.isInIdleMode then
+    if self.isInIdleMode and self.idleModeEnabled then
       return "idle"
     end
   end
@@ -435,7 +617,7 @@ Class "Tracker" (function(_ENV)
     Profiles:PrepareDatabase()
 
     local height, width, locked, showScrollbar, xPos, yPos, show
-    local idleModeAlpha, idleModeTimer, idleModePreventMouseover, idleModeResumeAfterMouseover
+    local idleModeAlpha, inactivityTimer, idleModeEnabled, idleModeType
     if Database:SelectTable(false, "trackers", self.id) then
       height                        = Database:GetValue("height")
       width                         = Database:GetValue("width")
@@ -445,9 +627,9 @@ Class "Tracker" (function(_ENV)
       yPos                          = Database:GetValue("yPos")
       show                          = Database:GetValue("show")
       idleModeAlpha                 = Database:GetValue("idle-mode-alpha")
-      idleModeTimer                 = Database:GetValue("idle-mode-timer")
-      idleModePreventMouseover      = Database:GetValue("idle-mode-prevent-mouseover")
-      idleModeResumeAfterMouseover  = Database:GetValue("idle-mode-resume-after-mouseover")
+      inactivityTimer               = Database:GetValue("inactivity-timer")
+      idleModeType                  = Database:GetValue("idle-mode-type")
+      idleModeEnabled               = Database:GetValue("idle-mode-enabled")
     end
 
     if show == nil or show ~= false then
@@ -467,9 +649,9 @@ Class "Tracker" (function(_ENV)
     self.locked                       = locked
     self.showScrollbar                = showScrollbar
     self.idleModeAlpha                = idleModeAlpha
-    self.idleModeTimer                = idleModeTimer
-    self.idleModePreventMouseover     = idleModePreventMouseover
-    self.idleModeResumeAfterMouseover = idleModeResumeAfterMouseover
+    self.inactivityTimer              = inactivityTimer
+    self.idleModeType                 = idleModeType
+    self.idleModeEnabled              = idleModeEnabled
     self:SetPosition(xPos, yPos, false)
   end
 
@@ -494,53 +676,6 @@ Class "Tracker" (function(_ENV)
   __Static__() function GetIDFromName(self, name)
     return name:lower()
   end
-
-  __Async__()
-  function RunInactivityTimer(self)
-    if self.idleModeTimer <= 0 then
-      return
-    end
-
-    self._inactivityTimer = 0
-    while not self.isInIdleMode and self.idleModeTimer > 0 do
-      Delay(1)
-      self._inactivityTimer = self._inactivityTimer + 1
-
-      if self._inactivityTimer >= self.idleModeTimer then
-        self.isInIdleMode = true
-      end
-    end
-  end
-
-  function OnEnterIdleMode(self)
-    self:SetAlpha(self.idleModeAlpha)
-    self:Skin()
-  end
-
-  function OnLeaveIdleMode(self)
-    self:SetAlpha(1.0)
-    self:Skin()
-  end
-
-  function WakeUp(self)
-    self._inactivityTimer   = 0
-    self.isInIdleMode       = false
-  end
-
-  __Arguments__ { String, Variable.Rest() }
-  function OnChildMessage(self, msg, ...)
-    if msg == "WakeUpTrackerRequest" then
-      self:WakeUp()
-    elseif msg == "OnFrameEnter" then
-      self:OnEnter()
-    elseif msg == "OnFrameLeave" then
-      self:OnLeave()
-    elseif msg == "OnMouseDown" then
-      self:OnMouseDown()
-    elseif msg == "OnMouseUp" then
-      self:OnMouseUp()
-    end
-  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -552,11 +687,15 @@ Class "Tracker" (function(_ENV)
   property "contentHeight"                { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
   property "displayNotifications"         { TYPE = Boolean, DEFAULT = false }
   property "showScrollbar"                { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
-  property "isInIdleMode"                 { TYPE = Boolean, DEFAULT = false, HANDLER =  UpdateIdleMode }
-  property "idleModeTimer"                { TYPE = Number, DEFAULT = 0, HANDLER = UpdateIdleModeProps }
-  property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.3, HANDLER = UpdateIdleModeProps }
-  property "idleModePreventMouseover"     { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateIdleModeProps }
-  property "idleModeResumeAfterMouseover" { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateIdleModeProps }
+  --property "idleModeEnabled"              { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateIdleModeProps }
+  --property "idleModeTimer"                { TYPE = Number, DEFAULT = 8, HANDLER = UpdateIdleModeProps }
+  --property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.35, HANDLER = UpdateIdleModeProps }
+
+  --property "isInIdleMode"                 { TYPE = Boolean, DEFAULT = false, HANDLER =  UpdateIdleMode }
+  --property "idleModeTimer"                { TYPE = Number, DEFAULT = 0, HANDLER = UpdateIdleModeProps }
+  --property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.5, HANDLER = UpdateIdleModeProps }
+  --property "idleModePreventMouseover"     { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateIdleModeProps }
+  --property "idleModeResumeAfterMouseover" { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateIdleModeProps }
   --- Locations
   property "inRaid"               { TYPE = Boolean, DEFAULT = false }
   property "inKeystone"           { TYPE = Boolean, DEFAULT = false }
@@ -670,6 +809,17 @@ Class "Tracker" (function(_ENV)
     end
 
     self.OnEnter = function()
+      self:LeaveTemporalyIdleMode()
+      self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
+    end
+
+    self.OnLeave = function()
+      self:EnterInIdleModeFromTemporarly()
+      self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
+    end
+
+    --[[
+    self.OnEnter = function()
       if not self.idleModePreventMouseover then
         if self.idleModeResumeAfterMouseover then
           self:OnLeaveIdleMode()
@@ -687,11 +837,9 @@ Class "Tracker" (function(_ENV)
           end
         end
       end
-    end
+    end--]]
 
     self.blocks = Array[Block]()
-
-    self:RunInactivityTimer()
   end
 
 end)

@@ -28,12 +28,23 @@ class "__WidgetEvent__" (function(_ENV)
     end
 end)
 
-
 __Abstract__()
 class "BaseObject" (function(_ENV)
   ------------------------------------------------------------------------------
   --                             Methods                                      --
   ------------------------------------------------------------------------------
+  enum "MessageDirection" {
+    "PARENTS",
+    "CHILDREN"
+  }
+
+
+  __Default__(1)
+  enum "ConsumeType" {
+    ForAll = 1,
+    OnlyForItsChildren = 2
+  }
+
   __Arguments__ { BaseObject }
   function AddChildObject(self, object)
     if not self._childrenObject then
@@ -42,28 +53,46 @@ class "BaseObject" (function(_ENV)
 
     self._childrenObject[object] = true
 
-    object:SetParentObject(self)
+    object:__SetParentObject(self)
   end
 
   __Arguments__ { BaseObject }
   function RemoveChildObject(self, obj)
     if self._childrenObject then
       self._childrenObject[obj] = nil
-      obj:SetParentObject()
+      obj:__SetParentObject()
     end
   end
 
-  function RemoveChildrens(self)
+  function RemoveChildObjects(self)
     if self._childrenObject then
       for child in pairs(self._childrenObject) do
-        child:SetParentObject(nil)
+        child:__SetParentObject(nil)
         self._childrenObject[child] = nil
       end
     end
   end
 
+  function GetChildObjects(self)
+    return self._childrenObject
+  end
+
+
+
   __Arguments__ { Variable.Optional(BaseObject) }
   function SetParentObject(self, obj)
+    local parent = self:GetParentObject()
+    if parent and (not obj or parent ~= obj) then
+      parent:RemoveChildObject(self)
+    end
+
+    if obj then
+      obj:AddChildObject(self)
+    end
+  end
+
+  __Arguments__ { Variable.Optional(BaseObject) }
+  function __SetParentObject(self, obj)
     self._parentObject = obj
   end
 
@@ -71,19 +100,69 @@ class "BaseObject" (function(_ENV)
     return self._parentObject
   end
 
-  __Arguments__ { String, Variable.Rest() }
-  function BroadcastObjectMessage(self, msg, ...)
-    local parent = self:GetParentObject()
-    local continue = true
-    while parent and continue do
-      continue = not parent:OnChildMessage(msg, ...)
-      parent = parent:GetParentObject()
+  --- Send a message for children or parents?
+  __Arguments__ { String, MessageDirection, Variable.Rest() }
+  function SendMessage(self, direction, msg, ...)
+    if direction == "PARENTS" then
+      self:SendMessageToParents(self, msg, ...)
+    elseif direction == "CHILDREN" then
+      self:SendMessageToChildren(self, msg, ...)
     end
   end
 
+  --- Send a message for parents
   __Arguments__ { String, Variable.Rest() }
-  function OnChildMessage(self, event, ...) end
+  function SendMessageToParents(self, msg, ...)
+    local parent    = self:GetParentObject()
+    local continue  = true
+    while parent and continue do
+      continue  = not parent:OnChildMessage(msg, ...)
+      parent    = parent:GetParentObject()
+    end
+  end
 
+
+  --- Send a message for its children
+  __Arguments__ { String, Variable.Rest() }
+  function SendMessageToChildren(self, msg, ...)
+    if self._childrenObject then
+      for obj in pairs(self._childrenObject) do
+        obj:OnParentMessage(msg, ...)
+        obj:SendMessageToChildren(msg, ...)
+      end
+    end
+  end
+
+  --- May be overloaded for answering to children message.
+  -- Returning true will consume the message (will no longer be dispatched)
+  __Arguments__ { String, Variable.Rest() }
+  function OnChildMessage(self, msg, ...) end
+
+  --- May be overloaded for answering to parent message.
+  -- Returning true will consume the message (will no longer be dispatched)
+  __Arguments__ { String, Variable.Rest() }
+  function OnParentMessage(self, msg, ...)  end
+
+
+  --- Send a request to parents which needs to be confirmed by them.
+  -- If the request has been confirmed, OnConfirmedRequest will be called.
+  __Arguments__ { String, Variable.Rest() }
+  function SendRequest(self, msg, ...)
+    local parent = self:GetParentObject()
+    local continue = true
+    while parent and continue do
+      continue = not parent:OnChildRequest(self, msg, ...)
+      parent   = parent:GetParentObject()
+    end
+  end
+
+  --- This method may be overloaded for confirming the child requests
+  __Arguments__ { BaseObject, String, Variable.Rest() }
+  function OnChildRequest(self, child, msg, ...) end
+
+  --- This method may be overloaded for answering to requests have been confirmed
+  __Arguments__ { String, Variable.Rest() }
+  function OnConfirmedRequest(self, child, msg, ...) end
 end)
 
 
@@ -133,6 +212,114 @@ class "Frame" (function(_ENV)
 
   local function UpdateLayout(self)
     self:Layout()
+  end
+
+
+  local function UpdateIdleModeProps(self, new, old, prop)
+    if prop == "idleModeEnabled" then
+      self:OnIdleModeEnabledChange(new)
+    elseif prop == "idleModeTimer" then
+      self:OnIdleModeTimerChange(new)
+    elseif prop == "idleModeAlpha" then
+      self:OnIdleModeAlphaChange(new)
+    elseif prop == "isInIdleMode" then
+      local ignoreChildren = (self.idleModeType == "basic-type") and true or false
+      if new then
+        self:OnEnterIdleMode(ignoreChildren)
+      else
+        self:OnLeaveIdleMode(ignoreChildren)
+      end
+
+      self:OnIdleModeChange(new)
+    elseif prop == "inactivityTimer" then
+      self:OnInactivityTimerChange(new)
+    elseif prop == "idleModeType" then
+      self:OnIdleModeTypeChange(new)
+    end
+  end
+  ------------------------------------------------------------------------------
+  --                    Comm Methods                                          --
+  ------------------------------------------------------------------------------
+  __Arguments__ { String , Variable.Rest() }
+  function OnConfirmedRequest(self, msg, ...)
+    if msg == "GET_IDLE_MODE_INFO" then
+      self:OnRetrieveIdleModeInfo(...)
+      self:SendMessageToChildren("GET_IDLE_MODE_INFO", ...)
+    end
+  end
+
+  __Arguments__ { String, Variable.Rest() }
+  function OnChildMessage(self, msg, ...)
+    if msg == "WAKE_UP" then
+      if self.idleModeType ~= "basic-type" then
+        local ownerTimer, timer = ...
+        self:AddIdleTimer(ownerTimer, timer)
+        self:OnWakeUp()
+      end
+    end
+  end
+
+  function OnRetrieveIdleModeInfo(self, enabled, timer, alpha, type)
+    if type == "basic-type" then
+      self.idleModeTimer = nil
+    else
+      self.idleModeTimer = timer
+    end
+
+    self.idleModeEnabled = enabled
+    self.idleModeAlpha = alpha
+    self.idleModeType  = type
+  end
+
+  __Arguments__ { String, Variable.Rest() }
+  function OnParentMessage(self, msg, ...)
+    if msg == "GET_IDLE_MODE_INFO" then
+      self:OnRetrieveIdleModeInfo(...)
+    elseif msg == "REFRESH_IDLE_MODE_ALPHA" then
+      if self.isInIdleMode then
+        self:SetEffectiveAlpha(self.idleModeAlpha)
+      end
+    elseif msg == "CHANGE_IDLE_MODE_ALPHA" then
+      local alpha = ...
+      self.idleModeAlpha = alpha
+    elseif msg == "CHANGE_IDLE_MODE_TIMER" then
+      local timer = ...
+      self.idleModeTimer = timer
+    elseif msg == "CHANGE_IDLE_MODE_ENABLED" then
+      local enabled = ...
+      self.idleModeEnabled = enabled
+    elseif msg == "WAKE_UP" then
+      local ownerTimer, timer = ...
+      self:AddIdleTimer(ownerTimer, timer)
+      self:OnWakeUp()
+    elseif msg == "LEAVE_IDLE_MODE_TEMPORARLY" then
+      self:LeaveTemporalyIdleMode()
+    elseif msg == "ENTER_IDLE_MODE_FROM_TEMPORALY" then
+      self:EnterInIdleModeFromTemporarly()
+    elseif msg == "ADD_IDLE_TIMER" then
+      local ownerTimer, timer = ...
+      self:AddIdleTimer(ownerTimer, timer)
+    elseif msg == "REMOVE_IDLE_TIMER" then
+      local ownerTimer = ...
+      self:RemoveIdleTimer(self)
+    elseif msg == "SET_EFFECTIVE_ALPHA" then
+      local alpha = ...
+      self:SetEffectiveAlpha(alpha)
+    end
+  end
+
+  __Arguments__ { BaseObject }
+  function AddChildObject(self, object)
+    super.AddChildObject(self, object)
+
+    self:SendMessageToParents("REGISTER_FRAME", object)
+  end
+
+  __Arguments__ { BaseObject }
+  function RemoveChildObject(self, object)
+    super.RemoveChildObject(self, object)
+
+    self:SendMessageToParents("UNREGISTER_FRAME", object)
   end
   ------------------------------------------------------------------------------
   --                        Size Methods                                      --
@@ -318,6 +505,208 @@ class "Frame" (function(_ENV)
     self:GetFrameContainer():SetAlpha(alpha)
   end
 
+  __Arguments__ { Number }
+  function SetEffectiveAlpha(self, alpha)
+    if not self:GetParentObject() then
+      self:SetAlpha(alpha)
+    else
+      local alphaToUse = alpha / self:GetFrameContainer():GetEffectiveAlpha()
+      if alphaToUse >= 1 then
+        self:SetAlpha(1)
+      else
+        self:SetAlpha(alphaToUse)
+      end
+    end
+  end
+  ------------------------------------------------------------------------------
+  --                    Idle Mode Methods                                     --
+  ------------------------------------------------------------------------------
+
+  __Arguments__ { Variable.Optional(Boolean, false)}
+  function OnEnterIdleMode(self, ignoreChildren)
+    self:RefreshIdleModeAlpha(ignoreChildren)
+  end
+
+  __Arguments__ { Variable.Optional(Boolean, false) }
+  function RefreshIdleModeAlpha(self, ignoreChildren)
+    if not self.idleModeEnabled then
+      return
+    end
+
+    if self.isInIdleMode then
+      self:SetEffectiveAlpha(self.idleModeAlpha)
+    else
+      self:SetAlpha(1.0)
+    end
+
+    self:Skin()
+
+    if not ignoreChildren then
+      local childrens = self:GetChildObjects()
+      if childrens then
+        for child in pairs(childrens) do
+          if child.RefreshIdleModeAlpha then
+            child:RefreshIdleModeAlpha()
+          end
+        end
+      end
+    end
+  end
+
+
+  --[[__Arguments__ { Variable.Optional(Boolean, true) }
+  function OnLeaveIdleMode(self, sendMsg)
+    self:SetAlpha(1)
+    self:Skin()
+
+    if self.idleModeEnabled then
+      if sendMsg then
+        self:SendMessageToChildren("REFRESH_IDLE_MODE_ALPHA")
+      end
+    end
+  end
+  --]]
+
+  __Arguments__ { Variable.Optional(Boolean, false ) }
+  function OnLeaveIdleMode(self, ignoreChildren)
+    self:RefreshIdleModeAlpha(ignoreChildren)
+  end
+
+  function LeaveTemporalyIdleMode(self)
+    self.idleModePaused = true
+    self:SetAlpha(1.0)
+  end
+
+
+
+  function EnterInIdleModeFromTemporarly(self)
+    self.idleModePaused = false
+    if self.isInIdleMode and self.idleModeEnabled then
+      self:SetEffectiveAlpha(self.idleModeAlpha)
+    end
+  end
+
+  function OnIdleModeChange(self, value) end
+
+  __Arguments__ { Boolean }
+  function OnIdleModeEnabledChange(self, enabled)
+    if not enabled then
+      -- Remove the transparency
+      self:SetAlpha(1.0)
+      -- Clear all timers
+      self:ClearIdleTimers()
+      -- Set the idle mode to false without triggered the handler system
+      self.__isInIdleMode = false
+    end
+  end
+
+  __Arguments__ { Number }
+  function OnIdleModeAlphaChange(self, alpha)
+    if self.isInIdleMode then
+      self:SetEffectiveAlpha(alpha)
+    end
+  end
+
+  __Arguments__ { Number }
+  function OnIdleModeTimerChange(self, timer) end
+
+  __Arguments__ { Number }
+  function OnInactivityTimerChange(self, timer) end
+
+  __Arguments__ { String }
+  function OnIdleModeTypeChange(self, type)
+    if type == "basic-type" then
+      self:SetAlpha(1.0)
+    end
+  end
+
+  __Arguments__ { Variable.Optional(Boolean, false), Variable.Optional(Number, 0) }
+  function WakeUp(self, wakeUpChildren, timer)
+    timer = (timer == 0) and self.idleModeTimer or timer
+
+    if self.idleModeType == "full-type" then
+      self:AddIdleTimer(self, timer)
+      self:OnWakeUp()
+    end
+
+    self:SendMessageToParents("WAKE_UP", self, timer)
+
+    if self.idleModeType ~= "basic-type" then
+      if wakeUpChildren then
+        self:SendMessageToChildren("WAKE_UP", self, timer)
+      end
+    end
+  end
+
+  __Arguments__ { Variable.Optional(Boolean, false) }
+  function WakeUpPermanently(self, wakeUpChildren)
+    WakeUp(self, wakeUpChildren, -1)
+  end
+
+  function OnWakeUp(self)
+    self.isInIdleMode     = false
+    self._inactivityTimer = nil
+  end
+
+  function Idle(self)
+    self:SendMessageToParents("REMOVE_IDLE_TIMER", self)
+  end
+
+  function ClearIdleTimers(self)
+    if self.idleTimers then
+      for k,v in self.idleTimers:GetIterator() do
+        self.idleTimers[k] = nil
+      end
+    end
+  end
+
+  function AddIdleTimer(self, owner, timer)
+    if not self.idleTimers then
+      self.idleTimers = Dictionary()
+    end
+
+
+    self.idleTimers[owner] = timer
+  end
+
+  function RemoveIdleTimer(self, owner)
+    if self.idleTimers then
+      self.idleTimers[owner] = nil
+    end
+  end
+
+  function UpdateIdleTimers(self, diff)
+    if self.idleTimers then
+      for k,v in self.idleTimers:GetIterator() do
+        if v ~= -1 then
+          local final = math.max(0, v-diff)
+          if final == 0 then
+            self.idleTimers[k] = nil
+          else
+            self.idleTimers[k] = final
+          end
+        end
+      end
+    end
+  end
+
+  function GetEffectiveIdleTimer(self)
+    local maximum = 0
+    if self.idleTimers then
+      for k,v in self.idleTimers:GetIterator() do
+      	if v == -1 then
+      		maximum = v
+          return -1
+      	else
+      		if v > maximum then
+      			maximum = v
+      		end
+      	end
+      end
+    end
+
+    return maximum
+  end
   ------------------------------------------------------------------------------
   --                    SetParent Methods                                     --
   ------------------------------------------------------------------------------
@@ -495,33 +884,6 @@ class "Frame" (function(_ENV)
   function GetClassPrefix(self)
     return Class.GetObjectClass(self)._prefix
   end
-
-
-
-
-  -- SkinCache
-    -- |- elementID -- Completed -> "text-align" ->
-
-  -- EnableThemeCache()
-
-  -- DisableThemeCache()
-  --SkinAll("quest.name", flags, )
-  --SkinAll(flags, "quest.name") -- ALL
-
-
-  --Theme:MustSkinFrame(idCheck, frame)
-
-  --EQT.Frame:SkinAll
-  --EQT.Frame:ReloadAll()
-  --EQT.Frame:HandleOption()
-
-  --EQT.Block:SkinAll()
-  --EQT.Block:ReloadAll()
-  --EQT.Block:HandleOption()
-
-  --EQT.Frame:ReloadAll(framesList)
-
-
   ------------------------------------------------------------------------------
   --                   Option Methods                                         --
   ------------------------------------------------------------------------------
@@ -639,6 +1001,10 @@ class "Frame" (function(_ENV)
       obj:Reload()
     end
   end
+
+  function NotifyScriptToParents(self, script)
+    self:SendMessageToParents(script)
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -656,6 +1022,17 @@ class "Frame" (function(_ENV)
   property "_needDraw" { TYPE = Boolean, DEFAULT = false }
   property "_needSkin"{ TYPE = Boolean, DEFAULT = false }
   property "_needDoLayout" { TYPE = Boolean, DEFAULT = false }
+  property "isInIdleMode" { TYPE = Boolean, FIELD = "__isInIdleMode", DEFAULT = false, HANDLER = UpdateIdleModeProps }
+  property "idleModeEnabled" { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateIdleModeProps }
+  property "idleModePaused" { TYPE = Boolean, DEFAULT = false}
+  property "idleModeTimer"  { TYPE = Number, DEFAULT = function(self) return self.inactivityTimer end }
+  property "idleModeAlpha"  { TYPE = Number, DEFAULT = 0.35, HANDLER = UpdateIdleModeProps }
+  property "idleModeType"   { TYPE = String, DEFAULT = "basic-type", HANDLER = UpdateIdleModeProps }
+  property "alpha"          { TYPE = Number, DEFAULT = 0.50 }
+  property "inactivityTimer" { TYPE = Number, DEFAULT = 4, HANDLER = UpdateIdleModeProps }
+
+  __Static__() property "idleModeTimerLaunched" { TYPE = Boolean, DEFAULT = false }
+
 
   __Arguments__ {}
   function Frame(self)

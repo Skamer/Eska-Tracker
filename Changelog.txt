@@ -1,5 +1,9 @@
+[1.0.7]
+- Rewritten the idle mode.
+- Remade the options for the idle mode.
+
 [1.0.6]
-- Implemented the idle mode as experimental feature. 
+- Implemented the idle mode as experimental feature.
 
 [1.0.5.1]
 - Fixed the localization files error.

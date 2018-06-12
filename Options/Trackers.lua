@@ -193,29 +193,37 @@ function AddIdleModeRecipes(self)
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Idle Mode"):SetID("idle-mode"):SetBuildingGroup("[tracker&:tracker_selected:]/idle-mode"):SetOrder(50), "tracker/tabs")
 
   --OptionBuilder:AddRecipe(HeadingRecipe():SetText("Idle Mode Activation"):SetOrder(101), "tracker/idle-mode")
-  OptionBuilder:AddRecipe(TextRecipe()
-  :SetWidth(1.0)
-  :SetText("NOTE: Setting '0' value will disable the idle mode."), "tracker/idle-mode")
-
-
-  local enable = RangeRecipe()
-  enable:SetText("Enable after x second(s) inactivity")
-  enable:SetOrder(102)
-  enable:SetWidth(0.75)
-  enable:SetRange(0, 1800)
+  local enable = CheckBoxRecipe()
+  enable:SetText("Enable")
+  enable:SetOrder(101)
   enable:Get(function(recipe)
-    return GetCurrentTracker(recipe).idleModeTimer
+    return GetCurrentTracker(recipe).idleModeEnabled
   end)
   enable:Set(function(recipe, value)
-    GetCurrentTracker(recipe).idleModeTimer = value
+    GetCurrentTracker(recipe).idleModeEnabled = value
   end)
   OptionBuilder:AddRecipe(enable, "tracker/idle-mode")
 
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Idle Mode Behaviors"):SetOrder(201), "tracker/idle-mode")
+
+
+  local inactivityTimer = RangeRecipe()
+  inactivityTimer:SetText("Enter in idle mode after x second(s) inactivity")
+  inactivityTimer:SetOrder(102)
+  inactivityTimer:SetWidth(0.75)
+  inactivityTimer:SetRange(0, 900)
+  inactivityTimer:Get(function(recipe)
+    return GetCurrentTracker(recipe).inactivityTimer
+  end)
+  inactivityTimer:Set(function(recipe, value)
+    GetCurrentTracker(recipe).inactivityTimer = value
+  end)
+  OptionBuilder:AddRecipe(inactivityTimer, "tracker/idle-mode")
+
   local alpha = RangeRecipe()
-  alpha:SetText("Set the tracker alpha")
+  alpha:SetText("Inactivity alpha")
   alpha:SetOrder(202)
   alpha:SetRange(0, 1)
+  alpha:SetStep(0.05)
   alpha:Get(function(recipe)
     return GetCurrentTracker(recipe).idleModeAlpha
   end)
@@ -224,31 +232,28 @@ function AddIdleModeRecipes(self)
   end)
   OptionBuilder:AddRecipe(alpha, "tracker/idle-mode")
 
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Other Options"):SetOrder(301), "tracker/idle-mode")
+  local headingMode = HeadingRecipe()
+  headingMode:SetText("Type")
+  headingMode:SetOrder(301)
+  OptionBuilder:AddRecipe(headingMode, "tracker/idle-mode")
 
-  local preventMouseover = CheckBoxRecipe()
-  preventMouseover:SetText("Prevent the mouseover to leave the idle mode")
-  preventMouseover:SetOrder(302)
-  preventMouseover:SetWidth(1.0)
-  preventMouseover:Get(function(recipe)
-    return GetCurrentTracker(recipe).idleModePreventMouseover
+  local idleModeType = RadioGroupRecipe()
+  idleModeType:SetOrder(302)
+  idleModeType:AddChoice("basic-type", "Basic")
+  idleModeType:AddChoice("full-type", "Full")
+  idleModeType:SetBuildingGroup("tracker/idle-mode/[mode&:tracker_idle_mode_type:]")
+  idleModeType:SetSaveChoiceVariable("tracker_idle_mode_type")
+  idleModeType:Get(function(recipe)
+    return GetCurrentTracker(recipe).idleModeType
   end)
-  preventMouseover:Set(function(recipe, value)
-    GetCurrentTracker(recipe).idleModePreventMouseover = value
+  idleModeType:Set(function(recipe, value)
+    GetCurrentTracker(recipe).idleModeType = value
   end)
-  OptionBuilder:AddRecipe(preventMouseover, "tracker/idle-mode")
 
-  local resumeAfterMouveover = CheckBoxRecipe()
-  resumeAfterMouveover:SetText("Resume the idle mode after mouseover if no activity has occured")
-  resumeAfterMouveover:SetOrder(303)
-  resumeAfterMouveover:SetWidth(1.0)
-  resumeAfterMouveover:Get(function(recipe)
-    return GetCurrentTracker(recipe).idleModeResumeAfterMouseover
-  end)
-  resumeAfterMouveover:Set(function(recipe, value)
-    GetCurrentTracker(recipe).idleModeResumeAfterMouseover = value
-  end)
-  OptionBuilder:AddRecipe(resumeAfterMouveover, "tracker/idle-mode")
+  OptionBuilder:AddRecipe(idleModeType, "tracker/idle-mode")
+
+  OptionBuilder:AddRecipe(TextRecipe():SetText("IDLE_MODE_BASIC_TYPE_DESCRIPTION"):SetWidth(1.0), "tracker/idle-mode/basic-type")
+  OptionBuilder:AddRecipe(TextRecipe():SetText("IDLE_MODE_FULL_TYPE_DESCRIPTION"):SetWidth(1.0), "tracker/idle-mode/full-type")
 
 end
 
