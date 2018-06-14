@@ -219,6 +219,11 @@ function AddIdleModeRecipes(self)
   end)
   OptionBuilder:AddRecipe(inactivityTimer, "tracker/idle-mode")
 
+  local inactivityAlphaText = TextRecipe()
+  inactivityAlphaText:SetText("|cffffd8000: Transparent (invisible)\n1: Fully opaque\n|r")
+  inactivityAlphaText:SetOrder(201)
+  OptionBuilder:AddRecipe(inactivityAlphaText, "tracker/idle-mode")
+
   local alpha = RangeRecipe()
   alpha:SetText("Inactivity alpha")
   alpha:SetOrder(202)

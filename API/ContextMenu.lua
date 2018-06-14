@@ -352,7 +352,7 @@ class "ContextMenu" (function(_ENV)
     super(self)
 
     local arrow = UIParent:CreateTexture()
-    arrow:SetTexture([[Interface\AddOns\EskaQuestTracker\Media\Textures\MenuContext-Arrow]])
+    arrow:SetTexture([[Interface\AddOns\EskaTracker\Media\Textures\MenuContext-Arrow]])
     arrow:SetPoint("CENTER", UIParent, "CENTER", 350, 350)
     arrow:SetSize(24, 24)
     arrow:SetVertexColor(0, 0, 0, 0.6)

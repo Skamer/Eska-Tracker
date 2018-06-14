@@ -319,9 +319,7 @@ class "Block" (function(_ENV)
   __Static__() property "_prefix" { DEFAULT = "block"}
 
   function Block(self)
-    super(self)
-
-    self.frame = CreateFrame("Frame")
+    super(self, CreateFrame("Frame"))
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropBorderColor(0, 0, 0, 0)
 
@@ -342,11 +340,13 @@ class "Block" (function(_ENV)
           end
         end
     end)
+    headerFrame:SetScript("OnEnter", function() self:OnEnter() end)
+    headerFrame:SetScript("OnLeave", function() self:OnLeave() end)
     self.frame.header = headerFrame
 
     local stripe = headerFrame:CreateTexture()
     stripe:SetAllPoints()
-    stripe:SetTexture([[Interface\AddOns\EskaQuestTracker\Media\Textures\Stripe]])
+    stripe:SetTexture([[Interface\AddOns\EskaTracker\Media\Textures\Stripe]])
     stripe:SetDrawLayer("ARTWORK", 2)
     stripe:SetBlendMode("ALPHAKEY")
     stripe:SetVertexColor(0, 0, 0, 0.5)

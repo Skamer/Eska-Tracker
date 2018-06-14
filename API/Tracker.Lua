@@ -314,18 +314,27 @@ Class "Tracker" (function(_ENV)
       local ownerTimer = ...
       self:RemoveIdleTimer(self)
     elseif msg == "OnEnter" then
-      self:LeaveTemporalyIdleMode()
-      self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
+      self.hover = self:GetFrameContainer():IsMouseOver()
+      --self:LeaveTemporalyIdleMode()
+      --self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
+      --print("OnEnter", self:GetFrameContainer():IsMouseOver())
     elseif msg == "OnLeave" then
-      self:EnterInIdleModeFromTemporarly()
-      self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
+      self.hover = self:GetFrameContainer():IsMouseOver()
+      --self:EnterInIdleModeFromTemporarly()
+      --self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
+      --print("OnEnter", self:GetFrameContainer():IsMouseOver())
     elseif msg == "WAKE_UP" then
+      local ownerTimer, timer = ...
       if self.idleModeType == "basic-type" then
-        self:AddIdleTimer(self, self.idleModeTimer)
-        self:SendMessageToChildren("WAKE_UP", self, self.idleModeTimer)
+        if timer == -1 then
+          self:SendMessageToChildren("WAKE_UP", self, -1)
+          self:AddIdleTimer(self, -1)
+        else
+          self:SendMessageToChildren("WAKE_UP", self, self.idleModeTimer)
+          self:AddIdleTimer(self, self.idleModeTimer)
+        end
         self:OnWakeUp()
       else
-        local ownerTimer, timer = ...
         self:AddIdleTimer(ownerTimer, timer)
         self:OnWakeUp()
       end
@@ -387,22 +396,24 @@ Class "Tracker" (function(_ENV)
     while self.idleModeEnabled do
       Delay(updateRate)
 
-      if not self.isInIdleMode then
+      if not self.isInIdleMode and not self.idleModePaused then
         local timerToUse = self:GetEffectiveIdleTimer()
-        if timerToUse <= 0 then
+        if timerToUse == -1 then
+          self.isInIdleMode = false
+        elseif timerToUse <= 0 then
           self.isInIdleMode = true
-        else
-          --print(timerToUse)
         end
 
         self:UpdateIdleTimers(updateRate)
 
         if self._frameContained then
           for obj in pairs(self._frameContained) do
-            if not obj.isInIdleMode then
+            if not obj.isInIdleMode and not self.idleModePaused  then
               local timerToUse = obj:GetEffectiveIdleTimer()
 
-              if timerToUse <= 0 then
+              if timerToUse == -1 then
+                obj.isInIdleMode = false
+              elseif timerToUse <= 0 then
                 obj.isInIdleMode = true
               end
 
@@ -676,6 +687,19 @@ Class "Tracker" (function(_ENV)
   __Static__() function GetIDFromName(self, name)
     return name:lower()
   end
+
+  __Arguments__ { Boolean }
+  function OnHover(self, hover)
+    super.OnHover(self, hover)
+
+    if hover then
+      self:LeaveTemporalyIdleMode()
+      self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
+    else
+      self:EnterInIdleModeFromTemporarly()
+      self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
+    end
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -789,6 +813,8 @@ Class "Tracker" (function(_ENV)
     content:SetHeight(self.contentHeight)
     content:SetBackdrop(_Backdrops.Common)
     content:SetBackdropColor(0, 1, 0, 0)
+    content:SetScript("OnEnter", function() self:OnEnter() end)
+    content:SetScript("OnLeave", function() self:OnLeave() end)
 
     self.content = content
     self.scrollFrame = scrollFrame
@@ -808,15 +834,17 @@ Class "Tracker" (function(_ENV)
       Scorpio.FireSystemEvent("EKT_TRACKER_CONTENT_SIZE_CHANGED", self.id, new)
     end
 
-    self.OnEnter = function()
+    --[[self.OnEnter = function()
+      self.hover = self:GetFrameContainer():IsMouseOver()
       self:LeaveTemporalyIdleMode()
       self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
     end
 
     self.OnLeave = function()
+      self.hover = self:GetFrameContainer():IsMouseOver()
       self:EnterInIdleModeFromTemporarly()
       self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
-    end
+    end--]]
 
     --[[
     self.OnEnter = function()

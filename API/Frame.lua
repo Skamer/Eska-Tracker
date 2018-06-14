@@ -256,6 +256,10 @@ class "Frame" (function(_ENV)
         self:AddIdleTimer(ownerTimer, timer)
         self:OnWakeUp()
       end
+    elseif msg == "OnEnter" then
+      self.hover = self:GetFrameContainer():IsMouseOver()
+    elseif msg == "OnLeave" then
+      self.hover = self:GetFrameContainer():IsMouseOver()
     end
   end
 
@@ -510,7 +514,13 @@ class "Frame" (function(_ENV)
     if not self:GetParentObject() then
       self:SetAlpha(alpha)
     else
-      local alphaToUse = alpha / self:GetFrameContainer():GetEffectiveAlpha()
+      local effectiveAlpha = self:GetFrameContainer():GetEffectiveAlpha()
+      local alphaToUse
+      if effectiveAlpha == 0 then
+        alphaToUse = 1
+      else
+        alphaToUse = alpha / self:GetFrameContainer():GetEffectiveAlpha()
+      end
       if alphaToUse >= 1 then
         self:SetAlpha(1)
       else
@@ -649,7 +659,9 @@ class "Frame" (function(_ENV)
   end
 
   function Idle(self)
+    self:RemoveIdleTimer(self)
     self:SendMessageToParents("REMOVE_IDLE_TIMER", self)
+    self:SendMessageToChildren("REMOVE_IDLE_TIMER", self)
   end
 
   function ClearIdleTimers(self)
@@ -1005,6 +1017,24 @@ class "Frame" (function(_ENV)
   function NotifyScriptToParents(self, script)
     self:SendMessageToParents(script)
   end
+
+
+  __Async__()
+  __Static__() function StartUpdateLoop(self)
+    while true do
+      for obj in pairs(_FrameCache) do
+        local frame = obj:GetFrameContainer()
+        obj.hover = frame and frame:IsMouseOver() or false
+      end
+
+      Delay(0.1)
+    end
+  end
+
+  __Arguments__ { Boolean }
+  function OnHover(self, hover)
+    self.idleModePaused = hover
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -1030,6 +1060,7 @@ class "Frame" (function(_ENV)
   property "idleModeType"   { TYPE = String, DEFAULT = "basic-type", HANDLER = UpdateIdleModeProps }
   property "alpha"          { TYPE = Number, DEFAULT = 0.50 }
   property "inactivityTimer" { TYPE = Number, DEFAULT = 4, HANDLER = UpdateIdleModeProps }
+  property "hover"           { TYPE = Boolean, DEFAULT = false, HANDLER = function(self, new) self:OnHover(new) end}
 
   __Static__() property "idleModeTimerLaunched" { TYPE = Boolean, DEFAULT = false }
 
@@ -1294,3 +1325,7 @@ class "FrameRow" (function(_ENV)
     self.baseHeight =  self.height
   end
 end)
+
+function OnLoad(self)
+  Frame.StartUpdateLoop()
+end
