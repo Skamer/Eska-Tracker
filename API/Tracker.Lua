@@ -341,7 +341,7 @@ Class "Tracker" (function(_ENV)
 
     -- 3. Start the timers if enabled/ Remove the timer and transparency if disabled
     if enabled then
-      self:AddIdleTimer(self, self.idleModeTimer)
+      self:AddIdleCountdown(self, IdleCountdownInfo(self.idleModeTimer, self.idleModeTimer))
       self:SendMessageToChildren("WAKE_UP", self, self.idleModeTimer)
 
       self.__isInIdleMode = false
