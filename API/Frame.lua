@@ -166,6 +166,12 @@ class "BaseObject" (function(_ENV)
 end)
 
 
+struct "IdleCountdownInfo" (function(_ENV)
+  member "countdown" { TYPE = Number, REQUIRE = true }
+  member "duration"  { TYPE = Number, REQUIRE = true }
+  member "applyToChildren" { TYPE = Boolean, DEFAULT = false }
+end)
+
 
 class "Frame" (function(_ENV)
   inherit "BaseObject"
@@ -188,8 +194,9 @@ class "Frame" (function(_ENV)
   local function UpdateHeight(self, new, old)
     local frame = self:GetFrameContainer()
     -- Ceil the values
-    new = Ceil(new)
-    old = Ceil(old)
+    new = math.floor(new+0.5)
+    old = math.floor(old+0.5)
+
 
     if frame then
       frame:SetHeight(new)
@@ -200,8 +207,8 @@ class "Frame" (function(_ENV)
   local function UpdateWidth(self, new, old)
     local frame = self:GetFrameContainer()
     -- Ceil the values
-    new = Ceil(new)
-    old = Ceil(old)
+    new = math.floor(new+0.5)
+    old = math.floor(old+0.5)
 
     if frame then
       frame:SetWidth(new)
@@ -223,14 +230,13 @@ class "Frame" (function(_ENV)
     elseif prop == "idleModeAlpha" then
       self:OnIdleModeAlphaChange(new)
     elseif prop == "isInIdleMode" then
+      self:OnIdleModeChange(new)
       local ignoreChildren = (self.idleModeType == "basic-type") and true or false
       if new then
         self:OnEnterIdleMode(ignoreChildren)
       else
         self:OnLeaveIdleMode(ignoreChildren)
       end
-
-      self:OnIdleModeChange(new)
     elseif prop == "inactivityTimer" then
       self:OnInactivityTimerChange(new)
     elseif prop == "idleModeType" then
@@ -251,15 +257,12 @@ class "Frame" (function(_ENV)
   __Arguments__ { String, Variable.Rest() }
   function OnChildMessage(self, msg, ...)
     if msg == "WAKE_UP" then
-      if self.idleModeType ~= "basic-type" then
-        local ownerTimer, timer = ...
-        self:AddIdleTimer(ownerTimer, timer)
-        self:OnWakeUp()
-      end
-    elseif msg == "OnEnter" then
-      self.hover = self:GetFrameContainer():IsMouseOver()
-    elseif msg == "OnLeave" then
-      self.hover = self:GetFrameContainer():IsMouseOver()
+      local ownerTimer, timer = ...
+      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
+      self:OnWakeUp()
+    elseif msg == "REMOVE_IDLE_COUNTDOWN" then
+      local ownerTimer = ...
+      self:RemoveIdleCountdown(ownerTimer)
     end
   end
 
@@ -294,18 +297,19 @@ class "Frame" (function(_ENV)
       self.idleModeEnabled = enabled
     elseif msg == "WAKE_UP" then
       local ownerTimer, timer = ...
-      self:AddIdleTimer(ownerTimer, timer)
+      --self:AddIdleTimer(ownerTimer, timer)
+      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
       self:OnWakeUp()
     elseif msg == "LEAVE_IDLE_MODE_TEMPORARLY" then
       self:LeaveTemporalyIdleMode()
     elseif msg == "ENTER_IDLE_MODE_FROM_TEMPORALY" then
       self:EnterInIdleModeFromTemporarly()
-    elseif msg == "ADD_IDLE_TIMER" then
-      local ownerTimer, timer = ...
-      self:AddIdleTimer(ownerTimer, timer)
-    elseif msg == "REMOVE_IDLE_TIMER" then
-      local ownerTimer = ...
-      self:RemoveIdleTimer(self)
+    elseif msg == "ADD_IDLE_COUNTDOWN" then
+      local ownerTimer, timer, applyToChildren = ...
+      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer), applyToChildren)
+    elseif msg == "REMOVE_IDLE_COUNTDOWN" then
+      local ownerTimer, applyToChildren = ...
+      self:RemoveIdleCountdown(ownerTimer, applyToChildren)
     elseif msg == "SET_EFFECTIVE_ALPHA" then
       local alpha = ...
       self:SetEffectiveAlpha(alpha)
@@ -313,17 +317,25 @@ class "Frame" (function(_ENV)
   end
 
   __Arguments__ { BaseObject }
-  function AddChildObject(self, object)
-    super.AddChildObject(self, object)
-
-    self:SendMessageToParents("REGISTER_FRAME", object)
-  end
-
-  __Arguments__ { BaseObject }
   function RemoveChildObject(self, object)
     super.RemoveChildObject(self, object)
 
     self:SendMessageToParents("UNREGISTER_FRAME", object)
+  end
+
+  __Arguments__ { BaseObject }
+  function AddChildObject(self, object)
+    super.AddChildObject(self, object)
+
+    if self.idleCountdowns then
+      for owner, info in pairs(self.idleCountdowns) do
+        if owner == self and info.applyToChildren then
+          object:AddIdleTimer(owner, IdleCountdownInfo(info.countdown, info.duration), true)
+        end
+      end
+    end
+
+    self:SendMessageToParents("REGISTER_FRAME", object)
   end
   ------------------------------------------------------------------------------
   --                        Size Methods                                      --
@@ -405,8 +417,6 @@ class "Frame" (function(_ENV)
       self:GetFrameContainer():ClearAllPoints()
     end
   end
-
-
   ------------------------------------------------------------------------------
   --                 Visibility Methods                                       --
   ------------------------------------------------------------------------------
@@ -514,13 +524,15 @@ class "Frame" (function(_ENV)
     if not self:GetParentObject() then
       self:SetAlpha(alpha)
     else
-      local effectiveAlpha = self:GetFrameContainer():GetEffectiveAlpha()
+      local parentAlpha = self:GetFrameContainer():GetEffectiveAlpha()
       local alphaToUse
-      if effectiveAlpha == 0 then
+
+      if parentAlpha == 0 then
         alphaToUse = 1
       else
-        alphaToUse = alpha / self:GetFrameContainer():GetEffectiveAlpha()
+        alphaToUse = alpha / parentAlpha
       end
+
       if alphaToUse >= 1 then
         self:SetAlpha(1)
       else
@@ -549,8 +561,6 @@ class "Frame" (function(_ENV)
       self:SetAlpha(1.0)
     end
 
-    self:Skin()
-
     if not ignoreChildren then
       local childrens = self:GetChildObjects()
       if childrens then
@@ -563,20 +573,6 @@ class "Frame" (function(_ENV)
     end
   end
 
-
-  --[[__Arguments__ { Variable.Optional(Boolean, true) }
-  function OnLeaveIdleMode(self, sendMsg)
-    self:SetAlpha(1)
-    self:Skin()
-
-    if self.idleModeEnabled then
-      if sendMsg then
-        self:SendMessageToChildren("REFRESH_IDLE_MODE_ALPHA")
-      end
-    end
-  end
-  --]]
-
   __Arguments__ { Variable.Optional(Boolean, false ) }
   function OnLeaveIdleMode(self, ignoreChildren)
     self:RefreshIdleModeAlpha(ignoreChildren)
@@ -587,8 +583,6 @@ class "Frame" (function(_ENV)
     self:SetAlpha(1.0)
   end
 
-
-
   function EnterInIdleModeFromTemporarly(self)
     self.idleModePaused = false
     if self.isInIdleMode and self.idleModeEnabled then
@@ -596,7 +590,11 @@ class "Frame" (function(_ENV)
     end
   end
 
-  function OnIdleModeChange(self, value) end
+  function OnIdleModeChange(self, value)
+    if not self.hover then
+      self:Skin()
+    end
+  end
 
   __Arguments__ { Boolean }
   function OnIdleModeEnabledChange(self, enabled)
@@ -613,7 +611,7 @@ class "Frame" (function(_ENV)
   __Arguments__ { Number }
   function OnIdleModeAlphaChange(self, alpha)
     if self.isInIdleMode then
-      self:SetEffectiveAlpha(alpha)
+      self:SetEffectiveAlpha(alpha, true)
     end
   end
 
@@ -634,23 +632,19 @@ class "Frame" (function(_ENV)
   function WakeUp(self, wakeUpChildren, timer)
     timer = (timer == 0) and self.idleModeTimer or timer
 
-    if self.idleModeType == "full-type" then
-      self:AddIdleTimer(self, timer)
-      self:OnWakeUp()
+    self:AddIdleCountdown(self, IdleCountdownInfo(timer, timer, wakeUpChildren))
+    self:OnWakeUp()
+
+    if wakeUpChildren then
+      self:SendMessageToChildren("WAKE_UP", self, timer)
     end
 
     self:SendMessageToParents("WAKE_UP", self, timer)
-
-    if self.idleModeType ~= "basic-type" then
-      if wakeUpChildren then
-        self:SendMessageToChildren("WAKE_UP", self, timer)
-      end
-    end
   end
 
   __Arguments__ { Variable.Optional(Boolean, false) }
   function WakeUpPermanently(self, wakeUpChildren)
-    WakeUp(self, wakeUpChildren, -1)
+    self:WakeUp(wakeUpChildren, -1)
   end
 
   function OnWakeUp(self)
@@ -658,66 +652,100 @@ class "Frame" (function(_ENV)
     self._inactivityTimer = nil
   end
 
-  function Idle(self)
-    self:RemoveIdleTimer(self)
-    self:SendMessageToParents("REMOVE_IDLE_TIMER", self)
-    self:SendMessageToChildren("REMOVE_IDLE_TIMER", self)
+  __Arguments__ { Variable.Optional(Boolean, false) }
+  function Idle(self, applyToChildren)
+    self:RemoveIdleCountdown(self, applyToChildren)
+    self:SendMessageToParents("REMOVE_IDLE_COUNTDOWN", self)
   end
 
-  function ClearIdleTimers(self)
-    if self.idleTimers then
-      for k,v in self.idleTimers:GetIterator() do
-        self.idleTimers[k] = nil
+  __Arguments__ { BaseObject, IdleCountdownInfo, Variable.Optional(Boolean, false) }
+  function AddIdleCountdown(self, owner, countdownInfo, applyToChildren)
+    if not self.idleCountdowns then
+      self.idleCountdowns = Dictionary()
+    end
+
+    self.idleCountdowns[owner] = countdownInfo
+
+    if applyToChildren and self._childrenObject then
+      for child in pairs(self._childrenObject) do
+        child:AddIdleCountdown(owner, IdleCountdownInfo(countdownInfo.countdown, countdownInfo.duration), applyToChildren)
       end
     end
   end
 
-  function AddIdleTimer(self, owner, timer)
-    if not self.idleTimers then
-      self.idleTimers = Dictionary()
+  __Arguments__  { BaseObject, Variable.Optional(Boolean, false) }
+  function RemoveIdleCountdown(self, owner, applyToChildren)
+    if self.idleCountdowns then
+      self.idleCountdowns[owner] = nil
     end
 
-
-    self.idleTimers[owner] = timer
-  end
-
-  function RemoveIdleTimer(self, owner)
-    if self.idleTimers then
-      self.idleTimers[owner] = nil
+    if applyToChildren and self._childrenObject then
+      for child in pairs(self._childrenObject) do
+        child:RemoveIdleCountdown(owner, applyToChildren)
+      end
     end
   end
 
-  function UpdateIdleTimers(self, diff)
-    if self.idleTimers then
-      for k,v in self.idleTimers:GetIterator() do
-        if v ~= -1 then
-          local final = math.max(0, v-diff)
+  __Arguments__ { Variable.Optional(Boolean, false) }
+  function ClearIdleCountdowns(self, applyToChildren)
+    if self.idleCountdowns then
+      for k in pairs(self.idleCountdowns) do
+        self.idleCountdowns[k] = nil
+      end
+    end
+
+    if applyToChildren and self._childrenObject then
+      for child in pairs(self._childrenObject) do
+        child:ClearIdleCountdowns(applyToChildren)
+      end
+    end
+  end
+
+
+  __Arguments__ { Number }
+  function UpdateIdleCountdowns(self, diff)
+    if self.idleCountdowns then
+      for owner, info in self.idleCountdowns:GetIterator() do
+        if info.duration ~= -1 then
+          local final = math.max(0, info.countdown-diff)
           if final == 0 then
-            self.idleTimers[k] = nil
+            self.idleCountdowns[owner] = nil
           else
-            self.idleTimers[k] = final
+            info.countdown = final
           end
         end
       end
     end
   end
 
-  function GetEffectiveIdleTimer(self)
+  function GetEffectiveIdleCountdown(self)
     local maximum = 0
-    if self.idleTimers then
-      for k,v in self.idleTimers:GetIterator() do
-      	if v == -1 then
-      		maximum = v
-          return -1
-      	else
-      		if v > maximum then
-      			maximum = v
-      		end
-      	end
+    if self.idleCountdowns then
+      for owner, info in self.idleCountdowns:GetIterator() do
+        if info.duration == -1 then
+          maximum = info.countdown
+          return info.countdown
+        else
+          if info.countdown > maximum then
+            maximum = info.countdown
+          end
+        end
       end
     end
-
     return maximum
+  end
+
+  function PrintIdleCountdowns(self)
+    print("-----------------------")
+    print("--", class.GetObjectClass(self), "--")
+    local index = 1
+    if self.idleCountdowns then
+      for owner, info in self.idleCountdowns:GetIterator() do
+        print(index, class.GetObjectClass(owner), info.countdown, info.duration)
+        index = index + 1
+      end
+    end
+    print("----------------------")
   end
   ------------------------------------------------------------------------------
   --                    SetParent Methods                                     --
@@ -837,8 +865,6 @@ class "Frame" (function(_ENV)
   function CompactModeEnabled(self)
     return Options:Get("compact-mode-enabled")
   end
-
-
   ------------------------------------------------------------------------------
   --                   Skin Methods                                           --
   ------------------------------------------------------------------------------
@@ -944,7 +970,6 @@ class "Frame" (function(_ENV)
 
     self._pendingOptionList = nil
   end
-
   ------------------------------------------------------------------------------
   --                   Other Methods                                          --
   ------------------------------------------------------------------------------
@@ -958,6 +983,20 @@ class "Frame" (function(_ENV)
   -- This method may be overrided if the frame uses states.
   function GetCurrentState(self)
     return nil
+  end
+
+  -- Build and return the current in function if it's hover or not.
+  __Arguments__ { String, Variable.Optional(Boolean)}
+  function BuildState(self, state, hover)
+    if hover == nil then
+      hover = self.hover
+    end
+
+    if hover then
+      return string.format("hover,%s", state)
+    else
+      return state
+    end
   end
 
 
@@ -976,6 +1015,36 @@ class "Frame" (function(_ENV)
 
   --- This function is called when the context menu must be parepared (add action, link to frame)
   function PrepareContextMenu(self) end
+
+  -- This function is called when the hover state has changed
+  __Arguments__ { Boolean }
+  function OnHover(self, hover)
+    self.idleModePaused = hover
+    self:ForceSkin()
+  end
+
+  function Reset(self)
+    -- Make some stuff
+    self:Hide()
+    self:ClearAllPoints()
+    self:SetParent()
+    self:SetParentObject()
+    self:ClearIdleCountdowns()
+    self:SetAlpha(1)
+
+    -- Remove event handlers
+    self.OnHeightChanged = nil
+    self.OnWidthChanged  = nil
+
+    -- Reset properties
+    self.isInIdleMode     = nil
+    self.idleModeType     = nil
+    self.idleModeTimer    = nil
+    self.idleModeAlpha    = nil
+    self.idleModeType     = nil
+    self.alpha            = nil
+    self.hover            = nil
+  end
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
   ------------------------------------------------------------------------------
@@ -1029,11 +1098,6 @@ class "Frame" (function(_ENV)
 
       Delay(0.1)
     end
-  end
-
-  __Arguments__ { Boolean }
-  function OnHover(self, hover)
-    self.idleModePaused = hover
   end
   ------------------------------------------------------------------------------
   --                         Properties                                       --

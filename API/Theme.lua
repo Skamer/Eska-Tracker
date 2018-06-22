@@ -580,35 +580,8 @@ __Serializable__() class "Theme" (function(_ENV)
     if not frame.GetScript or not frame.SetScript then
       return
     end
-
-    local theme = Themes:GetSelected()
-    if not theme or not theme:ElementHasState(frame.elementID, "hover", frame.inheritElementID) then return end
-
-    local function FrameOnHover(f)
-        Theme:SkinFrame(frame, nil, "hover")
-    end
-
-    if not frame:GetScript("OnEnter") then
-      frame:SetScript("OnEnter", function()
-        frame:SetScript("OnUpdate", FrameOnHover)
-      end)
-    end
-
-    if not frame:GetScript("OnLeave") then
-      frame:SetScript("OnLeave", function()
-        frame:SetScript("OnUpdate", nil)
-        Theme:SkinFrame(frame)
-      end)
-    end
-
-
-    if not frame:GetScript("OnMouseDown") and not frame:GetScript("OnMouseUp") then
-      frame:SetScript("OnMouseDown", _EKTAddon.ObjectiveTrackerMouseDown)
-      frame:SetScript("OnMouseUp", _EKTAddon.ObjectiveTrackerMouseUp)
-    end
   end
 
-  -- ElementFlags (9)  = INCLUDE_PARENT (1) + INCLUDE_STATE (8)
   __Arguments__ { ClassType, String, Variable.Optional(String), Variable.Optional(ElementFlags, 9) }
   __Static__() function GetReadingIDList(self, elementID, inheritElementID, flags)
     local rawElementID, states = self:RemoveStates(elementID)
@@ -704,84 +677,82 @@ __Serializable__() class "Theme" (function(_ENV)
     return str, states
   end
 
+  ------------------------------------------------------------------------------
+  --         EXPERIMETAL
+  ------------------------------------------------------------------------------
+  __Arguments__ { ClassType, String }
+  __Static__() function GetValidID(self, id)
+    -- Trim the string
+    id = API:Trim(id)
+
+    -- Get the states
+    local states = id:match("%[([,%w]*)%]")
+    -- Remove the states
+    local idWithoutStates = id:gsub("(%[[,|%w]*%])", "")
+    --
+    local statesString = ""
+
+    -- Order the states in the right order (hover is always first, then is ordered by alphabetically)
+    if states then
+      local stateList = List(strsplit(",", states))
+      local function SortStates(a,b)
+        if a == "hover" then
+          return true
+        elseif b == "hover" then
+          return false
+        else
+          return a < b
+        end
+      end
+      for index, state in stateList:Sort(SortStates):GetIterator() do
+        if index == 1 then
+          statesString = state
+        else
+          statesString = statesString .. "," .. state
+        end
+      end
+    end
+
+    -- Build the complete valid id
+    if states and states ~= "" then
+      id = string.format("%s[%s]", idWithoutStates, statesString)
+    else
+      id = idWithoutStates
+    end
+
+    return id, idWithoutStates, statesString
+  end
+
   __Arguments__ { ClassType, String }
   __Static__() function GetPossibleElementIDs(self, str)
-    local elementID, states = self:RemoveStates(str)
-    if states then
-      local possibleStates =  { self:GetPossibleStates(states) }
-      local list = {}
-      for _, s in ipairs(possibleStates) do
-        tinsert(list, string.format("%s[%s]", elementID, s))
-      end
-      return unpack(list)
-    else
-      return elementID
-    end
+    local elementID = self:GetValidID(str)
+    return elementID
   end
-
 
   __Arguments__ { ClassType, String }
-  __Static__() function GetPossibleStates(self, str)
-    -- Build the list
-    local andList = {}
-    local andSplit = { strsplit(",", str) }
-    for _, orList in ipairs(andSplit) do
-      local list = {}
-      local orSplit = { strsplit("|", orList) }
-      for _, state in ipairs(orSplit) do
-        state = state:gsub("([%c%p%s]*)", "") -- clear space and @ character
-        tinsert(list, state)
-      end
-      tinsert(andList, list)
-    end
-
-    -- helper function (recurcive)
-    local function GetList(i)
-      local l = {}
-      if andList[i+1] then
-        local childStates = { GetList(i+1) }
-        for _, state in ipairs(andList[i]) do
-          for _, childState in ipairs(childStates) do
-            tinsert(l, state..","..childState)
-          end
-        end
-        return unpack(l)
+  __Static__() function GetReadingStateList(self, states)
+    local hasHover = false
+    local otherState = ""
+    local index = 0
+    for i, state in List(strsplit(",", states)):GetIterator() do
+      if state == "hover" then
+        hasHover = true
       else
-        return unpack(andList[i])
+        otherState = state
       end
+      index = i
     end
 
-    return GetList(1)
+    if hasHover then
+      if index > 1 then
+        return List("["..otherState.."]", "[hover]", string.format("[hover,%s]",otherState))
+      else
+        return List("[hover]")
+      end
+    else
+      return List("["..otherState.."]")
+    end
   end
-
-  --[[
-  function ExportToText(self, includeDatabase)
-    local theme = self
-    if includeDatabase or self.lua == false then
-      theme = System.Reflector.Clone(self, true)
-      Database:SelectRoot()
-      if Database:SelectTable(false, "themes", self.name, "properties") then
-        for elementID, properties in Database:IterateTable() do
-          for property, value in pairs(properties) do
-            if type(value) == "table" then
-              local t = {}
-              for k,v in pairs(value) do
-                t[k] = v
-              end
-              theme:SetElementProperty(elementID, property, t)
-            else
-              theme:SetElementProperty(elementID, property, value)
-            end
-          end
-        end
-      end
-    end
-
-    local data = Serialization.Serialize( StringFormatProvider(), theme)
-    local compressedData = API:Compress(data)
-    local encode = API:EncodeToBase64(compressedData)
-    return encode
-  end --]]
 
   __Arguments__ { Variable.Optional(Boolean, true) }
   function ExportToText(self, includeDB)

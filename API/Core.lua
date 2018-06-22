@@ -244,6 +244,10 @@ end
     return str:gsub("(%a)([%w_']*)", tchelper)
   end
 
+  function Round(self, number)
+    return math.floor(number+0.5)
+  end
+
 end)
 
 --------------------------------------------------------------------------------

@@ -1,3 +1,11 @@
+[1.0.8]
+- Fixed a critical issue where the tracker content didn't have a correct height, preventing some contents to be displayed.
+- Fixed a major issue where the mouseover isn't triggered for the parent frame.
+- The mouseover will now pause all timers for idle mode.
+- Fixed an issue where the content width isn't correctly resized when the scrollbar is hidden.
+- Added a special state 'hover' for all frames, this state can be combined with an another one.
+- Options: Added a description for describing the alpha behavior for idle mode.
+
 [1.0.7]
 - Rewritten the idle mode.
 - Remade the options for the idle mode.

@@ -274,10 +274,6 @@ class "Block" (function(_ENV)
     Theme:SkinText(self.frame.header.text)
     Theme:SkinTexture(self.frame.header.stripe)
   end
-
-  function WakeUpTracker(self)
-    self:BroadcastObjectMessage("WakeUpTrackerRequest")
-  end
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
   ------------------------------------------------------------------------------
@@ -340,8 +336,6 @@ class "Block" (function(_ENV)
           end
         end
     end)
-    headerFrame:SetScript("OnEnter", function() self:OnEnter() end)
-    headerFrame:SetScript("OnLeave", function() self:OnLeave() end)
     self.frame.header = headerFrame
 
     local stripe = headerFrame:CreateTexture()

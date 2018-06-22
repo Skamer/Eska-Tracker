@@ -270,9 +270,6 @@ Class "Tracker" (function(_ENV)
 
     frame:OnRetrieveIdleModeInfo(self.idleModeEnabled, self.idleModeTimer, self.idleModeAlpha, self.idleModeType)
 
-    frame:AddIdleTimer(self, self.idleModeTimer)
-    frame:OnWakeUp()
-
     local subChildren = frame:GetChildObjects()
     if subChildren then
       for subChild in pairs(subChildren) do
@@ -297,9 +294,8 @@ Class "Tracker" (function(_ENV)
     frame.idleModeEnabled = nil
     frame.idleModeAlpha   = nil
   end
-  ------------------------------------------------------------------------------
-  --                        Idle. Methods                                     --
-  ------------------------------------------------------------------------------
+
+  __Arguments__ { String, Variable.Rest() }
   function OnChildMessage(self, msg, ...)
     if msg == "REGISTER_FRAME" then
       local obj = ...
@@ -312,35 +308,25 @@ Class "Tracker" (function(_ENV)
       self:AddIdleTimer(ownerTimer, timer)
     elseif msg == "REMOVE_IDLE_TIMER" then
       local ownerTimer = ...
-      self:RemoveIdleTimer(self)
-    elseif msg == "OnEnter" then
-      self.hover = self:GetFrameContainer():IsMouseOver()
-      --self:LeaveTemporalyIdleMode()
-      --self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
-      --print("OnEnter", self:GetFrameContainer():IsMouseOver())
-    elseif msg == "OnLeave" then
-      self.hover = self:GetFrameContainer():IsMouseOver()
-      --self:EnterInIdleModeFromTemporarly()
-      --self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
-      --print("OnEnter", self:GetFrameContainer():IsMouseOver())
+      self:RemoveIdleTimer(ownerTimer)
+      if self.idleModeType == "basic-type" then
+        self:SendMessageToChildren("REMOVE_IDLE_TIMER", ownerTimer)
+      end
+    elseif msg == "ADD_IDLE_COUNTDOWN" then
+      local ownerTimer, timer, applyToChildren = ...
+      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
+    elseif msg == "REMOVE_IDLE_COUNTDOWN" then
+      local ownerTimer, applyToChildren = ...
+      self:RemoveIdleCountdown(ownerTimer, applyToChildren)
     elseif msg == "WAKE_UP" then
       local ownerTimer, timer = ...
-      if self.idleModeType == "basic-type" then
-        if timer == -1 then
-          self:SendMessageToChildren("WAKE_UP", self, -1)
-          self:AddIdleTimer(self, -1)
-        else
-          self:SendMessageToChildren("WAKE_UP", self, self.idleModeTimer)
-          self:AddIdleTimer(self, self.idleModeTimer)
-        end
-        self:OnWakeUp()
-      else
-        self:AddIdleTimer(ownerTimer, timer)
-        self:OnWakeUp()
-      end
+      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
+      self:OnWakeUp()
     end
   end
-
+  ------------------------------------------------------------------------------
+  --                        Idle. Methods                                     --
+  ------------------------------------------------------------------------------
   __Arguments__ { Boolean }
   function OnIdleModeEnabledChange(self, enabled)
     -- 1. Save the change in the database
@@ -373,7 +359,6 @@ Class "Tracker" (function(_ENV)
   function LeaveTemporalyIdleMode(self)
     self.idleModePaused = true
     self:SetAlpha(1.0)
-    self:Skin()
   end
 
   function EnterInIdleModeFromTemporarly(self)
@@ -381,7 +366,6 @@ Class "Tracker" (function(_ENV)
     if self.isInIdleMode and self.idleModeEnabled then
       self:SetAlpha(self.idleModeAlpha)
     end
-    self:Skin()
   end
 
   __Async__()
@@ -397,27 +381,26 @@ Class "Tracker" (function(_ENV)
       Delay(updateRate)
 
       if not self.isInIdleMode and not self.idleModePaused then
-        local timerToUse = self:GetEffectiveIdleTimer()
-        if timerToUse == -1 then
+        local trackerTimerToUse = self:GetEffectiveIdleCountdown()
+        if trackerTimerToUse == -1 then
           self.isInIdleMode = false
-        elseif timerToUse <= 0 then
+        elseif trackerTimerToUse <= 0 then
           self.isInIdleMode = true
         end
 
-        self:UpdateIdleTimers(updateRate)
+        self:UpdateIdleCountdowns(updateRate)
 
         if self._frameContained then
           for obj in pairs(self._frameContained) do
             if not obj.isInIdleMode and not self.idleModePaused  then
-              local timerToUse = obj:GetEffectiveIdleTimer()
-
+              local timerToUse = (self.idleModeType == "basic-type") and trackerTimerToUse or obj:GetEffectiveIdleCountdown()
               if timerToUse == -1 then
                 obj.isInIdleMode = false
               elseif timerToUse <= 0 then
                 obj.isInIdleMode = true
               end
 
-              obj:UpdateIdleTimers(updateRate)
+              obj:UpdateIdleCountdowns(updateRate)
             end
           end
         end
@@ -433,16 +416,21 @@ Class "Tracker" (function(_ENV)
     -- Check if the scrollbar is needed or not
     local parentHeight = self.scrollFrame:GetHeight()
     local isNeeded     = self.contentHeight >= parentHeight
-
+    -- Check if a change has occured for avoiding useless layout
+    local wasShown = self.scrollbar:IsShown()
+    local isShown
     if isNeeded and self.showScrollbar then
       self.scrollbar:Show()
+      isShown = true
     else
       self.scrollbar:Hide()
+      isShown = false
     end
 
-    self:Layout()
-
-    Scorpio.FireSystemEvent("EKT_SCROLLBAR_VISIBILITY_CHANGED", self.id)
+    if wasShown ~= isShown then
+      self:ForceLayout()
+      Scorpio.FireSystemEvent("EKT_SCROLLBAR_VISIBILITY_CHANGED", self.id)
+    end
   end
 
   function OnLayout(self)
@@ -451,9 +439,9 @@ Class "Tracker" (function(_ENV)
     self.content:SetPoint("LEFT")
 
     if self.scrollbar:IsShown() then
-      self.content:SetWidth(self:GetFrameContainer():GetWidth() - 2 * self.borderWidth - self.scrollbar:GetWidth())
+      self.content:SetWidth(API:Round(self.frame:GetWidth() - self.scrollbar:GetWidth()))
     else
-      self.content:SetWidth(self:GetFrameContainer():GetWidth() - 2 * self.borderWidth)
+      self.content:SetWidth(API:Round(self.frame:GetWidth()))
     end
 
     local displayNotifications = self.displayNotifications and Notifications():IsShown()
@@ -487,10 +475,10 @@ Class "Tracker" (function(_ENV)
     local height = 0
 
     for index, obj in self.blocks:GetIterator() do
-      height = obj.height
-
-      if index > 1 then
-        height = height + 4
+      if index == 1 then
+        height = obj.height
+      else
+        height = height + 4 + obj.height
       end
     end
 
@@ -602,7 +590,7 @@ Class "Tracker" (function(_ENV)
   end
 
   function GetCurrentState(self)
-    if self.isInIdleMode and self.idleModeEnabled then
+    if self.isInIdleMode and self.idleModeEnabled and not self.idleModePaused then
       return "idle"
     end
   end
@@ -694,10 +682,14 @@ Class "Tracker" (function(_ENV)
 
     if hover then
       self:LeaveTemporalyIdleMode()
-      self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
+      if self.idleModeType ~= "basic-type" then
+        self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
+      end
     else
       self:EnterInIdleModeFromTemporarly()
-      self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
+      if self.idleModeType ~= "basic-type" then
+        self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
+      end
     end
   end
   ------------------------------------------------------------------------------
@@ -711,15 +703,6 @@ Class "Tracker" (function(_ENV)
   property "contentHeight"                { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
   property "displayNotifications"         { TYPE = Boolean, DEFAULT = false }
   property "showScrollbar"                { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
-  --property "idleModeEnabled"              { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateIdleModeProps }
-  --property "idleModeTimer"                { TYPE = Number, DEFAULT = 8, HANDLER = UpdateIdleModeProps }
-  --property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.35, HANDLER = UpdateIdleModeProps }
-
-  --property "isInIdleMode"                 { TYPE = Boolean, DEFAULT = false, HANDLER =  UpdateIdleMode }
-  --property "idleModeTimer"                { TYPE = Number, DEFAULT = 0, HANDLER = UpdateIdleModeProps }
-  --property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.5, HANDLER = UpdateIdleModeProps }
-  --property "idleModePreventMouseover"     { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateIdleModeProps }
-  --property "idleModeResumeAfterMouseover" { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateIdleModeProps }
   --- Locations
   property "inRaid"               { TYPE = Boolean, DEFAULT = false }
   property "inKeystone"           { TYPE = Boolean, DEFAULT = false }
@@ -813,8 +796,6 @@ Class "Tracker" (function(_ENV)
     content:SetHeight(self.contentHeight)
     content:SetBackdrop(_Backdrops.Common)
     content:SetBackdropColor(0, 1, 0, 0)
-    content:SetScript("OnEnter", function() self:OnEnter() end)
-    content:SetScript("OnLeave", function() self:OnLeave() end)
 
     self.content = content
     self.scrollFrame = scrollFrame
@@ -833,39 +814,6 @@ Class "Tracker" (function(_ENV)
 
       Scorpio.FireSystemEvent("EKT_TRACKER_CONTENT_SIZE_CHANGED", self.id, new)
     end
-
-    --[[self.OnEnter = function()
-      self.hover = self:GetFrameContainer():IsMouseOver()
-      self:LeaveTemporalyIdleMode()
-      self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
-    end
-
-    self.OnLeave = function()
-      self.hover = self:GetFrameContainer():IsMouseOver()
-      self:EnterInIdleModeFromTemporarly()
-      self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
-    end--]]
-
-    --[[
-    self.OnEnter = function()
-      if not self.idleModePreventMouseover then
-        if self.idleModeResumeAfterMouseover then
-          self:OnLeaveIdleMode()
-        else
-          self:WakeUp()
-        end
-      end
-    end
-
-    self.OnLeave = function()
-      if not self.idleModePreventMouseover then
-        if self.idleModeResumeAfterMouseover then
-          if self.isInIdleMode then
-            self:OnEnterIdleMode()
-          end
-        end
-      end
-    end--]]
 
     self.blocks = Array[Block]()
   end
