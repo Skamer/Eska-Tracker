@@ -3,7 +3,7 @@
 ## Author: Skamer
 ## Notes: EskaTracker
 ## SavedVariables: EskaTrackerDB
-## Version: 1.0.8
+## Version: 1.0.9
 ## X-Stage: Alpha
 ## Dependencies: PLoop, Scorpio
 ## OptionalDeps: LibStub, LibSharedMedia-3.0

@@ -602,7 +602,7 @@ class "Frame" (function(_ENV)
       -- Remove the transparency
       self:SetAlpha(1.0)
       -- Clear all timers
-      self:ClearIdleTimers()
+      self:ClearIdleCountdowns()
       -- Set the idle mode to false without triggered the handler system
       self.__isInIdleMode = false
     end

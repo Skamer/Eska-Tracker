@@ -1,3 +1,6 @@
+[1.0.9]
+- Fixed an error which preventing the 'enable' checkbox to work for idle mode.
+
 [1.0.8]
 - Fixed a critical issue where the tracker content didn't have a correct height, preventing some contents to be displayed.
 - Fixed a major issue where the mouseover isn't triggered for the parent frame.
