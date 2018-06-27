@@ -334,6 +334,13 @@ class "Frame" (function(_ENV)
       end
     end
 
+    if object.idleCountdowns then
+      for owner, info in pairs(object.idleCountdowns) do
+        self:AddIdleCountdown(owner, IdleCountdownInfo(info.countdown, info.duration))
+        self:SendMessageToParents("ADD_IDLE_COUNTDOWN", owner, info.countdown)
+      end
+    end
+
     self:SendMessageToParents("REGISTER_FRAME", object)
   end
   ------------------------------------------------------------------------------
