@@ -84,6 +84,7 @@ class "TreeRecipe" (function(_ENV)
     local function FindUniqueValue(id)
       local info = categoriesTable[id]
 
+
       if info.uniquePath then
         return info.uniquePath
       end

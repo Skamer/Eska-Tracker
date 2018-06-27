@@ -56,7 +56,13 @@ function OnLoad(self)
   createButton.OnClick = createButton.OnClick + function(recipe)
     local name = OptionBuilder:GetVariable("create_action_bar_name")
     if name then
-      self:CreateActionBar(name, recipe)
+      --self:CreateActionBar(name, recipe)
+      local id = ActionBar:GetIDFromName(name)
+      ActionBars:New(id, true)
+      -- Redirect the user to new
+      local idWithSuffix = AddSuffix(id)
+      OptionBuilder:SetVariable("action_bar_selected", idWithSuffix)
+      OptionBuilder:BuildUrl(idWithSuffix)
     end
   end
   OptionBuilder:AddRecipe(createButton, "action-bars/children")
@@ -87,43 +93,12 @@ function OnLoad(self)
   OptionBuilder:AddRecipe(deleteButton, "action-bars/children")
 end
 
-
-function CreateActionBar(self, name, srcRecipe)
-  local path  = "action-bars"
-  local id    = ActionBar:GetIDFromName(name)
-  local group = string.format("[action-bar&%s]/children", AddSuffix(id))
-
-  if not ActionBars:Get(id) then
-    local recipe = OptionBuilder:GetRecipe(id, group)
-    if not recipe then
-      local actionBar = ActionBars:New(id, true)
-      local headingText = string.format("|cffff5000%s action bar Options|r", actionBar.name)
-
-      -- Add Specific recipes
-      OptionBuilder:AddRecipe(HeadingRecipe():SetText(headingText):SetOrder(1), string.format("%s/children", actionBar.id))
-      OptionBuilder:AddRecipe(TreeItemRecipe():SetID(AddSuffix(id)):SetText(name):SetPath(path):SetBuildingGroup(group), "RootTree")
-
-      -- Action Bar Theme property
-      OptionBuilder:AddRecipe(ThemePropertyRecipe()
-      :SetElementID(string.format("action-bar.%s.frame", actionBar.id))
-      :SetElementParentID("action-bar.frame")
-      :SetOrder(500)
-      :AddFlag(Theme.SkinFlags.FRAME_BORDER_COLOR)
-      :AddFlag(Theme.SkinFlags.FRAME_BORDER_WIDTH), string.format("%s-action-bar/general", actionBar.id))
-
-      -- Redirection and rebuild
-      OptionBuilder:SetVariable("action_bar_selected", id)
-      OptionBuilder:BuildUrl(id)
-    end
-  end
-end
-
 function DeleteActionBar(self, id)
   ActionBars:Delete(id)
 
   -- Then remove the recipes related to action bar which has been deleted
-  OptionBuilder:RemoveRecipe(id, "RootTree")
-  OptionBuilder:RemoveRecipes(string.format("%s/children", id))
+  OptionBuilder:RemoveRecipe(AddSuffix(id), "RootTree")
+  OptionBuilder:RemoveRecipes(string.format("%s/children", AddSuffix(id)))
 
   -- And to finish, redirect the user to action bar category
   OptionBuilder:BuildUrl("action-bars")

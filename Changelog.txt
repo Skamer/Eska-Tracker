@@ -1,6 +1,9 @@
 [1.0.10]
 - Fixed issues relative to notification system.
-- Fixed a lua error (AddIdleTimer)
+- Fixed an error (AddIdleTimer)
+- Fixed an error when an action bar was created in the options.
+- The action bars list will now be correctly refreshed after an action bar has been deleted.
+
 
 [1.0.9]
 - Fixed an error which preventing the 'enable' checkbox to work for idle mode.
