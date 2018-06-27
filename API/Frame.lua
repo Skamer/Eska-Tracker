@@ -297,7 +297,6 @@ class "Frame" (function(_ENV)
       self.idleModeEnabled = enabled
     elseif msg == "WAKE_UP" then
       local ownerTimer, timer = ...
-      --self:AddIdleTimer(ownerTimer, timer)
       self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
       self:OnWakeUp()
     elseif msg == "LEAVE_IDLE_MODE_TEMPORARLY" then
@@ -330,7 +329,7 @@ class "Frame" (function(_ENV)
     if self.idleCountdowns then
       for owner, info in pairs(self.idleCountdowns) do
         if owner == self and info.applyToChildren then
-          object:AddIdleTimer(owner, IdleCountdownInfo(info.countdown, info.duration), true)
+          object:AddIdleCountdown(owner, IdleCountdownInfo(info.countdown, info.duration), true)
         end
       end
     end

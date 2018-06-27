@@ -65,7 +65,7 @@ Class "Tracker" (function(_ENV)
       Database:SetValue("inactivity-timer", timer)
     end
 
-    self:AddIdleTimer(self, timer)
+    self:AddIdleCountdown(self, timer)
     self:SendMessageToChildren("CHANGE_IDLE_MODE_TIMER", new)
     self:SendMessageToChildren("ADD_IDLE_TIMER", self, timer)
   end
@@ -125,37 +125,17 @@ Class "Tracker" (function(_ENV)
     self.name = name
   end
 
-  local function PrepareNotifications(self, useNotifications)
-    if useNotifications then
-      --[[Notifications().OnHeightChanged = function(_, new, old)
-        self.contentHeight = self.contentHeight + (new - old)
-        if new == 0 then
-          Notifications():Hide()
-        elseif old == 0 then
-          Notifications():Show()
-        end
-      end--]]
-      self.OnNotificationHeightHandler = function(_, new, old)
-        self.contentHeight = self.contentHeight + (new - old)
-      end
-      Notifications().OnHeightChanged = Notifications().OnHeightChanged + self.OnNotificationHeightHandler
-    else
-        if self.OnNotificationHeightHandler then
-          Notifications().OnHeightChanged = Notifications().OnHeightChanged - self.OnNotificationHeightHandler
-        end
-    end
-    self:Layout()
-  end
-
   function EnableNotifications(self)
     self.OnNotificationHeightHandler = function(_, new, old)
       self.contentHeight = self.contentHeight + (new - old)
+      self:Layout()
     end
 
     Notifications().OnHeightChanged = Notifications().OnHeightChanged + self.OnNotificationHeightHandler
 
     Notifications():ClearAllPoints()
     Notifications():SetParent(self.content)
+    Notifications():SetParentObject(self)
     Notifications():SetPoint("TOP")
     Notifications():SetPoint("LEFT")
     Notifications():SetPoint("RIGHT")
@@ -175,6 +155,7 @@ Class "Tracker" (function(_ENV)
 
     Notifications():ClearAllPoints()
     Notifications():SetParent()
+    Notifications():SetParentObject()
 
     self.displayNotifications = false
 
@@ -303,15 +284,6 @@ Class "Tracker" (function(_ENV)
     elseif msg == "UNREGISTER_FRAME" then
       local obj = ...
       self:UnregisterContainedFrame(obj)
-    elseif msg == "ADD_IDLE_TIMER" then
-      local ownerTimer, timer = ...
-      self:AddIdleTimer(ownerTimer, timer)
-    elseif msg == "REMOVE_IDLE_TIMER" then
-      local ownerTimer = ...
-      self:RemoveIdleTimer(ownerTimer)
-      if self.idleModeType == "basic-type" then
-        self:SendMessageToChildren("REMOVE_IDLE_TIMER", ownerTimer)
-      end
     elseif msg == "ADD_IDLE_COUNTDOWN" then
       local ownerTimer, timer, applyToChildren = ...
       self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
@@ -609,6 +581,7 @@ Class "Tracker" (function(_ENV)
     Theme:SkinTexture(self.scrollbar.thumb)
 
     self:SetPosition(nil, nil, false)
+
   end
 
   function LoadPropsFromDatabase(self)

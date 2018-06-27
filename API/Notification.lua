@@ -445,12 +445,15 @@ class "Notifications" (function(_ENV)
   function Add(self, notification)
     self.notifications:Insert(notification)
     notification:SetParent(self)
+    notification:SetParentObject(self)
+
     notification.OnFinished = function(obj) self:Remove(obj) end
     notification.OnHeightChanged = function(notification, new, old)
       self.height = self.height + (new - old)
     end
 
     self:Draw()
+    self:WakeUpPermanently(true)
   end
 
   __Arguments__ { Number + String }
@@ -468,11 +471,16 @@ class "Notifications" (function(_ENV)
   function Remove(self, notification )
     self.notifications:Remove(notification)
     notification:SetParent()
+    notification:SetParentObject()
     notification:ClearAllPoints()
     notification:Hide()
     notification.OnFinished = nil
     notification.OnHeightChanged = nil
     self:Layout()
+
+    if self.notifications.Count == 0 then
+      self:Idle()
+    end
   end
 
   __Arguments__ { Number + String }
@@ -620,11 +628,22 @@ end)
 
 function OnLoad(self)
   Options:Register("link-notifications-to-a-tracker", true)
-  Options:Register("tracker-used-for-notifications", "main-tracker")
+  Options:Register("tracker-used-for-notifications", "main")
 end
 
 __SystemEvent__()
 function EKT_PROFILES_LOADED()
   Notifications():LoadOption("link-notifications-to-a-tracker")
   Notifications():LoadOption("tracker-used-for-notifications")
+end
+
+__SystemEvent__()
+function EKT_TRACKER_REGISTERED(tracker)
+  local trackerLinked = Options:Get("link-notifications-to-a-tracker")
+  if trackerLinked then
+    local trackerUsed = Options:Get("tracker-used-for-notifications")
+    if trackerUsed == tracker.id then
+      Notifications():HandleOption("tracker-used-for-notifications", trackerUsed)
+    end
+  end
 end
