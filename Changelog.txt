@@ -1,5 +1,6 @@
 [1.0.11]
 - Fixed a case where sometimes the idle mode doesn't work.
+- The blizzard objective tracker will be completely replaced by EskaTracker.
 
 [1.0.10]
 - Fixed issues relative to notification system.

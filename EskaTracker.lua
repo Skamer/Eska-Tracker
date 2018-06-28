@@ -43,6 +43,11 @@ function OnLoad(self)
   -- Create and init the DB
   _DB = SVManager("EskaTrackerDB")
 
+  -- Register the options
+  Options:Register("replace-blizzard-objective-tracker", true, "Blizzard/UpdateTrackerVisibility")
+  -- Register callbacks
+  CallbackHandlers:Register("Blizzard/UpdateTrackerVisibility", CallbackHandler(function(replace) BLIZZARD_TRACKER_VISIBLITY_CHANGED(not replace) end))
+
   -- Get the same version as Eska Quest Tracker
   _DB:SetDefault{dbVersion = 2 }
   _DB:SetDefault{ minimap = { hide = false }}
@@ -55,9 +60,21 @@ function OnLoad(self)
 end
 
 function OnEnable(self)
-
+  BLIZZARD_TRACKER_VISIBLITY_CHANGED(not Options:Get("replace-blizzard-objective-tracker"))
 end
 
+__SystemEvent__()
+function BLIZZARD_TRACKER_VISIBLITY_CHANGED(isVisible)
+  if isVisible then
+    ObjectiveTracker_Initialize(ObjectiveTrackerFrame)
+    ObjectiveTrackerFrame:SetScript("OnEvent", ObjectiveTracker_OnEvent)
+    ObjectiveTrackerFrame:Show()
+    ObjectiveTracker_Update()
+  else
+    ObjectiveTrackerFrame:Hide()
+    ObjectiveTrackerFrame:SetScript("OnEvent", nil)
+  end
+end
 
 function OnQuit(self)
   -- Do a clean in the Database (remove empty tables) when the player log out
