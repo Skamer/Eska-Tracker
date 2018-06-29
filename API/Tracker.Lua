@@ -65,9 +65,8 @@ Class "Tracker" (function(_ENV)
       Database:SetValue("inactivity-timer", timer)
     end
 
-    self:AddIdleCountdown(self, timer)
     self:SendMessageToChildren("CHANGE_IDLE_MODE_TIMER", new)
-    self:SendMessageToChildren("ADD_IDLE_TIMER", self, timer)
+    self:AddIdleCountdown(self, IdleCountdownInfo(timer, timer), true)
   end
 
   __Arguments__ { Number }
@@ -680,7 +679,7 @@ Class "Tracker" (function(_ENV)
 
   function ValidateDisplayRules(self)
     if self.displayRulesType == "predefined-type" then
-      if InCombatLockdown() and not self.displayInCombat then
+      if UnitAffectingCombat("player") and not self.displayInCombat then
         return false
       end
 
@@ -692,7 +691,7 @@ Class "Tracker" (function(_ENV)
         return false
       end
 
-      if C_PetBattles.IsInBattle() and not self.displayInPetBattle then
+      if C_PetBattles.IsInBattle and not self.displayInPetBattle then
         return false
       end
 
@@ -706,15 +705,10 @@ Class "Tracker" (function(_ENV)
 
 
   function UpdateDisplay(self)
-      if not self.enabled then
+      if not self.enabled or not self.displayRulesType == "predefined-type" then
         return
       end
 
-      -- IsActiveBattlefieldArena()
-      -- IsInRaid()
-      -- IsInGroup()
-      -- C_PetBattles.IsInBattle()
-      -- InCombatLockdown()
     local show = self:ValidateDisplayRules()
     if show then
       self:Show()
@@ -730,7 +724,13 @@ Class "Tracker" (function(_ENV)
     end
 
     if new then
-      self:UpdateDisplay()
+      if self.displayRulesType == "predefined-type" then
+        self:UpdateDisplay()
+      elseif self.displayRulesType == "macro-type" then
+        self:RunDisplayMacroTicker()
+      elseif self.displayRulesType == "function-type" then
+        self:RunDisplayFunctionTicker()
+      end
     else
       self:Hide()
     end
@@ -742,20 +742,27 @@ Class "Tracker" (function(_ENV)
       local id
       if prop == "displayInRaid" then
         id = "display-in-raid"
+        self:UpdateDisplay()
       elseif prop == "displayInGroup" then
         id = "display-in-group"
+        self:UpdateDisplay()
       elseif prop == "displayInCombat" then
         id = "display-in-combat"
+        self:UpdateDisplay()
       elseif prop == "displayInPetBattle" then
         id = "display-in-pet-battle"
+        self:UpdateDisplay()
       elseif prop == "displayInArena" then
         id = "display-in-arena"
+        self:UpdateDisplay()
       elseif prop == "displayRulesType" then
         id = "display-rules-type"
         if new == "macro-type" then
           self:RunDisplayMacroTicker()
         elseif new == "function-type" then
           self:RunDisplayFunctionTicker()
+        elseif new == "predefined-type" then
+          self:UpdateDisplay()
         end
       elseif prop == "displayFunction" then
         id = "display-function"
@@ -769,38 +776,45 @@ Class "Tracker" (function(_ENV)
 
   __Async__()
   function RunDisplayMacroTicker(self)
-    while self.displayRulesType == "macro-type" do
-      local show = false
-      local result = SecureCmdOptionParse(self.displayMacro)
-      if result and result == "show" then
-        show = true
-      end
+    if not self.__displayMacroTickerRunning then
+      while self.displayRulesType == "macro-type" and self.enabled do
+        local show = false
+        local result = SecureCmdOptionParse(self.displayMacro)
+        if result and result == "show" then
+          show = true
+        end
 
-      if show and not self:IsShown() then
-        self:Show()
-      elseif not show and self:IsShown() then
-        self:Hide()
-      end
+        if show and not self:IsShown() then
+          self:Show()
+        elseif not show and self:IsShown() then
+          self:Hide()
+        end
 
-      Delay(0.2)
+        Delay(0.1)
+      end
+      self.__displayMacroTickerRunning = nil
     end
   end
 
   __Async__()
   function RunDisplayFunctionTicker(self)
-    while self.displayRulesType == "function-type" do
-      local show = false
-      if self.displayFunctionCache then
-        show = self.displayFunctionCache()
-      end
+    if not self.__displayFunctionTickerRunning then
+      self.__displayFunctionTickerRunning = true
+      while self.displayRulesType == "function-type" and self.enabled do
+        local show = false
+        if self.displayFunctionCache then
+          show = self.displayFunctionCache()
+        end
 
-      if show and not self:IsShown() then
-        self:Show()
-      elseif not show and self:IsShown() then
-        self:Hide()
-      end
+        if show and not self:IsShown() then
+          self:Show()
+        elseif not show and self:IsShown() then
+          self:Hide()
+        end
 
-      Delay(0.1)
+        Delay(0.1)
+      end
+      self.__displayFunctionTickerRunning = nil
     end
   end
 

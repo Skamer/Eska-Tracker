@@ -1,3 +1,7 @@
+[1.0.12.1]
+- Fixed some issues relative to display rules system.
+- Fixed an error which preventing the tracker options to work.
+
 [1.0.12]
 - Fixed an issue where the radio groups don't display their children once created.
 - Added a way to enable and disable a tracker.
