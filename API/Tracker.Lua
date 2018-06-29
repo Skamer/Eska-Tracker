@@ -691,7 +691,7 @@ Class "Tracker" (function(_ENV)
         return false
       end
 
-      if C_PetBattles.IsInBattle and not self.displayInPetBattle then
+      if C_PetBattles.IsInBattle() and not self.displayInPetBattle then
         return false
       end
 
