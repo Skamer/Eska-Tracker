@@ -1,4 +1,6 @@
 <Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+    <Script file="Libs\ForAllIndentsAndPurposes\indent.lua"/>
+    <Script file="Libs\ForAllIndentsAndPurposes\defaulthooks.lua"/>
   <!--@no-lib-strip@-->
     <Script file="Libs\LibStub\LibStub.lua"/>
     <Script file="Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua"/>
@@ -10,4 +12,5 @@
     <Include file="Libs\AceConfig-3.0\AceConfig-3.0.xml"/>
     <Include file="Libs\AceGUI-3.0-SharedMediaWidgets\widget.xml"/>
   <!--@end-no-lib-strip@-->
+    <Include file="Libs\AceGUI-Widgets\widgets.xml"/>
 </Ui>

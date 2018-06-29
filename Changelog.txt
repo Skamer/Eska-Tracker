@@ -1,3 +1,29 @@
+[1.0.12]
+- Fixed an issue where the radio groups don't display their children once created.
+- Added a way to enable and disable a tracker.
+
+- NEW: Implemented the display rules system for trackers.
+There are 3 methods where you need to select the one suiting you : Predefined, Macro Condtionals and Status Function.
+* Predefined is the simplest method, you need to choose the case where you want the tracker is displayed (e.g, in raid, in pet battle or in combat).
+
+* Macro Condtionals  uses the WoW Macro System, this provides more cases than the previous method.
+Example macro: [raid][petbattle] hide; show
+--- The tracker will be hidden when you're in raid or in petbattle.
+--- Usefull link: https://wow.gamepedia.com/Macro_conditionals
+--- NOTE: If the macro is invalid or without 'show', the tracker won't be displayed.
+
+* Status function uses the function you've set for checking if the tracker must be displayed or not. The advantage of this method is you are only limited by your imagination. Of couse, you need
+to have knownlegde with LUA and WoW API for using this method.
+Example function:
+  function()
+    if IsInRaid() or C_PetBattles.IsInBattle() then
+      return false
+    end
+
+    return true
+  end
+--- This example will work the same way as the previous example.
+
 [1.0.11]
 - Fixed a case where sometimes the idle mode doesn't work.
 - The blizzard objective tracker will be completely replaced by EskaTracker.

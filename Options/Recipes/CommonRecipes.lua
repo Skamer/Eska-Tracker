@@ -641,16 +641,20 @@ class "RadioGroupRecipe" (function(_ENV)
     if not radioSelected then
       radioSelected = first
       first:SetValue(true)
+    end
 
-      if self.saveChoiceVariable then
-        context:SetVariable(self.saveChoiceVariable, radioSelected:GetUserData("value"))
-      end
+    if self.saveChoiceVariable then
+      context:SetVariable(self.saveChoiceVariable, radioSelected:GetUserData("value"))
+    end
+
+    if self.addSeparator then
+      context.parentWidget:AddChild(_AceGUI:Create("Heading"))
     end
 
     -- Create the group
     local group = _AceGUI:Create("SimpleGroup")
     group:SetLayout("Flow")
-    group:SetFullWidth(true)
+    group:SetRelativeWidth(1.0)
     context.parentWidget:AddChild(group)
     -- Set it in the cache for rebuilding its children
     self.cache["group"] = group
@@ -662,6 +666,7 @@ class "RadioGroupRecipe" (function(_ENV)
         recipe:Build(OptionContext(group, self, context))
       end
     end
+    self.context.parentWidget:DoLayout()
   end
 
   function RebuildChildren(self)
@@ -674,6 +679,8 @@ class "RadioGroupRecipe" (function(_ENV)
         recipe:Build(OptionContext(group, self, self.context))
       end
     end
+    group:DoLayout()
+    self.context.parentWidget:DoLayout()
   end
 
   __Arguments__ { Any, Any }
@@ -687,10 +694,17 @@ class "RadioGroupRecipe" (function(_ENV)
     self.saveChoiceVariable = variableName
     return self
   end
+
+  __Arguments__ { Boolean }
+  function SetAddSeparator(self, add)
+    self.addSeparator = add
+    return true
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
   property "saveChoiceVariable" { TYPE = String }
+  property "addSeparator"       { TYPE = Boolean, DEFAULT = false }
   ------------------------------------------------------------------------------
   --                            Constructors                                  --
   ------------------------------------------------------------------------------
@@ -874,8 +888,71 @@ class "LineEditRecipe" (function(_ENV)
   end
 
 end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                         TextEdit Recipe                                    --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "TextEditRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  --- Fired when the value has changed
+  event "OnValueChanged"
+  --- Fired when the value has been confirmed (enter button and confirmation button)
+  event "OnValueConfirmed"
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
 
+    local textEdit = self.luaSyntaxHighlighting and _AceGUI:Create("EskaTrackerMultiLineEditBox") or _AceGUI:Create("MultiLineEditBox")
+    textEdit:SetLabel(self.text)
+    textEdit:DisableButton(self.disableButton)
+    textEdit:SetText(self:GetOption() or "")
+    textEdit:SetNumLines(self.numLines)
+    textEdit:SetCallback("OnTextChanged", function(_, _, value) self:OnValueChanged(value) end)
+    textEdit:SetCallback("OnEnterPressed", function(_, _, value) self:OnValueConfirmed(value) ; self:SetOption(value) end)
+    context.parentWidget:AddChild(textEdit)
 
+    -- Do specific stuff when the lua syntax highlighting is enabled
+    if self.luaSyntaxHighlighting then
+      IndentationLib.enable(textEdit.editBox, nil, 2)
+    end
+
+    if self.width then
+      if self.width > 0 and self.width <= 1 then
+        textEdit:SetRelativeWidth(self.width)
+      else
+        textEdit:SetWidth(self.width)
+      end
+    end
+  end
+
+  __Arguments__ { Number }
+  function SetNumLines(self, numLines)
+    self.numLines = numLines
+    return self
+  end
+
+  __Arguments__ { Boolean }
+  function DisableButton(self, disable)
+    self.disableButton = disable
+    return self
+  end
+
+  __Arguments__{ Boolean }
+  function SetLUASyntaxHighlighting(self, enable)
+    self.luaSyntaxHighlighting = enable
+    return self
+  end
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "numLines"               { TYPE = Number, DEFAULT =  10 }
+  property "disableButton"          { TYPE = Boolean, DEFAULT = true }
+  property "luaSyntaxHighlighting"  { TYPE = Boolean, DEFAULT = false }
+end)
 --------------------------------------------------------------------------------
 --                                                                            --
 --                         Text Recipe                                    --

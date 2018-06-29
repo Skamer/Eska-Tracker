@@ -588,12 +588,15 @@ Class "Tracker" (function(_ENV)
     -- Load the properties contained in the profile
     Profiles:PrepareDatabase()
 
-    local height, width, locked, showScrollbar, xPos, yPos, show
+    local height, width, enabled, locked, showScrollbar, xPos, yPos, show
     local idleModeAlpha, inactivityTimer, idleModeEnabled, idleModeType
+    local displayRulesType, displayMacro, displayFunction
+    local displayInRaid, displayInArena, displayInGroup, displayInPetBattle, displayInCombat
     if Database:SelectTable(false, "trackers", self.id) then
       height                        = Database:GetValue("height")
       width                         = Database:GetValue("width")
       locked                        = Database:GetValue("locked")
+      enabled                       = Database:GetValue("enabled")
       showScrollbar                 = Database:GetValue("showScrollbar")
       xPos                          = Database:GetValue("xPos")
       yPos                          = Database:GetValue("yPos")
@@ -602,16 +605,14 @@ Class "Tracker" (function(_ENV)
       inactivityTimer               = Database:GetValue("inactivity-timer")
       idleModeType                  = Database:GetValue("idle-mode-type")
       idleModeEnabled               = Database:GetValue("idle-mode-enabled")
-    end
-
-    if show == nil or show ~= false then
-      show = true
-    end
-
-    if show and not self:IsShown() then
-      self:Show()
-    elseif not show and self:IsShown() then
-      self:Hide()
+      displayRulesType              = Database:GetValue("display-rules-type")
+      displayMacro                  = Database:GetValue("display-macro")
+      displayFunction               = Database:GetValue("display-function")
+      displayInRaid                 = Database:GetValue("display-in-raid")
+      displayInGroup                = Database:GetValue("display-in-group")
+      displayInPetBattle            = Database:GetValue("display-in-pet-battle")
+      displayInCombat               = Database:GetValue("display-in-combat")
+      displayInArena                = Database:GetValue("display-in-arena")
     end
 
 
@@ -619,13 +620,24 @@ Class "Tracker" (function(_ENV)
     self.height                       = height or 300
     self.width                        = width or 325
     self.locked                       = locked
+    self.enabled                      = enabled
     self.showScrollbar                = showScrollbar
     self.idleModeAlpha                = idleModeAlpha
     self.inactivityTimer              = inactivityTimer
     self.idleModeType                 = idleModeType
     self.idleModeEnabled              = idleModeEnabled
+    self.displayMacro                 = displayMacro
+    self.__displayFunction            = displayFunction
+    self.displayRulesType             = displayRulesType
+    self.displayInRaid                = displayInRaid
+    self.displayInGroup               = displayInGroup
+    self.displayInPetBattle           = displayInPetBattle
+    self.displayInCombat              = displayInCombat
+    self.displayInArena               = displayInArena
     self:SetPosition(xPos, yPos, false)
+    self:BuildDisplayFunctionCache()
   end
+
 
   function OnHide(self)
     super.OnHide(self)
@@ -665,21 +677,159 @@ Class "Tracker" (function(_ENV)
       end
     end
   end
+
+  function ValidateDisplayRules(self)
+    if self.displayRulesType == "predefined-type" then
+      if InCombatLockdown() and not self.displayInCombat then
+        return false
+      end
+
+      if IsInRaid() and not self.displayInRaid then
+        return false
+      end
+
+      if IsInGroup() and not self.displayInGroup then
+        return false
+      end
+
+      if C_PetBattles.IsInBattle() and not self.displayInPetBattle then
+        return false
+      end
+
+      if IsActiveBattlefieldArena() and not self.displayInArena then
+        return false
+      end
+    end
+
+    return true
+  end
+
+
+  function UpdateDisplay(self)
+      if not self.enabled then
+        return
+      end
+
+      -- IsActiveBattlefieldArena()
+      -- IsInRaid()
+      -- IsInGroup()
+      -- C_PetBattles.IsInBattle()
+      -- InCombatLockdown()
+    local show = self:ValidateDisplayRules()
+    if show then
+      self:Show()
+    else
+      self:Hide()
+    end
+  end
+
+  local function UpdateEnabled(self, new)
+    Profiles:PrepareDatabase()
+    if Database:SelectTable(false, "trackers", self.id) then
+      Database:SetValue("enabled", new)
+    end
+
+    if new then
+      self:UpdateDisplay()
+    else
+      self:Hide()
+    end
+  end
+
+  local function UpdateDisplayProps(self, new, old, prop)
+    Profiles:PrepareDatabase()
+    if Database:SelectTable("trackers", self.id) then
+      local id
+      if prop == "displayInRaid" then
+        id = "display-in-raid"
+      elseif prop == "displayInGroup" then
+        id = "display-in-group"
+      elseif prop == "displayInCombat" then
+        id = "display-in-combat"
+      elseif prop == "displayInPetBattle" then
+        id = "display-in-pet-battle"
+      elseif prop == "displayInArena" then
+        id = "display-in-arena"
+      elseif prop == "displayRulesType" then
+        id = "display-rules-type"
+        if new == "macro-type" then
+          self:RunDisplayMacroTicker()
+        elseif new == "function-type" then
+          self:RunDisplayFunctionTicker()
+        end
+      elseif prop == "displayFunction" then
+        id = "display-function"
+        self:BuildDisplayFunctionCache()
+      end
+      if id then
+        Database:SetValue(id, new)
+      end
+    end
+  end
+
+  __Async__()
+  function RunDisplayMacroTicker(self)
+    while self.displayRulesType == "macro-type" do
+      local show = false
+      local result = SecureCmdOptionParse(self.displayMacro)
+      if result and result == "show" then
+        show = true
+      end
+
+      if show and not self:IsShown() then
+        self:Show()
+      elseif not show and self:IsShown() then
+        self:Hide()
+      end
+
+      Delay(0.2)
+    end
+  end
+
+  __Async__()
+  function RunDisplayFunctionTicker(self)
+    while self.displayRulesType == "function-type" do
+      local show = false
+      if self.displayFunctionCache then
+        show = self.displayFunctionCache()
+      end
+
+      if show and not self:IsShown() then
+        self:Show()
+      elseif not show and self:IsShown() then
+        self:Hide()
+      end
+
+      Delay(0.1)
+    end
+  end
+
+  function BuildDisplayFunctionCache(self)
+    self.displayFunctionCache = assert(loadstring("return " .. self.displayFunction))()
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
   property "id"                           { TYPE = String, DEFAULT = "", HANDLER = UpdateID }
   property "name"                         { TYPE = String }
+  property "enabled"                      { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateEnabled }
   property "xPos"                         { TYPE = Number, DEFAULT = 0 }
   property "yPos"                         { TYPE = Number, DEFAULT = 0 }
   property "locked"                       { TYPE = Boolean, DEFAULT = false,  HANDLER = UpdateLock }
   property "contentHeight"                { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
   property "displayNotifications"         { TYPE = Boolean, DEFAULT = false }
   property "showScrollbar"                { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
-  --- Locations
-  property "inRaid"               { TYPE = Boolean, DEFAULT = false }
-  property "inKeystone"           { TYPE = Boolean, DEFAULT = false }
-  __Static__() property "_prefix"  { DEFAULT = "tracker"}
+  --- Display conditionals
+  property "displayRulesType"             { TYPE = String, DEFAULT = "predefined-type", HANDLER = UpdateDisplayProps }
+  property "displayInRaid"                { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
+  property "displayInGroup"               { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
+  property "displayInCombat"              { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
+  property "displayInPetBattle"           { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
+  property "displayInArena"               { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
+  property "displayMacro"                 { TYPE = String, DEFAULT = "show" }
+  property "displayFunction"              { TYPE = String, DEFAULT = [[function() return true end]],  FIELD = "__displayFunction", HANDLER = UpdateDisplayProps }
+
+  __Static__() property "_prefix"         { DEFAULT = "tracker"}
   ------------------------------------------------------------------------------
   --                            Constructors                                  --
   ------------------------------------------------------------------------------
@@ -960,7 +1110,13 @@ function EKT_COPY_PROFILE_PROCESS(sourceDB, destDB, destProfile)
       if (Profiles:IsGlobal(destProfile) and destDB["trackers"][trackerID]) or not Profiles:IsGlobal(destProfile) then
         destDB["trackers"][trackerID] = trackerDB
       end
-
     end
+  end
+end
+
+__SystemEvent__ "PLAYER_REGEN_ENABLED" "PLAYER_REGEN_DISABLED" "PLAYER_ENTERING_WORLD" "PARTY_MEMBERS_CHANGED" "GROUP_ROSTER_UPDATE" "PET_BATTLE_OPENING_START"
+function UpdateTrackersVisibility()
+  for trackerID, tracker in Trackers:GetIterator() do
+    tracker:UpdateDisplay()
   end
 end

@@ -16,7 +16,11 @@ function RemoveSuffix(id)
 end
 
 function GetCurrentTracker(recipe)
-  return Trackers:Get(RemoveSuffix(recipe.context("tracker_selected")))
+  if recipe then
+    return Trackers:Get(RemoveSuffix(recipe.context("tracker_selected")))
+  else
+    return Trackers:Get(RemoveSuffix(OptionBuilder:GetVariable("tracker_selected")))
+  end
 end
 
 local function GetTrackerList()
@@ -90,8 +94,22 @@ function AddGeneralTabRecipes(self)
   -- Create the tab item
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("General"):SetID("general"):SetBuildingGroup("tracker/general"):SetOrder(10), "tracker/tabs")
 
+  -- Enable
+  local enable = CheckBoxRecipe()
+  enable:SetWidth(1.0)
+  enable:SetText("Enable")
+  enable:SetOrder(10)
+  enable:Get(function(recipe)
+    return GetCurrentTracker(recipe).enabled
+  end)
+  enable:Set(function(recipe, value)
+    GetCurrentTracker(recipe).enabled = value
+  end)
+  OptionBuilder:AddRecipe(enable, "tracker/general")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(11), "tracker/general")
+
   -- Top options group
-  OptionBuilder:AddRecipe(SimpleGroupRecipe():SetBuildingGroup("tracker/general/top-options"), "tracker/general")
+  OptionBuilder:AddRecipe(SimpleGroupRecipe():SetBuildingGroup("tracker/general/top-options"):SetOrder(20), "tracker/general")
 
   -- Lock
   local lockRecipe = CheckBoxRecipe()
@@ -186,6 +204,97 @@ end
 function AddDisplyingRulesRecipes(self)
   -- Create displaying item
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Displaying Rules"):SetID("displaying-rules"):SetBuildingGroup("[tracker&:tracker_selected:]/displaying-rules"):SetOrder(40), "tracker/tabs")
+
+  local displayRulesType = RadioGroupRecipe()
+  displayRulesType:SetOrder(101)
+  displayRulesType:AddChoice("predefined-type", "Predefined")
+  displayRulesType:AddChoice("macro-type", "Macro conditionals")
+  displayRulesType:AddChoice("function-type", "Status function")
+  displayRulesType:Get(function(recipe) return GetCurrentTracker(recipe).displayRulesType end)
+  displayRulesType:Set(function(recipe, value) GetCurrentTracker(recipe).displayRulesType = value end)
+  displayRulesType:SetBuildingGroup("tracker/displaying-rules/[type&:tracker_display_rules_type:]")
+  displayRulesType:SetSaveChoiceVariable("tracker_display_rules_type")
+  displayRulesType:SetAddSeparator(true)
+  OptionBuilder:AddRecipe(displayRulesType, "tracker/displaying-rules")
+
+  -- Predefined type
+  local displayInCombat = CheckBoxRecipe()
+  displayInCombat:SetText("Display in Combat")
+  displayInCombat:SetWidth(1.0)
+  displayInCombat:Get(function(recipe)
+    return GetCurrentTracker(recipe).displayInCombat
+  end)
+  displayInCombat:Set(function(recipe, value)
+    GetCurrentTracker(recipe).displayInCombat = value
+  end)
+  OptionBuilder:AddRecipe(displayInCombat, "tracker/displaying-rules/predefined-type")
+
+  local displayInRaid = CheckBoxRecipe()
+  displayInRaid:SetText("Display in Raid")
+  displayInRaid:SetWidth(1.0)
+  displayInRaid:Get(function(recipe)
+    return GetCurrentTracker(recipe).displayInRaid
+  end)
+  displayInRaid:Set(function(recipe, value)
+    GetCurrentTracker(recipe).displayInCombat = value
+  end)
+  OptionBuilder:AddRecipe(displayInRaid, "tracker/displaying-rules/predefined-type")
+
+  local displayInGroup = CheckBoxRecipe()
+  displayInGroup:SetText("Display in Group")
+  displayInGroup:SetWidth(1.0)
+  displayInGroup:Get(function(recipe)
+    return GetCurrentTracker(recipe).displayInGroup
+  end)
+  displayInGroup:Set(function(recipe, value)
+    GetCurrentTracker(recipe).displayInCombat = value
+  end)
+  OptionBuilder:AddRecipe(displayInGroup, "tracker/displaying-rules/predefined-type")
+
+  local displayInPetBattle = CheckBoxRecipe()
+  displayInPetBattle:SetText("Display in Pet Battle")
+  displayInPetBattle:SetWidth(1.0)
+  displayInPetBattle:Get(function(recipe)
+    return GetCurrentTracker(recipe).displayInGroup
+  end)
+  displayInPetBattle:Set(function(recipe, value)
+    GetCurrentTracker(recipe).displayInCombat = value
+  end)
+  OptionBuilder:AddRecipe(displayInPetBattle, "tracker/displaying-rules/predefined-type")
+
+  local displayInArena = CheckBoxRecipe()
+  displayInArena:SetText("Display in Arena")
+  displayInArena:SetWidth(1.0)
+  displayInArena:Get(function(recipe)
+    return GetCurrentTracker(recipe).displayInGroup
+  end)
+  displayInArena:Set(function(recipe, value)
+    GetCurrentTracker(recipe).displayInCombat = value
+  end)
+  OptionBuilder:AddRecipe(displayInArena, "tracker/displaying-rules/predefined-type")
+
+
+  -- conditionals Macro
+  local macro = TextEditRecipe()
+  macro:SetOrder(101)
+  macro:SetWidth(1.0)
+  macro:SetNumLines(1)
+  macro:DisableButton(false)
+  macro:Get(function(recipe) return GetCurrentTracker(recipe).displayMacro end)
+  macro.OnValueConfirmed = function(recipe, macro) GetCurrentTracker(recipe).displayMacro = macro end
+  OptionBuilder:AddRecipe(macro, "tracker/displaying-rules/macro-type")
+
+  -- status function
+  local statusFunction = TextEditRecipe()
+  statusFunction:SetOrder(101)
+  statusFunction:SetWidth(1.0)
+  statusFunction:SetNumLines(20)
+  statusFunction:DisableButton(false)
+  statusFunction:SetLUASyntaxHighlighting(true)
+  statusFunction:Get(function(recipe) return GetCurrentTracker(recipe).displayFunction end)
+  statusFunction.OnValueConfirmed = function(recipe, funcStr) print(funcStr) ; GetCurrentTracker(recipe).displayFunction = funcStr end
+  OptionBuilder:AddRecipe(statusFunction, "tracker/displaying-rules/function-type")
+
 end
 
 function AddIdleModeRecipes(self)
