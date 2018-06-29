@@ -13,7 +13,7 @@ Example macro: [raid][petbattle] hide; show
 --- NOTE: If the macro is invalid or without 'show', the tracker won't be displayed.
 
 * Status function uses the function you've set for checking if the tracker must be displayed or not. The advantage of this method is you are only limited by your imagination.
-Of course, you needto have knownledge with LUA and WoW API for using this method.
+Of course, you need to have knownledge with LUA and WoW API for using this method.
 Example function:
   function()
     if IsInRaid() or C_PetBattles.IsInBattle() then
