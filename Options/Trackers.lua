@@ -292,7 +292,7 @@ function AddDisplyingRulesRecipes(self)
   statusFunction:DisableButton(false)
   statusFunction:SetLUASyntaxHighlighting(true)
   statusFunction:Get(function(recipe) return GetCurrentTracker(recipe).displayFunction end)
-  statusFunction.OnValueConfirmed = function(recipe, funcStr) print(funcStr) ; GetCurrentTracker(recipe).displayFunction = funcStr end
+  statusFunction.OnValueConfirmed = function(recipe, funcStr) GetCurrentTracker(recipe).displayFunction = funcStr end
   OptionBuilder:AddRecipe(statusFunction, "tracker/displaying-rules/function-type")
 
 end
