@@ -326,18 +326,20 @@ class "Frame" (function(_ENV)
   function AddChildObject(self, object)
     super.AddChildObject(self, object)
 
-    if self.idleCountdowns then
-      for owner, info in pairs(self.idleCountdowns) do
-        if owner == self and info.applyToChildren then
-          object:AddIdleCountdown(owner, IdleCountdownInfo(info.countdown, info.duration), true)
-        end
-      end
-    end
-
     if object.idleCountdowns then
       for owner, info in pairs(object.idleCountdowns) do
         self:AddIdleCountdown(owner, IdleCountdownInfo(info.countdown, info.duration))
         self:SendMessageToParents("ADD_IDLE_COUNTDOWN", owner, info.countdown)
+      end
+    end
+
+    if self.idleCountdowns then
+      for owner, info in pairs(self.idleCountdowns) do
+        -- It's important to check the owner is well the parent, to avoid propagate
+        -- the countdowns which have been added previously.
+        if owner == self and info.applyToChildren then
+          object:AddIdleCountdown(owner, IdleCountdownInfo(info.countdown, info.duration), true)
+        end
       end
     end
 
@@ -747,7 +749,7 @@ class "Frame" (function(_ENV)
     local index = 1
     if self.idleCountdowns then
       for owner, info in self.idleCountdowns:GetIterator() do
-        print(index, class.GetObjectClass(owner), info.countdown, info.duration)
+        print(index, class.GetObjectClass(owner), info.countdown, info.duration, info.applyToChildren)
         index = index + 1
       end
     end
