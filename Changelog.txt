@@ -1,5 +1,5 @@
 [1.0.13]
-- Fixed an issue relative to idle mode where sometime a frame has not the right countdown info.
+- Fixed an issue relative to idle mode where sometimes a frame has not the right countdown info.
 
 [1.0.12.1]
 - Fixed some issues relative to display rules system.

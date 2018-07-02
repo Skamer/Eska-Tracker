@@ -7,8 +7,6 @@ Scorpio              "EskaTracker.API.Notification"                           ""
 --============================================================================--
 namespace                            "EKT"
 --============================================================================--
-
--- NotificationButton
 __Recyclable__()
 class "NotificationButton" (function(_ENV)
   inherit "Frame"

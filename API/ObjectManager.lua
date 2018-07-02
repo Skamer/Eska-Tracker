@@ -29,9 +29,9 @@ class "ObjectManager" (function(_ENV)
     if not _Recyclers[type] then
       local recycler = System.Recycle(type)
       recycler.OnPush = function(_, obj)
-        if obj.Reset then
+        if obj.OnRecycle then
           obj._isUsed = false
-          obj:Reset()
+          obj:OnRecycle()
         end
       end
 

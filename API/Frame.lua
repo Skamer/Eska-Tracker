@@ -979,6 +979,39 @@ class "Frame" (function(_ENV)
     self._pendingOptionList = nil
   end
   ------------------------------------------------------------------------------
+  --                    Reset & Recycle Methos                                --
+  ------------------------------------------------------------------------------
+  function Reset(self)
+    self:OnReset()
+  end
+
+  function OnReset(self)
+    self.isInIdleMode     = nil
+    self.idleModeType     = nil
+    self.idleModeTimer    = nil
+    self.idleModeAlpha    = nil
+    self.idleModeType     = nil
+    self.alpha            = nil
+    self.hover            = nil
+  end
+
+  function OnRecycle(self)
+    -- Make some stuff
+    self:Hide()
+    self:ClearAllPoints()
+    self:SetParent()
+    self:SetParentObject()
+    self:ClearIdleCountdowns()
+    self:SetAlpha(1)
+
+    -- Remove event handlers
+    self.OnHeightChanged = nil
+    self.OnWidthChanged  = nil
+
+    -- Reset properties
+    self:Reset()
+  end
+  ------------------------------------------------------------------------------
   --                   Other Methods                                          --
   ------------------------------------------------------------------------------
   -- Return the frame which must be used for anchor/show features
@@ -1029,29 +1062,6 @@ class "Frame" (function(_ENV)
   function OnHover(self, hover)
     self.idleModePaused = hover
     self:ForceSkin()
-  end
-
-  function Reset(self)
-    -- Make some stuff
-    self:Hide()
-    self:ClearAllPoints()
-    self:SetParent()
-    self:SetParentObject()
-    self:ClearIdleCountdowns()
-    self:SetAlpha(1)
-
-    -- Remove event handlers
-    self.OnHeightChanged = nil
-    self.OnWidthChanged  = nil
-
-    -- Reset properties
-    self.isInIdleMode     = nil
-    self.idleModeType     = nil
-    self.idleModeTimer    = nil
-    self.idleModeAlpha    = nil
-    self.idleModeType     = nil
-    self.alpha            = nil
-    self.hover            = nil
   end
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
