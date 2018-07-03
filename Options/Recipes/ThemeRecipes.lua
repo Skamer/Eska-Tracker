@@ -607,7 +607,6 @@ class "ImportThemeRecipe" (function(_ENV)
     EditBoxOnTextChanged = function(self)
       local name = self:GetText()
       local parent = self:GetParent()
-      for k,v in pairs(parent) do print(k,v) end
       local validate, msg = ValidateName(name)
       if name ~= "" then
         if validate then
@@ -618,8 +617,7 @@ class "ImportThemeRecipe" (function(_ENV)
           parent.SubText:SetText(string.format("|cffff0000%s|r", msg))
         end
       end
-    end,
-    EditBoxOnEscapePressed = function(...) print("EditBoxOnEscapePressed", ...) end,
+    end
   }
 
   local function CreateRow(name, value)
