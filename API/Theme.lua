@@ -1009,7 +1009,7 @@ class "Themes" (function(_ENV)
     if not _THEMES[theme.name] then
       _THEMES[theme.name] = theme
 
-      Scorpio.FireSystemEvent("EKT_NEW_THEME_REGISTERED", theme)
+      Scorpio.FireSystemEvent("EKT_THEME_REGISTERED", theme)
     end
   end
 
@@ -1067,7 +1067,7 @@ class "Themes" (function(_ENV)
     end
   end
 
-  __Arguments__  { ClassType, String }
+  __Arguments__  { ClassType }
   __Static__() function GetFirst(self)
     for _, theme in _THEMES:GetIterator() do return theme end
   end
@@ -1180,6 +1180,8 @@ class "Themes" (function(_ENV)
       if Database:SelectTable(false, "themes", theme.name) then
         Database:DeleteTable()
         _THEMES[name] = nil
+
+        Scorpio.FireSystemEvent("EKT_THEME_DELETED", theme)
         return true
       end
     end
@@ -1228,8 +1230,18 @@ class "Themes" (function(_ENV)
 
 end)
 
+function CheckSelectedTheme(tracker)
+  local selected = Options:Get("theme-selected")
+  if selected and selected == tracker.name then
+    if selected ~= Themes:GetSelected().name then
+      Themes:Select(selected, false)
+    end
+  end
+end
+
 
 function OnLoad(self)
+  self:RegisterEvent("EKT_THEME_REGISTERED", CheckSelectedTheme)
   Themes:LoadFromDB()
 
   Scorpio.FireSystemEvent("EKT_THEMES_LOADED")

@@ -583,6 +583,45 @@ class "ImportThemeRecipe" (function(_ENV)
   event "OnTextChanged"
   event "OnImportThemeRequest"
 
+  local function ValidateName(name)
+    if Themes:Get(name) then
+      return false, "Name already taken"
+    end
+
+    return true, "Name is avalaible"
+  end
+
+  StaticPopupDialogs["EKT_THEME_NEW_NAME"] = {
+    text = "A theme with this name already exists.\nChoose an another one to continue",
+    subText = "",
+    button1 = OKAY,
+    hasEditBox = true,
+    OnAccept = function(self, data) Themes:Import(data, self.editBox:GetText()) end,
+    OnShow = function(self)
+      self.button1:Disable()
+      self.editBox:SetFocus()
+    end,
+    OnHide = function(self)
+      self.editBox:SetText("")
+    end,
+    EditBoxOnTextChanged = function(self)
+      local name = self:GetText()
+      local parent = self:GetParent()
+      for k,v in pairs(parent) do print(k,v) end
+      local validate, msg = ValidateName(name)
+      if name ~= "" then
+        if validate then
+          parent.button1:Enable()
+          parent.SubText:SetText(string.format("|cff00ff00%s|r", msg))
+        else
+          parent.button1:Disable()
+          parent.SubText:SetText(string.format("|cffff0000%s|r", msg))
+        end
+      end
+    end,
+    EditBoxOnEscapePressed = function(...) print("EditBoxOnEscapePressed", ...) end,
+  }
+
   local function CreateRow(name, value)
     local row = _AceGUI:Create("SimpleGroup")
     row:SetRelativeWidth(1.0)
@@ -603,6 +642,11 @@ class "ImportThemeRecipe" (function(_ENV)
   end
 
   function Build(self, context)
+    super.Build(self, context)
+
+    -- local default values
+    local defaultForceOverride = OptionBuilder:GetVariable("import-theme-force-override") or false
+
     local textBox = _AceGUI:Create("MultiLineEditBox")
     textBox:SetLabel("Paste text below to import the theme")
     textBox:SetRelativeWidth(1.0)
@@ -638,6 +682,7 @@ class "ImportThemeRecipe" (function(_ENV)
 
     local separator = _AceGUI:Create("Heading")
     separator:SetText("")
+    separator:SetRelativeWidth(1.0)
     context.parentWidget:AddChild(separator)
 
     local import = _AceGUI:Create("Button")
@@ -645,7 +690,194 @@ class "ImportThemeRecipe" (function(_ENV)
     import:SetRelativeWidth(1.0)
     context.parentWidget:AddChild(import)
 
+    -- Callback
+    import:SetCallback("OnClick", function()
+      local forceOverride = override:GetValue()
+      if not forceOverride then
+        local themeName = OptionBuilder:GetVariable("import-theme-name")
+        if ValidateName(themeName) then
+          Themes:Import(textBox:GetText())
+        else
+          local dialog = StaticPopup_Show("EKT_THEME_NEW_NAME")
+          if dialog then
+            dialog.data = textBox:GetText()
+          end
+        end
+      else
+        Themes:Override(textBox:GetText())
+      end
+    end)
 
+
+    textBox:SetCallback("OnTextChanged", function()
+      local theme, msg = Theme:GetFromText(textBox:GetText())
+      local successColor = "ff00ff00"
+      local failedColor = "ffff0000"
+
+      if theme then
+        name:SetText(string.format("|c%s%s|r", successColor, theme.name))
+        author:SetText(string.format("|c%s%s|r", successColor, theme.author))
+        version:SetText(string.format("|c%s%s|r", successColor, theme.version))
+        stage:SetText(string.format("|c%s%s|r", successColor, theme.stage))
+        OptionBuilder:SetVariable("import-theme-name", theme.name)
+      else
+        name:SetText(string.format("|c%s%s|r", failedColor, msg))
+        author:SetText(string.format("|c%s%s|r", failedColor, msg))
+        version:SetText(string.format("|c%s%s|r", failedColor, msg))
+        stage:SetText(string.format("|c%s%s|r", failedColor, msg))
+      end
+    end)
+  end
+end)
+
+class "ExportThemeRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    super.Build(self, context)
+
+    -- Get the selected theme
+    local theme = Themes:GetSelected()
+    OptionBuilder:SetVariable("export-theme-selected", theme.name)
+    -- default values
+    local defaultIncludeDBValues = OptionBuilder:GetVariable("export-theme-include-db-values") or true
+
+    local selectTheme = _AceGUI:Create("Dropdown")
+    selectTheme:SetLabel("Select Theme to export")
+    selectTheme:SetRelativeWidth(0.25)
+    selectTheme:SetText(theme.name)
+    context.parentWidget:AddChild(selectTheme)
+
+    local themeList = {}
+    for _, theme in Themes:GetIterator() do
+      themeList[theme.name] = theme.name
+    end
+    selectTheme:SetList(themeList)
+
+    -- Line
+    local headingTop = _AceGUI:Create("Heading")
+    headingTop:SetText("")
+    context.parentWidget:AddChild(headingTop)
+
+    -- Export text
+    local textBox = _AceGUI:Create("MultiLineEditBox")
+    textBox:SetLabel("Theme text export")
+    textBox:SetRelativeWidth(1.0)
+    textBox:DisableButton(true)
+    context.parentWidget:AddChild(textBox)
+
+    textBox:SetText(theme:ExportToText(defaultIncludeDBValues))
+    textBox:SetNumLines(20)
+    textBox:HighlightText()
+
+    -- Export Flags line
+    local headingFlags = _AceGUI:Create("Heading")
+    headingFlags:SetText("Export flags")
+    context.parentWidget:AddChild(headingFlags)
+
+    local includeDBValue = _AceGUI:Create("CheckBox")
+    includeDBValue:SetLabel("Include database values")
+    includeDBValue:SetCallback("OnValueChanged", function(_, _, value)
+      OptionBuilder:SetVariable("export-theme-include-db-values", value)
+      textBox:SetText(Themes:Get(OptionBuilder:GetVariable("export-theme-selected")):ExportToText(value))
+      textBox:HighlightText()
+    end)
+    context.parentWidget:AddChild(includeDBValue)
+
+    -- Callback
+    selectTheme:SetCallback("OnValueChanged", function(_, _, themeName)
+      OptionBuilder:SetVariable("export-theme-selected", themeName)
+      textBox:SetText(Themes:Get(themeName):ExportToText(OptionBuilder:GetVariable("export-theme-include-db-values")))
+      textBox:HighlightText()
+    end)
+  end
+
+end)
+
+class "CreateThemeRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+
+  function Build(self, context)
+    super.Build(self, context)
+
+    -- Set the default values
+    local defaultAuthor           = UnitName("player")
+    local defaultStage            = "Release"
+    local defaultVersion          = "1.0.0"
+    local defaultCopyFrom         = "none"
+    local defaultIncludeDBValues  = OptionBuilder:GetVariable("create-theme-include-db-values") or true
+
+    local name = _AceGUI:Create("EditBox")
+    name:SetLabel("Name")
+    name:SetRelativeWidth(0.2)
+    context.parentWidget:AddChild(name)
+
+    local author = _AceGUI:Create("EditBox")
+    author:SetLabel("Author")
+    author:SetRelativeWidth(0.19)
+    author:SetText(defaultAuthor)
+    context.parentWidget:AddChild(author)
+
+    local version = _AceGUI:Create("EditBox")
+    version:SetLabel("Version")
+    version:SetRelativeWidth(0.15)
+    version:SetText(defaultVersion)
+    context.parentWidget:AddChild(version)
+
+    local stage = _AceGUI:Create("Dropdown")
+    stage:SetLabel("Stage")
+    stage:SetText(defaultStage)
+    stage:SetRelativeWidth(0.15)
+    stage:SetList({
+      ["Alpha"]     = "Alpha",
+      ["Beta"]      = "Beta",
+      ["Release"]   = "Release"
+    })
+    stage:SetCallback("OnValueChanged", function(_, _,  stage) OptionBuilder:SetVariable("create-theme-stage", stage) end)
+    context.parentWidget:AddChild(stage)
+
+    local copyFrom = _AceGUI:Create("Dropdown")
+    copyFrom:SetLabel("Copy From")
+    copyFrom:SetRelativeWidth(0.2)
+    context.parentWidget:AddChild(copyFrom)
+
+    local createButton = _AceGUI:Create("Button")
+    createButton:SetText("Create")
+    createButton:SetRelativeWidth(0.1)
+    context.parentWidget:AddChild(createButton)
+
+    local includeDBValues = _AceGUI:Create("CheckBox")
+    includeDBValues:SetLabel("Include database values")
+    includeDBValues:SetValue(defaultIncludeDBValues)
+    context.parentWidget:AddChild(includeDBValues)
+
+    createButton:SetCallback("OnClick", function()
+      local themeToCopy = OptionBuilder:GetVariable("create-theme-copy-from") or defaultCopyFrom
+      local themeName = name:GetText()
+      local themeAuthor = author:GetText() or defaultAuthor
+      local themeVersion = version:GetText() or defaultVersion
+      local themeStage = OptionBuilder:GetVariable("create-theme-stage") or defaultStage
+      local themeToCopy = OptionBuilder:GetVariable("create-theme-copy-from") or defaultCopyFrom
+      local includeDBValues = OptionBuilder:GetVariable("create-theme-include-db-values") or defaultIncludeDBValues
+
+      if themeToCopy and themeToCopy ~= "none" then
+        Themes:CreateDBTheme(themeName, themeAuthor, themeVersion, themeStage, themeToCopy, includeDBValues)
+      else
+        Themes:CreateDBTheme(themeName, themeAuthor, themeVersion, themeStage)
+      end
+    end)
+
+    local themeList = {}
+    themeList["none"] = "None"
+    for _, theme in Themes:GetIterator() do
+      themeList[theme.name] = theme.name
+    end
+    copyFrom:SetList(themeList)
+    copyFrom:SetText(themeList[defaultCopyFrom])
+    copyFrom:SetCallback("OnValueChanged", function(_, _, theme) OptionBuilder:SetVariable("create-theme-copy-from", theme) end)
 
   end
+
 end)

@@ -1,3 +1,7 @@
+[1.0.14]
+- Finished the options for themes (create a theme, delete a theme, export and import a theme have been implemented).
+- Do some minor fix for the options.
+
 [1.0.13]
 - Fixed an issue relative to idle mode where sometimes a frame has not the right countdown info.
 

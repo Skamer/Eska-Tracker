@@ -411,6 +411,8 @@ class "OptionRecipe" (function(_ENV)
           end
         end
       end)
+
+      _EVENTS[event] = t
     end
 
     if not t[obj] then
