@@ -98,8 +98,8 @@ class "CallbackHandlers"
 
   end
 
-  __Static__() __Arguments__ { ClassType, String, { Type = Any, Nilable = true, IsList = true } }
-  function Call(self, id, ...)
+  __Arguments__ { ClassType, String, Variable.Rest()}
+  __Static__() function Call(self, id, ...)
     local handler = CALLBACK_HANDLERS[id]
     if handler then
       handler(...)

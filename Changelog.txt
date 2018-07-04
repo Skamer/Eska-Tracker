@@ -1,3 +1,8 @@
+[1.0.15]
+- Tagged as Beta
+- Fixed the arguments for CallbackHandlers Run() Method.
+
+
 [1.0.14]
 - Finished the options for themes (create a theme, delete a theme, export and import a theme have been implemented).
 - Do some minor fix for the options.
