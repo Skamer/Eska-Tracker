@@ -451,7 +451,6 @@ class "Notifications" (function(_ENV)
     end
 
     self:Draw()
-    self:WakeUpPermanently(true)
   end
 
   __Arguments__ { Number + String }

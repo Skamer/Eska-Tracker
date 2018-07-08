@@ -220,99 +220,14 @@ class "Frame" (function(_ENV)
   local function UpdateLayout(self)
     self:Layout()
   end
-
-
-  local function UpdateIdleModeProps(self, new, old, prop)
-    if prop == "idleModeEnabled" then
-      self:OnIdleModeEnabledChange(new)
-    elseif prop == "idleModeTimer" then
-      self:OnIdleModeTimerChange(new)
-    elseif prop == "idleModeAlpha" then
-      self:OnIdleModeAlphaChange(new)
-    elseif prop == "isInIdleMode" then
-      self:OnIdleModeChange(new)
-      local ignoreChildren = (self.idleModeType == "basic-type") and true or false
-      if new then
-        self:OnEnterIdleMode(ignoreChildren)
-      else
-        self:OnLeaveIdleMode(ignoreChildren)
-      end
-    elseif prop == "inactivityTimer" then
-      self:OnInactivityTimerChange(new)
-    elseif prop == "idleModeType" then
-      self:OnIdleModeTypeChange(new)
-    end
-  end
   ------------------------------------------------------------------------------
   --                    Comm Methods                                          --
   ------------------------------------------------------------------------------
-  __Arguments__ { String , Variable.Rest() }
-  function OnConfirmedRequest(self, msg, ...)
-    if msg == "GET_IDLE_MODE_INFO" then
-      self:OnRetrieveIdleModeInfo(...)
-      self:SendMessageToChildren("GET_IDLE_MODE_INFO", ...)
-    end
-  end
+  __Arguments__ { BaseObject }
+  function AddChildObject(self, object)
+    super.AddChildObject(self, object)
 
-  __Arguments__ { String, Variable.Rest() }
-  function OnChildMessage(self, msg, ...)
-    if msg == "WAKE_UP" then
-      local ownerTimer, timer = ...
-      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
-      self:OnWakeUp()
-    elseif msg == "REMOVE_IDLE_COUNTDOWN" then
-      local ownerTimer = ...
-      self:RemoveIdleCountdown(ownerTimer)
-    end
-  end
-
-  function OnRetrieveIdleModeInfo(self, enabled, timer, alpha, type)
-    if type == "basic-type" then
-      self.idleModeTimer = nil
-    else
-      self.idleModeTimer = timer
-    end
-
-    self.idleModeEnabled = enabled
-    self.idleModeAlpha = alpha
-    self.idleModeType  = type
-  end
-
-  __Arguments__ { String, Variable.Rest() }
-  function OnParentMessage(self, msg, ...)
-    if msg == "GET_IDLE_MODE_INFO" then
-      self:OnRetrieveIdleModeInfo(...)
-    elseif msg == "REFRESH_IDLE_MODE_ALPHA" then
-      if self.isInIdleMode then
-        self:SetEffectiveAlpha(self.idleModeAlpha)
-      end
-    elseif msg == "CHANGE_IDLE_MODE_ALPHA" then
-      local alpha = ...
-      self.idleModeAlpha = alpha
-    elseif msg == "CHANGE_IDLE_MODE_TIMER" then
-      local timer = ...
-      self.idleModeTimer = timer
-    elseif msg == "CHANGE_IDLE_MODE_ENABLED" then
-      local enabled = ...
-      self.idleModeEnabled = enabled
-    elseif msg == "WAKE_UP" then
-      local ownerTimer, timer = ...
-      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
-      self:OnWakeUp()
-    elseif msg == "LEAVE_IDLE_MODE_TEMPORARLY" then
-      self:LeaveTemporalyIdleMode()
-    elseif msg == "ENTER_IDLE_MODE_FROM_TEMPORALY" then
-      self:EnterInIdleModeFromTemporarly()
-    elseif msg == "ADD_IDLE_COUNTDOWN" then
-      local ownerTimer, timer, applyToChildren = ...
-      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer), applyToChildren)
-    elseif msg == "REMOVE_IDLE_COUNTDOWN" then
-      local ownerTimer, applyToChildren = ...
-      self:RemoveIdleCountdown(ownerTimer, applyToChildren)
-    elseif msg == "SET_EFFECTIVE_ALPHA" then
-      local alpha = ...
-      self:SetEffectiveAlpha(alpha)
-    end
+    self:SendMessageToParents("REGISTER_FRAME", object)
   end
 
   __Arguments__ { BaseObject }
@@ -320,30 +235,6 @@ class "Frame" (function(_ENV)
     super.RemoveChildObject(self, object)
 
     self:SendMessageToParents("UNREGISTER_FRAME", object)
-  end
-
-  __Arguments__ { BaseObject }
-  function AddChildObject(self, object)
-    super.AddChildObject(self, object)
-
-    if object.idleCountdowns then
-      for owner, info in pairs(object.idleCountdowns) do
-        self:AddIdleCountdown(owner, IdleCountdownInfo(info.countdown, info.duration))
-        self:SendMessageToParents("ADD_IDLE_COUNTDOWN", owner, info.countdown)
-      end
-    end
-
-    if self.idleCountdowns then
-      for owner, info in pairs(self.idleCountdowns) do
-        -- It's important to check the owner is well the parent, to avoid propagate
-        -- the countdowns which have been added previously.
-        if owner == self and info.applyToChildren then
-          object:AddIdleCountdown(owner, IdleCountdownInfo(info.countdown, info.duration), true)
-        end
-      end
-    end
-
-    self:SendMessageToParents("REGISTER_FRAME", object)
   end
   ------------------------------------------------------------------------------
   --                        Size Methods                                      --
@@ -551,12 +442,6 @@ class "Frame" (function(_ENV)
   ------------------------------------------------------------------------------
   --                    Idle Mode Methods                                     --
   ------------------------------------------------------------------------------
-
-  __Arguments__ { Variable.Optional(Boolean, false)}
-  function OnEnterIdleMode(self, ignoreChildren)
-    self:RefreshIdleModeAlpha(ignoreChildren)
-  end
-
   __Arguments__ { Variable.Optional(Boolean, false) }
   function RefreshIdleModeAlpha(self, ignoreChildren)
     if not self.idleModeEnabled then
@@ -586,36 +471,6 @@ class "Frame" (function(_ENV)
     self:RefreshIdleModeAlpha(ignoreChildren)
   end
 
-  function LeaveTemporalyIdleMode(self)
-    self.idleModePaused = true
-    self:SetAlpha(1.0)
-  end
-
-  function EnterInIdleModeFromTemporarly(self)
-    self.idleModePaused = false
-    if self.isInIdleMode and self.idleModeEnabled then
-      self:SetEffectiveAlpha(self.idleModeAlpha)
-    end
-  end
-
-  function OnIdleModeChange(self, value)
-    if not self.hover then
-      self:Skin()
-    end
-  end
-
-  __Arguments__ { Boolean }
-  function OnIdleModeEnabledChange(self, enabled)
-    if not enabled then
-      -- Remove the transparency
-      self:SetAlpha(1.0)
-      -- Clear all timers
-      self:ClearIdleCountdowns()
-      -- Set the idle mode to false without triggered the handler system
-      self.__isInIdleMode = false
-    end
-  end
-
   __Arguments__ { Number }
   function OnIdleModeAlphaChange(self, alpha)
     if self.isInIdleMode then
@@ -623,137 +478,9 @@ class "Frame" (function(_ENV)
     end
   end
 
-  __Arguments__ { Number }
-  function OnIdleModeTimerChange(self, timer) end
-
-  __Arguments__ { Number }
-  function OnInactivityTimerChange(self, timer) end
-
-  __Arguments__ { String }
-  function OnIdleModeTypeChange(self, type)
-    if type == "basic-type" then
-      self:SetAlpha(1.0)
-    end
-  end
-
-  __Arguments__ { Variable.Optional(Boolean, false), Variable.Optional(Number, 0) }
-  function WakeUp(self, wakeUpChildren, timer)
-    timer = (timer == 0) and self.idleModeTimer or timer
-
-    self:AddIdleCountdown(self, IdleCountdownInfo(timer, timer, wakeUpChildren))
-    self:OnWakeUp()
-
-    if wakeUpChildren then
-      self:SendMessageToChildren("WAKE_UP", self, timer)
-    end
-
-    self:SendMessageToParents("WAKE_UP", self, timer)
-  end
-
-  __Arguments__ { Variable.Optional(Boolean, false) }
-  function WakeUpPermanently(self, wakeUpChildren)
-    self:WakeUp(wakeUpChildren, -1)
-  end
-
-  function OnWakeUp(self)
-    self.isInIdleMode     = false
-    self._inactivityTimer = nil
-  end
-
-  __Arguments__ { Variable.Optional(Boolean, false) }
-  function Idle(self, applyToChildren)
-    self:RemoveIdleCountdown(self, applyToChildren)
-    self:SendMessageToParents("REMOVE_IDLE_COUNTDOWN", self)
-  end
-
-  __Arguments__ { BaseObject, IdleCountdownInfo, Variable.Optional(Boolean, false) }
-  function AddIdleCountdown(self, owner, countdownInfo, applyToChildren)
-    if not self.idleCountdowns then
-      self.idleCountdowns = Dictionary()
-    end
-
-    self.idleCountdowns[owner] = countdownInfo
-
-    if applyToChildren and self._childrenObject then
-      for child in pairs(self._childrenObject) do
-        child:AddIdleCountdown(owner, IdleCountdownInfo(countdownInfo.countdown, countdownInfo.duration), applyToChildren)
-      end
-    end
-  end
-
-  __Arguments__  { BaseObject, Variable.Optional(Boolean, false) }
-  function RemoveIdleCountdown(self, owner, applyToChildren)
-    if self.idleCountdowns then
-      self.idleCountdowns[owner] = nil
-    end
-
-    if applyToChildren and self._childrenObject then
-      for child in pairs(self._childrenObject) do
-        child:RemoveIdleCountdown(owner, applyToChildren)
-      end
-    end
-  end
-
-  __Arguments__ { Variable.Optional(Boolean, false) }
-  function ClearIdleCountdowns(self, applyToChildren)
-    if self.idleCountdowns then
-      for k in pairs(self.idleCountdowns) do
-        self.idleCountdowns[k] = nil
-      end
-    end
-
-    if applyToChildren and self._childrenObject then
-      for child in pairs(self._childrenObject) do
-        child:ClearIdleCountdowns(applyToChildren)
-      end
-    end
-  end
-
-
-  __Arguments__ { Number }
-  function UpdateIdleCountdowns(self, diff)
-    if self.idleCountdowns then
-      for owner, info in self.idleCountdowns:GetIterator() do
-        if info.duration ~= -1 then
-          local final = math.max(0, info.countdown-diff)
-          if final == 0 then
-            self.idleCountdowns[owner] = nil
-          else
-            info.countdown = final
-          end
-        end
-      end
-    end
-  end
-
-  function GetEffectiveIdleCountdown(self)
-    local maximum = 0
-    if self.idleCountdowns then
-      for owner, info in self.idleCountdowns:GetIterator() do
-        if info.duration == -1 then
-          maximum = info.countdown
-          return info.countdown
-        else
-          if info.countdown > maximum then
-            maximum = info.countdown
-          end
-        end
-      end
-    end
-    return maximum
-  end
-
-  function PrintIdleCountdowns(self)
-    print("-----------------------")
-    print("--", class.GetObjectClass(self), "--")
-    local index = 1
-    if self.idleCountdowns then
-      for owner, info in self.idleCountdowns:GetIterator() do
-        print(index, class.GetObjectClass(owner), info.countdown, info.duration, info.applyToChildren)
-        index = index + 1
-      end
-    end
-    print("----------------------")
+  function WakeUpTracker(self)
+    self.wakeUpRequest = true
+    self:SendRequest("WAKE_UP_TRACKER")
   end
   ------------------------------------------------------------------------------
   --                    SetParent Methods                                     --
@@ -986,11 +713,6 @@ class "Frame" (function(_ENV)
   end
 
   function OnReset(self)
-    self.isInIdleMode     = nil
-    self.idleModeType     = nil
-    self.idleModeTimer    = nil
-    self.idleModeAlpha    = nil
-    self.idleModeType     = nil
     self.alpha            = nil
     self.hover            = nil
   end
@@ -1001,7 +723,6 @@ class "Frame" (function(_ENV)
     self:ClearAllPoints()
     self:SetParent()
     self:SetParentObject()
-    self:ClearIdleCountdowns()
     self:SetAlpha(1)
 
     -- Remove event handlers
@@ -1059,10 +780,7 @@ class "Frame" (function(_ENV)
 
   -- This function is called when the hover state has changed
   __Arguments__ { Boolean }
-  function OnHover(self, hover)
-    self.idleModePaused = hover
-    self:ForceSkin()
-  end
+  function OnHover(self, hover) end
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
   ------------------------------------------------------------------------------
@@ -1120,29 +838,24 @@ class "Frame" (function(_ENV)
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "frame" { TYPE = Table }
-  property "width" { TYPE = Number, HANDLER = UpdateWidth, DEFAULT = 0 }
-  property "height" { TYPE = Number, HANDLER = UpdateHeight, DEFAULT = 0 }
-  property "baseHeight" { TYPE = Number, DEFAULT = 0 }
-  property "baseWidth" { TYPE = Number, DEFAULT = 0 }
-  property "relWidth" { TYPE = Number }
-  property "layout" { TYPE = String, DEFAULT = "", UpdateLayout }
-  property "_pendingDraw" { TYPE = Boolean, DEFAULT = false }
-  property "_pendingSkin" { TYPE = Boolean, DEFAULT = false }
-  property "_pendingLayout" { TYPE = Boolean, DEFAULT = false }
-  property "_pendingOption" { TYPE = Boolean, DEFAULT = false }
-  property "_needDraw" { TYPE = Boolean, DEFAULT = false }
-  property "_needSkin"{ TYPE = Boolean, DEFAULT = false }
-  property "_needDoLayout" { TYPE = Boolean, DEFAULT = false }
-  property "isInIdleMode" { TYPE = Boolean, FIELD = "__isInIdleMode", DEFAULT = false, HANDLER = UpdateIdleModeProps }
-  property "idleModeEnabled" { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateIdleModeProps }
-  property "idleModePaused" { TYPE = Boolean, DEFAULT = false}
-  property "idleModeTimer"  { TYPE = Number, DEFAULT = function(self) return self.inactivityTimer end }
-  property "idleModeAlpha"  { TYPE = Number, DEFAULT = 0.35, HANDLER = UpdateIdleModeProps }
-  property "idleModeType"   { TYPE = String, DEFAULT = "basic-type", HANDLER = UpdateIdleModeProps }
-  property "alpha"          { TYPE = Number, DEFAULT = 0.50 }
-  property "inactivityTimer" { TYPE = Number, DEFAULT = 4, HANDLER = UpdateIdleModeProps }
-  property "hover"           { TYPE = Boolean, DEFAULT = false, HANDLER = function(self, new) self:OnHover(new) end}
+  property "frame"            { TYPE = Table }
+  property "width"            { TYPE = Number, HANDLER = UpdateWidth, DEFAULT = 0 }
+  property "height"           { TYPE = Number, HANDLER = UpdateHeight, DEFAULT = 0 }
+  property "baseHeight"       { TYPE = Number, DEFAULT = 0 }
+  property "baseWidth"        { TYPE = Number, DEFAULT = 0 }
+  property "relWidth"         { TYPE = Number }
+  property "layout"           { TYPE = String, DEFAULT = "", UpdateLayout }
+  property "_pendingDraw"     { TYPE = Boolean, DEFAULT = false }
+  property "_pendingSkin"     { TYPE = Boolean, DEFAULT = false }
+  property "_pendingLayout"   { TYPE = Boolean, DEFAULT = false }
+  property "_pendingOption"   { TYPE = Boolean, DEFAULT = false }
+  property "_needDraw"        { TYPE = Boolean, DEFAULT = false }
+  property "_needSkin"        { TYPE = Boolean, DEFAULT = false }
+  property "_needDoLayout"    { TYPE = Boolean, DEFAULT = false }
+  property "wakeUpRequest"    { TYPE = Boolean, DEFAULT = false }
+  property "alpha"            { TYPE = Number, DEFAULT = 0.50 }
+  property "hover"            { TYPE = Boolean, DEFAULT = false, HANDLER = function(self, new) self:OnHover(new) end }
+  property "dbReadOnly"       { TYPE = Boolean, DEFAULT = false }
 
   __Static__() property "idleModeTimerLaunched" { TYPE = Boolean, DEFAULT = false }
 

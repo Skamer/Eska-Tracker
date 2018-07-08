@@ -345,30 +345,6 @@ function AddIdleModeRecipes(self)
     GetCurrentTracker(recipe).idleModeAlpha = value
   end)
   OptionBuilder:AddRecipe(alpha, "tracker/idle-mode")
-
-  local headingMode = HeadingRecipe()
-  headingMode:SetText("Type")
-  headingMode:SetOrder(301)
-  OptionBuilder:AddRecipe(headingMode, "tracker/idle-mode")
-
-  local idleModeType = RadioGroupRecipe()
-  idleModeType:SetOrder(302)
-  idleModeType:AddChoice("basic-type", "Basic")
-  idleModeType:AddChoice("full-type", "Full")
-  idleModeType:SetBuildingGroup("tracker/idle-mode/[mode&:tracker_idle_mode_type:]")
-  idleModeType:SetSaveChoiceVariable("tracker_idle_mode_type")
-  idleModeType:Get(function(recipe)
-    return GetCurrentTracker(recipe).idleModeType
-  end)
-  idleModeType:Set(function(recipe, value)
-    GetCurrentTracker(recipe).idleModeType = value
-  end)
-
-  OptionBuilder:AddRecipe(idleModeType, "tracker/idle-mode")
-
-  OptionBuilder:AddRecipe(TextRecipe():SetText("IDLE_MODE_BASIC_TYPE_DESCRIPTION"):SetWidth(1.0), "tracker/idle-mode/basic-type")
-  OptionBuilder:AddRecipe(TextRecipe():SetText("IDLE_MODE_FULL_TYPE_DESCRIPTION"):SetWidth(1.0), "tracker/idle-mode/full-type")
-
 end
 
 

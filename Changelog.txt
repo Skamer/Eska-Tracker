@@ -1,3 +1,6 @@
+[1.0.16]
+- REMOVED: Deleted the 'full' type for idle mode, and all things related with.
+
 [1.0.15]
 - Tagged as Beta
 - Fixed the arguments for CallbackHandlers Run() Method.

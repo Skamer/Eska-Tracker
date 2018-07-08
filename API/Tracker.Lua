@@ -7,6 +7,19 @@ Scorpio                    "EskaTracker.API.Tracker"                          ""
 --============================================================================--
 namespace                  "EKT"
 --============================================================================--
+struct "IdleCountdownInfo" (function(_ENV)
+  member "countdown" { TYPE = Number, REQUIRE = true }
+  member "duration"  { TYPE = Number }
+  member "paused"    { TYPE = Boolean, DEFAULT = false}
+
+  function __init(self)
+    if self.duration == nil then
+      self.duration = self.countdown
+    end
+  end
+end)
+
+
 Class "Tracker" (function(_ENV)
   inherit "BorderFrame"
   _TrackerCache = setmetatable({}, { __mode = "k"})
@@ -32,9 +45,11 @@ Class "Tracker" (function(_ENV)
   local function OnWidthChanged(self, new, old)
     self:Layout()
 
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      Database:SetValue("width", new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "trackers", self.id) then
+        Database:SetValue("width", new)
+      end
     end
   end
 
@@ -42,72 +57,36 @@ Class "Tracker" (function(_ENV)
     -- Update the scroll bar visibility
     self:UpdateScrollbarVisibility()
 
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      Database:SetValue("height", new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "trackers", self.id) then
+        Database:SetValue("height", new)
+      end
     end
   end
 
   local function UpdateLock(self, new)
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      Database:SetValue("locked", new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "trackers", self.id) then
+        Database:SetValue("locked", new)
+      end
     end
 
     --self:GetFrameContainer():EnableMouse(true)
     self:GetFrameContainer():SetMovable(not new)
   end
 
-  __Arguments__ { Number }
-  function OnInactivityTimerChange(self, timer)
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      Database:SetValue("inactivity-timer", timer)
-    end
-
-    self:SendMessageToChildren("CHANGE_IDLE_MODE_TIMER", new)
-    self:AddIdleCountdown(self, IdleCountdownInfo(timer, timer), true)
-  end
-
-  __Arguments__ { Number }
-  function OnIdleModeAlphaChange(self, alpha)
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      Database:SetValue("idle-mode-alpha", alpha)
-    end
-
-    if self.isInIdleMode then
-      self:SetAlpha(alpha)
-    else
-      self:SetAlpha(1)
-    end
-    self:SendMessageToChildren("CHANGE_IDLE_MODE_ALPHA", alpha)
-  end
-
-  __Arguments__ { String }
-  function OnIdleModeTypeChange(self, type)
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      Database:SetValue("idle-mode-type", type)
-    end
-
-    self:SendMessageToChildren("GET_IDLE_MODE_INFO", self.idleModeEnabled, self.idleModeTimer, self.idleModeAlpha, self.idleModeType)
-  end
-
-  __Arguments__ { BaseObject, String, Variable.Rest() }
-  function OnChildRequest(self, child, msg, ...)
-    if msg == "GET_IDLE_MODE_INFO" then
-      child:OnConfirmedRequest(msg, self.idleModeEnabled, self.idleModeTimer, self.idleModeAlpha, self.idleModeType)
-    end
-  end
 
   local function UpdateShowScrollbar(self, new)
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      if new then
-        Database:SetValue("showScrollbar", true)
-      else
-        Database:SetValue("showScrollbar", nil)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "trackers", self.id) then
+        if new then
+          Database:SetValue("showScrollbar", true)
+        else
+          Database:SetValue("showScrollbar", nil)
+        end
       end
     end
 
@@ -234,151 +213,246 @@ Class "Tracker" (function(_ENV)
   ------------------------------------------------------------------------------
   --                        Comm. Methods                                     --
   ------------------------------------------------------------------------------
+  function OnChildRequest(self, child, request, ...)
+    if request == "WAKE_UP_TRACKER" then
+      child.wakeUpRequest = false
+      self:OnWakeUp()
+    end
+  end
+
+  function OnChildMessage(self, msg, ...)
+    if msg == "REGISTER_FRAME" then
+      local object = ...
+      self:CheckWakeUpRequests(object)
+    end
+  end
+
   __Arguments__ { BaseObject }
   function AddChildObject(self, object)
     super.AddChildObject(self, object)
 
-    self:RegisterContainedFrame(object)
+    self:CheckWakeUpRequests(object)
   end
 
-  function RegisterContainedFrame(self, frame)
-    if not self._frameContained then
-      self._frameContained = setmetatable({}, { __mode = "k"})
+  function CheckWakeUpRequests(self, object)
+    local hasRequest = false
+
+    if self.wakeUpRequest then
+      hasRequest = true
+      self.wakeUpRequest = nil
     end
 
-    self._frameContained[frame] = true
+    local function check(object)
+      local hasRequest = false
 
-    frame:OnRetrieveIdleModeInfo(self.idleModeEnabled, self.idleModeTimer, self.idleModeAlpha, self.idleModeType)
-
-    local subChildren = frame:GetChildObjects()
-    if subChildren then
-      for subChild in pairs(subChildren) do
-        self:RegisterContainedFrame(subChild)
+      if object.wakeUpRequest then
+        hasRequest = true
+        object.wakeUpRequest = nil
       end
-    end
-  end
 
-  function UnregisterContainedFrame(self, frame)
-    if self._frameContained then
-      self._frameContained[frame] = nil
-      local subChildren = frame:GetChildObjects()
+      local subChildren = object:GetChildObjects()
       if subChildren then
         for subChild in pairs(subChildren) do
-          self:UnregisterContainedFrame(subChild)
+          if check(subChild) then
+            hasRequest = true
+          end
+        end
+      end
+
+      return hasRequest
+    end
+
+    local subChildren = object:GetChildObjects()
+    if subChildren then
+      for subChild in pairs(subChildren) do
+        if check(subChild) then
+          hasRequest = true
         end
       end
     end
 
-    frame.idleModeType    = nil
-    frame.idleModeTimer   = nil
-    frame.idleModeEnabled = nil
-    frame.idleModeAlpha   = nil
-  end
-
-  __Arguments__ { String, Variable.Rest() }
-  function OnChildMessage(self, msg, ...)
-    if msg == "REGISTER_FRAME" then
-      local obj = ...
-      self:RegisterContainedFrame(obj)
-    elseif msg == "UNREGISTER_FRAME" then
-      local obj = ...
-      self:UnregisterContainedFrame(obj)
-    elseif msg == "ADD_IDLE_COUNTDOWN" then
-      local ownerTimer, timer, applyToChildren = ...
-      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
-    elseif msg == "REMOVE_IDLE_COUNTDOWN" then
-      local ownerTimer, applyToChildren = ...
-      self:RemoveIdleCountdown(ownerTimer, applyToChildren)
-    elseif msg == "WAKE_UP" then
-      local ownerTimer, timer = ...
-      self:AddIdleCountdown(ownerTimer, IdleCountdownInfo(timer, timer))
+    if hasRequest then
       self:OnWakeUp()
     end
   end
   ------------------------------------------------------------------------------
   --                        Idle. Methods                                     --
   ------------------------------------------------------------------------------
-  __Arguments__ { Boolean }
-  function OnIdleModeEnabledChange(self, enabled)
-    -- 1. Save the change in the database
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "trackers", self.id) then
-      Database:SetValue("idle-mode-enabled", enabled)
-    end
-
-
-    -- 2. Notify the children
-    self:SendMessageToChildren("CHANGE_IDLE_MODE_ENABLED", enabled)
-
-    -- 3. Start the timers if enabled/ Remove the timer and transparency if disabled
-    if enabled then
-      self:AddIdleCountdown(self, IdleCountdownInfo(self.idleModeTimer, self.idleModeTimer))
-      self:SendMessageToChildren("WAKE_UP", self, self.idleModeTimer)
-
-      self.__isInIdleMode = false
-      self:StartInactivityTimers()
-    else
-      -- Remove the transparency
-      self:SetAlpha(1.0)
-      -- Clear all Timers
-      self:ClearIdleCountdowns()
-      -- Set the idle mode to false without triggered the handler system
-      self.__isInIdleMode = false
-    end
-  end
-
-  function LeaveTemporalyIdleMode(self)
-    self.idleModePaused = true
-    self:SetAlpha(1.0)
-  end
-
-  function EnterInIdleModeFromTemporarly(self)
-    self.idleModePaused = false
-    if self.isInIdleMode and self.idleModeEnabled then
+  local function IsInIdleModeChanged(self, new)
+    if new then
       self:SetAlpha(self.idleModeAlpha)
+    else
+      self:SetAlpha(1.0)
     end
+  end
+
+  local function InactivityTimerChanged(self, new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "trackers", self.id) then
+        Database:SetValue("inactivity-timer", new)
+      end
+    end
+
+    if self.idleCountdowns then
+      for id, info in pairs(self.idleCountdowns) do
+        if id == self and info.countdown > new then
+          info.countdown = new
+        end
+      end
+    end
+  end
+
+  local function IdleModeEnabledChanged(self, new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "trackers", self.id) then
+        Database:SetValue("idle-mode-enabled", new)
+      end
+    end
+
+    if new then
+      self:AddIdleCountdown(self, self.inactivityTimer)
+      self:StartInactivityTimer()
+    else
+      self:ClearIdleCountdowns()
+    end
+      self.isInIdleMode = false
+  end
+
+  local function IdleModeAlphaChanged(self, new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "trackers", self.id) then
+        Database:SetValue("idle-mode-alpha", new)
+      end
+    end
+
+    if self.isInIdleMode then
+      self:SetAlpha(new)
+    end
+  end
+
+  function OnWakeUp(self)
+    self:AddIdleCountdown(self, self.inactivityTimer)
+    self.isInIdleMode = false
+    self:StartInactivityTimer()
+  end
+
+
+  __Arguments__ { Any, Number, Variable.Optional(Number), Variable.Optional(Boolean) }
+  function AddIdleCountdown(self, id, countdown, duration, paused)
+    self:AddIdleCountdown(id, IdleCountdownInfo(countdown, duration, paused))
+  end
+
+  __Arguments__ { Any, IdleCountdownInfo }
+  function AddIdleCountdown(self, id, countdownInfo)
+    if not self.idleCountdowns then
+      self.idleCountdowns = Dictionary()
+    end
+
+    self.idleCountdowns[id] = countdownInfo
+  end
+
+  __Arguments__ { Any }
+  function RemoveIdleCountdown(self, id)
+    if self.idleCountdowns then
+      self.idleCountdowns[owner] = nil
+    end
+  end
+
+  function ClearIdleCountdowns(self)
+    if self.idleCountdowns then
+      for k in pairs(self.idleCountdowns) do
+        self.idleCountdowns[k] = nil
+      end
+    end
+  end
+
+  __Arguments__ { Number }
+  function UpdateIdleCountdowns(self, delta)
+    if self.idleCountdowns then
+      for id, info in self.idleCountdowns:GetIterator() do
+        if not info.paused then
+          local result = math.max(0, info.countdown-delta)
+          if result == 0 then
+            self.idleCountdowns[id] = nil
+          else
+            info.countdown = result
+          end
+        end
+      end
+    end
+  end
+
+  __Arguments__ { Any }
+  function PauseIdleCountdown(self, id)
+    if self.idleCountdowns then
+      local info = self.idleCountdowns[id]
+      if info then
+        info.paused = true
+      end
+    end
+  end
+
+  __Arguments__ { Any }
+  function ResumeIdleCountdown(self, id)
+    if self.idleCountdowns then
+      local info = self.idleCountdowns[id]
+      if info then
+        info.paused = false
+      end
+    end
+  end
+
+  function GetEffectiveIdleCountdown(self)
+    local maximum = 0
+    if self.idleCountdowns then
+      for id, info in self.idleCountdowns:GetIterator() do
+        if info.countdown > maximum then
+          maximum = info.countdown
+        end
+      end
+    end
+
+    return maximum
   end
 
   __Async__()
-  function StartInactivityTimers(self)
+  function StartInactivityTimer(self)
     if self._inactivityTimerStarted then
       return
     end
 
     self._inactivityTimerStarted = true
+    -- Update rate
     local updateRate = 0.1
 
     while self.idleModeEnabled do
       Delay(updateRate)
 
       if not self.isInIdleMode and not self.idleModePaused then
-        local trackerTimerToUse = self:GetEffectiveIdleCountdown()
-        if trackerTimerToUse == -1 then
-          self.isInIdleMode = false
-        elseif trackerTimerToUse <= 0 then
+        local countdown = self:GetEffectiveIdleCountdown()
+        if countdown <= 0 and self.idleModeEnabled then
           self.isInIdleMode = true
         end
-
         self:UpdateIdleCountdowns(updateRate)
-
-        if self._frameContained then
-          for obj in pairs(self._frameContained) do
-            if not obj.isInIdleMode and not self.idleModePaused  then
-              local timerToUse = (self.idleModeType == "basic-type") and trackerTimerToUse or obj:GetEffectiveIdleCountdown()
-              if timerToUse == -1 then
-                obj.isInIdleMode = false
-              elseif timerToUse <= 0 then
-                obj.isInIdleMode = true
-              end
-
-              obj:UpdateIdleCountdowns(updateRate)
-            end
-          end
-        end
       end
     end
 
     self._inactivityTimerStarted = nil
+  end
+
+  __Arguments__ { Boolean }
+  function OnHover(self, hover)
+    super.OnHover(self, hover)
+
+    if hover then
+      self.isInIdleMode = false
+      self:AddIdleCountdown("hover", 3, nil, true)
+    else
+      self:ResumeIdleCountdown("hover")
+    end
   end
   ------------------------------------------------------------------------------
   --                             Methods                                      --
@@ -584,59 +658,36 @@ Class "Tracker" (function(_ENV)
   end
 
   function LoadPropsFromDatabase(self)
-    -- Load the properties contained in the profile
+    -- Database Read Only for avoiding the properties writing during the loading.
+    self.dbReadOnly = true
+
+    -- Load the properties value contained in the profile
     Profiles:PrepareDatabase()
 
-    local height, width, enabled, locked, showScrollbar, xPos, yPos, show
-    local idleModeAlpha, inactivityTimer, idleModeEnabled, idleModeType
-    local displayRulesType, displayMacro, displayFunction
-    local displayInRaid, displayInArena, displayInGroup, displayInPetBattle, displayInCombat
     if Database:SelectTable(false, "trackers", self.id) then
-      height                        = Database:GetValue("height")
-      width                         = Database:GetValue("width")
-      locked                        = Database:GetValue("locked")
-      enabled                       = Database:GetValue("enabled")
-      showScrollbar                 = Database:GetValue("showScrollbar")
-      xPos                          = Database:GetValue("xPos")
-      yPos                          = Database:GetValue("yPos")
-      show                          = Database:GetValue("show")
-      idleModeAlpha                 = Database:GetValue("idle-mode-alpha")
-      inactivityTimer               = Database:GetValue("inactivity-timer")
-      idleModeType                  = Database:GetValue("idle-mode-type")
-      idleModeEnabled               = Database:GetValue("idle-mode-enabled")
-      displayRulesType              = Database:GetValue("display-rules-type")
-      displayMacro                  = Database:GetValue("display-macro")
-      displayFunction               = Database:GetValue("display-function")
-      displayInRaid                 = Database:GetValue("display-in-raid")
-      displayInGroup                = Database:GetValue("display-in-group")
-      displayInPetBattle            = Database:GetValue("display-in-pet-battle")
-      displayInCombat               = Database:GetValue("display-in-combat")
-      displayInArena                = Database:GetValue("display-in-arena")
+      self.height               = Database:GetValue("height")
+      self.width                = Database:GetValue("width")
+      self.locked               = Database:GetValue("locked")
+      self.enabled              = Database:GetValue("enabled")
+      self.showScrollbar        = Database:GetValue("showScrollbar")
+      self.idleModeAlpha        = Database:GetValue("idle-mode-alpha")
+      self.inactivityTimer      = Database:GetValue("inactivity-timer")
+      self.idleModeEnabled      = Database:GetValue("idle-mode-enabled")
+      self.displayRulesType     = Database:GetValue("display-rules-type")
+      self.displayRulesType     = Database:GetValue("display-rules-type")
+      self.displayMacro         = Database:GetValue("display-macro")
+      self.displayFunction      = Database:GetValue("display-function")
+      self.displayInRaid        = Database:GetValue("display-in-raid")
+      self.displayInGroup       = Database:GetValue("display-in-group")
+      self.displayInPetBattle   = Database:GetValue("display-in-pet-battle")
+      self.displayInCombat      = Database:GetValue("display-in-combat")
+      self.displayInArena       = Database:GetValue("display-in-arena")
+      self:SetPosition(Database:GetValue("xPos"), Database:GetValue("yPos"), false)
     end
 
-
-    -- Assign the values
-    self.height                       = height or 300
-    self.width                        = width or 325
-    self.locked                       = locked
-    self.enabled                      = enabled
-    self.showScrollbar                = showScrollbar
-    self.idleModeAlpha                = idleModeAlpha
-    self.inactivityTimer              = inactivityTimer
-    self.idleModeType                 = idleModeType
-    self.idleModeEnabled              = idleModeEnabled
-    self.displayMacro                 = displayMacro
-    self.__displayFunction            = displayFunction
-    self.displayRulesType             = displayRulesType
-    self.displayInRaid                = displayInRaid
-    self.displayInGroup               = displayInGroup
-    self.displayInPetBattle           = displayInPetBattle
-    self.displayInCombat              = displayInCombat
-    self.displayInArena               = displayInArena
-    self:SetPosition(xPos, yPos, false)
-    self:BuildDisplayFunctionCache()
+    -- remove the read only mode for Database
+    self.dbReadOnly = false
   end
-
 
   function OnHide(self)
     super.OnHide(self)
@@ -658,23 +709,6 @@ Class "Tracker" (function(_ENV)
 
   __Static__() function GetIDFromName(self, name)
     return name:lower()
-  end
-
-  __Arguments__ { Boolean }
-  function OnHover(self, hover)
-    super.OnHover(self, hover)
-
-    if hover then
-      self:LeaveTemporalyIdleMode()
-      if self.idleModeType ~= "basic-type" then
-        self:SendMessageToChildren("LEAVE_IDLE_MODE_TEMPORARLY")
-      end
-    else
-      self:EnterInIdleModeFromTemporarly()
-      if self.idleModeType ~= "basic-type" then
-        self:SendMessageToChildren("ENTER_IDLE_MODE_FROM_TEMPORALY")
-      end
-    end
   end
 
   function ValidateDisplayRules(self)
@@ -718,9 +752,11 @@ Class "Tracker" (function(_ENV)
   end
 
   local function UpdateEnabled(self, new)
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(false, "trackers", self.id) then
-      Database:SetValue("enabled", new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(false, "trackers", self.id)  then
+        Database:SetValue("enabled", new)
+      end
     end
 
     if new then
@@ -768,7 +804,7 @@ Class "Tracker" (function(_ENV)
         id = "display-function"
         self:BuildDisplayFunctionCache()
       end
-      if id then
+      if id and not self.dbReadOnly then
         Database:SetValue(id, new)
       end
     end
@@ -833,6 +869,12 @@ Class "Tracker" (function(_ENV)
   property "contentHeight"                { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
   property "displayNotifications"         { TYPE = Boolean, DEFAULT = false }
   property "showScrollbar"                { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
+  property "isInIdleMode"                 { TYPE = Boolean, DEFAULT = false, HANDLER = IsInIdleModeChanged }
+  property "inactivityTimer"              { TYPE = Number, DEFAULT = 20, HANDLER = InactivityTimerChanged }
+  property "idleModeTimer"                { TYPE = Number, DEFAULT = 0 }
+  property "idleModeEnabled"              { TYPE = Boolean, DEFAULT = false, HANDLER = IdleModeEnabledChanged }
+  property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.35, HANDLER = IdleModeAlphaChanged }
+  property "idleModePaused"               { TYPE = Boolean, DEFAULT = false }
   --- Display conditionals
   property "displayRulesType"             { TYPE = String, DEFAULT = "predefined-type", HANDLER = UpdateDisplayProps }
   property "displayInRaid"                { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
