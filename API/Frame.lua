@@ -54,11 +54,14 @@ class "BaseObject" (function(_ENV)
     self._childrenObject[object] = true
 
     object:__SetParentObject(self)
+    object:OnParentObjectSet(self)
   end
 
   __Arguments__ { BaseObject }
   function RemoveChildObject(self, obj)
     if self._childrenObject then
+      obj:OnParentObjectUnset(self)
+
       self._childrenObject[obj] = nil
       obj:__SetParentObject()
     end
@@ -67,6 +70,7 @@ class "BaseObject" (function(_ENV)
   function RemoveChildObjects(self)
     if self._childrenObject then
       for child in pairs(self._childrenObject) do
+        child:OnParentObjectUnset(self)
         child:__SetParentObject(nil)
         self._childrenObject[child] = nil
       end
@@ -163,6 +167,13 @@ class "BaseObject" (function(_ENV)
   --- This method may be overloaded for answering to requests have been confirmed
   __Arguments__ { String, Variable.Rest() }
   function OnConfirmedRequest(self, child, msg, ...) end
+
+
+  __Arguments__ { BaseObject }
+  function OnParentObjectSet(self, parent) end
+
+  __Arguments__ { BaseObject }
+  function OnParentObjectUnset(self, parent) end
 end)
 
 
@@ -481,6 +492,24 @@ class "Frame" (function(_ENV)
   function WakeUpTracker(self)
     self.wakeUpRequest = true
     self:SendRequest("WAKE_UP_TRACKER")
+  end
+
+  -- TO DELETE
+  function PauseTrackerIdleCountdown(self)
+    self:SendRequest("PAUSE_TRACKER_IDLE_COUNTDOWN")
+  end
+
+  -- TO DELETE
+  function ResumeTrackerIdleCountdown(self)
+    self:SendRequest("RESUME_TRACKER_IDLE_COUNTDOWN")
+  end
+
+  function PauseIdleCountdown(self)
+    self:SendRequest("PAUSE_IDLE_COUNTDOWN", self)
+  end
+
+  function ResumeIdleCountdown(self)
+    self:SendRequest("RESUME_IDLE_COUNTDOWN", self)
   end
   ------------------------------------------------------------------------------
   --                    SetParent Methods                                     --

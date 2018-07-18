@@ -216,7 +216,16 @@ Class "Tracker" (function(_ENV)
   function OnChildRequest(self, child, request, ...)
     if request == "WAKE_UP_TRACKER" then
       child.wakeUpRequest = false
+      self:AddIdleCountdown(child, self.inactivityTimer)
       self:OnWakeUp()
+    elseif request == "PAUSE_TRACKER_IDLE_COUNTDOWN" then
+      self:PauseIdleCountdown(self)
+    elseif request == "RESUME_TRACKER_IDLE_COUNTDOWN" then
+      self:ResumeIdleCountdown(self)
+    elseif request == "RESUME_IDLE_COUNTDOWN" then
+      self:ResumeIdleCountdown(child)
+    elseif request == "PAUSE_IDLE_COUNTDOWN" then
+      self:PauseIdleCountdown(child)
     end
   end
 
@@ -231,8 +240,49 @@ Class "Tracker" (function(_ENV)
   function AddChildObject(self, object)
     super.AddChildObject(self, object)
 
+    self:LoadAndAddIdleCountdowns(object)
     self:CheckWakeUpRequests(object)
   end
+
+  __Arguments__ { BaseObject }
+  function RemoveChildObject(self, object)
+    super.RemoveChildObject(self, object)
+
+    self:RemoveAndSaveIdleCountdowns(object)
+  end
+
+  function RemoveAndSaveIdleCountdowns(self, object)
+    if self.idleCountdowns then
+      local countdownInfo = self.idleCountdowns[object]
+      if countdownInfo then
+        object.idleCountdownInfo = countdownInfo
+        self.idleCountdowns[object] = nil
+      end
+
+      local subChildren = object:GetChildObjects()
+      if subChildren then
+        for subChild in pairs(subChildren) do
+          self:RemoveAndSaveIdleCountdowns(subChild)
+        end
+      end
+    end
+  end
+
+  function LoadAndAddIdleCountdowns(self, object)
+    if object.idleCountdownInfo then
+      self:AddIdleCountdown(object, object.idleCountdownInfo)
+      self:OnWakeUp()
+      object.idleCountdownInfo = nil
+    end
+
+    local subChildren = object:GetChildObjects()
+    if subChildren then
+      for subChild in pairs(subChildren) do
+        self:LoadAndAddIdleCountdowns(subChild)
+      end
+    end
+  end
+
 
   function CheckWakeUpRequests(self, object)
     local hasRequest = false
@@ -240,6 +290,7 @@ Class "Tracker" (function(_ENV)
     if self.wakeUpRequest then
       hasRequest = true
       self.wakeUpRequest = nil
+      self:AddIdleCountdown(object, self.inactivityTimer)
     end
 
     local function check(object)
@@ -248,6 +299,7 @@ Class "Tracker" (function(_ENV)
       if object.wakeUpRequest then
         hasRequest = true
         object.wakeUpRequest = nil
+        self:AddIdleCountdown(object, self.inactivityTimer)
       end
 
       local subChildren = object:GetChildObjects()
@@ -334,7 +386,6 @@ Class "Tracker" (function(_ENV)
   end
 
   function OnWakeUp(self)
-    self:AddIdleCountdown(self, self.inactivityTimer)
     self.isInIdleMode = false
     self:StartInactivityTimer()
   end
@@ -428,7 +479,7 @@ Class "Tracker" (function(_ENV)
     -- Update rate
     local updateRate = 0.1
 
-    while self.idleModeEnabled do
+    while self.enabled and self.idleModeEnabled do
       Delay(updateRate)
 
       if not self.isInIdleMode and not self.idleModePaused then

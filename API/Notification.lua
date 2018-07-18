@@ -476,7 +476,7 @@ class "Notifications" (function(_ENV)
     self:Layout()
 
     if self.notifications.Count == 0 then
-      self:Idle()
+      -- TODO: Add ResumeIdleCountdown
     end
   end
 

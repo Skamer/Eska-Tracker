@@ -608,6 +608,12 @@ class "RadioGroupRecipe" (function(_ENV)
       local radio = _AceGUI:Create("CheckBox")
       radio:SetLabel(info.display)
       radio:SetType("radio")
+
+      if self.itemWidth > 0 and self.itemWidth <= 1 then
+        radio:SetRelativeWidth(self.itemWidth)
+      elseif self.itemWidth > 1 then
+        radio:SetWidth(self.itemWidth)
+      end
       radio:SetUserData("value", info.value)
       radio:SetCallback("OnValueChanged", function(r, _, value)
         if radioSelected then
@@ -700,11 +706,18 @@ class "RadioGroupRecipe" (function(_ENV)
     self.addSeparator = add
     return true
   end
+
+  __Arguments__ { Number }
+  function SetItemWidth(self, width)
+    self.itemWidth = width
+    return self
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
   property "saveChoiceVariable" { TYPE = String }
   property "addSeparator"       { TYPE = Boolean, DEFAULT = false }
+  property "itemWidth"          { TYPE = Number, DEFAULT = 0 }
   ------------------------------------------------------------------------------
   --                            Constructors                                  --
   ------------------------------------------------------------------------------

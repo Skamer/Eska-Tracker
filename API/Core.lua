@@ -248,6 +248,16 @@ end
     return math.floor(number+0.5)
   end
 
+  function TruncateDecimal(self, number, decimal)
+    if not decimal then
+      decimal = 0
+    end
+
+    local tenPower = math.pow(10, decimal)
+
+    return math.floor(number * tenPower)/ tenPower
+  end
+
 end)
 
 --------------------------------------------------------------------------------
