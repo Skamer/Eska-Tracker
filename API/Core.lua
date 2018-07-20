@@ -17,6 +17,7 @@ bit_band    = bit.band
 bit_lshift  = bit.lshift
 bit_rshift  = bit.rshift
 --============================================================================--
+-- [[ DEPRECRATED]]
 __Final__()
 interface "API" (function(_ENV)
   do
@@ -258,6 +259,256 @@ end
     return math.floor(number * tenPower)/ tenPower
   end
 
+end)
+-- [[[ END DEPRECRATED ]]]
+
+class "Utils" (function(_ENV)
+  ------------------------------------------------------------------------------
+  --                         String
+  ------------------------------------------------------------------------------
+  class "String" (function(_ENV)
+
+    __Arguments__ { String }
+    __Static__() function Trim(str)
+      return str:gsub("%s+", "")
+    end
+
+    __Arguments__ { String }
+    __Static__() function UpperFirstOfEach(str)
+      local function tchelper(first, rest)
+          return first:upper()..rest
+      end
+      return str:gsub("(%a)([%w_']*)", tchelper)
+    end
+  end)
+  ------------------------------------------------------------------------------
+  --                         Math
+  ------------------------------------------------------------------------------
+  class "Math" (function(_ENV)
+
+    __Arguments__ { Number, Variable.Optional(Number), Variable.Optional(Number) }
+    __Static__() function IsInRange(value, min, max)
+      if not min and max then
+        return value <= max
+      elseif not max and min then
+        return value >= min
+      elseif max and min then
+        return (value >= min) and (value <= max)
+      end
+
+      return false
+    end
+
+    __Arguments__ { Number }
+    __Static__() function Round(number)
+      return math.floor(number+0.5)
+    end
+
+    __Arguments__ {Number, Variable.Optional(Number, 0)}
+    __Static__() function TruncateDecimal(number, decimal)
+      local tenPower = math.pow(10, decimal)
+
+      return math.floor(number * tenPower)/ tenPower
+    end
+  end)
+  ------------------------------------------------------------------------------
+  --                         Enum
+  ------------------------------------------------------------------------------
+  class "Enum" (function(_ENV)
+    __Static__() function AddFlag(flag, flag)
+      if not Enum.ValidateFlags(flags, flag) then
+        flags = flags + flag
+      end
+
+      return flags
+    end
+
+    __Static__() function RemoveFlag(flags, flag)
+      if Enum.ValidateFlags(flags, flag) then
+        flags = flags - flag
+      end
+
+      return flags
+    end
+  end)
+  ------------------------------------------------------------------------------
+  --                         Class
+  ------------------------------------------------------------------------------
+  class "Class" (function(_ENV)
+    __Static__() function GetDefaultValueFromClass(class, prop)
+      return Class.GetFeature(class, prop):GetDefault()
+    end
+
+    __Static__() function GetDefaultValueFromObj(obj, prop)
+      return Class.GetFeature(Class.GetObjectClass(obj), prop):GetDefault()
+    end
+  end)
+  ------------------------------------------------------------------------------
+  --                         Network
+  ------------------------------------------------------------------------------
+  class "Network" (function(_ENV)
+    do
+      -- The below code is based on the Encode7Bit and encodeB64 from LibCompress
+      -- and WeakAuras 2
+      -- Credits go to Golmok (galmok@gmail.com) and WeakAuras author.
+      local byteToBase64 = {
+        [0]="A","B","C","D","E","F","G","H",
+        "I","J","K","L","M","N","O","P",
+        "Q","R","S","T","U","V","W","X",
+        "Y","Z","a","b","c","d","e","f",
+        "g","h","i","j","k","l","m","n",
+        "o","p","q","r","s","t","u","v",
+        "w","x","y","z","0","1","2","3",
+        "4","5","6","7","8","9","-","_"
+      }
+
+      local base64ToByte = {
+        A =  0,  B =  1,  C =  2,  D =  3,  E =  4,  F =  5,  G =  6,  H =  7,
+        I =  8,  J =  9,  K = 10,  L = 11,  M = 12,  N = 13,  O = 14,  P = 15,
+        Q = 16,  R = 17,  S = 18,  T = 19,  U = 20,  V = 21,  W = 22,  X = 23,
+        Y = 24,  Z = 25,  a = 26,  b = 27,  c = 28,  d = 29,  e = 30,  f = 31,
+        g = 32,  h = 33,  i = 34,  j = 35,  k = 36,  l = 37,  m = 38,  n = 39,
+        o = 40,  p = 41,  q = 42,  r = 43,  s = 44,  t = 45,  u = 46,  v = 47,
+        w = 48,  x = 49,  y = 50,  z = 51,["0"]=52,["1"]=53,["2"]=54,["3"]=55,
+        ["4"]=56,["5"]=57,["6"]=58,["7"]=59,["8"]=60,["9"]=61,["-"]=62,["_"]=63
+      }
+      local encodeBase64Table = {}
+
+      __Static__() function EncodeToBase64(data)
+        local base64 = encodeBase64Table
+        local remainder = 0
+        local remainderLength = 0
+        local encodedSize = 0
+        local lengh = #data
+
+        for i = 1, lengh do
+          local code = string.byte(data, i)
+          remainder = remainder + bit_lshift(code, remainderLength)
+          remainderLength = remainderLength + 8
+          while remainderLength >= 6 do
+            encodedSize = encodedSize + 1
+            base64[encodedSize] = byteToBase64[bit_band(remainder, 63)]
+            remainder = bit_rshift(remainder, 6)
+            remainderLength = remainderLength - 6
+          end
+        end
+
+        if remainderLength > 0 then
+          encodedSize = encodedSize + 1
+          base64[encodedSize] = byteToBase64[remainder]
+        end
+        return table.concat(base64, "", 1, encodedSize)
+      end
+
+      local decodeBase64Table = {}
+
+      __Static__() function DecodeFromBase64(data)
+        local bit8 = decodeBase64Table
+        local decodedSize = 0
+        local ch
+        local i = 1
+        local bitfieldLenght = 0
+        local bitfield = 0
+        local lenght = #data
+
+        while true do
+          if bitfieldLenght >= 8 then
+            decodedSize = decodedSize + 1
+            bit8[decodedSize] = decodedSize + 1
+            bit8[decodedSize] = string.char(bit_band(bitfield, 255))
+            bitfield = bit_rshift(bitfield, 8)
+            bitfieldLenght = bitfieldLenght - 8
+          end
+          ch = base64ToByte[data:sub(i, i)]
+          bitfield = bitfield + bit_lshift(ch or 0, bitfieldLenght)
+          bitfieldLenght = bitfieldLenght + 6
+
+          if i > lenght then
+            break
+          end
+          i = i + 1
+        end
+        return table.concat(bit8, "", 1, decodedSize)
+      end
+
+      __Static__() function Encode(data, forChat)
+        if forChat then
+          return EncodeToBase64(data)
+        else
+          return _ENCODER:Encode(data)
+        end
+      end
+
+      __Static__() function Decode(data, fromChat)
+        if fromChat then
+          return DecodeFromBase64(data)
+        else
+          return _ENCODER:Decode(data)
+        end
+      end
+
+      __Static__() function Compress(data)
+        return _COMPRESSER:CompressHuffman(data)
+      end
+
+      __Static__() function Decompress(data)
+        return _COMPRESSER:Decompress(data)
+      end
+    end
+  end)
+
+  ------------------------------------------------------------------------------
+  --                         Misc
+  ------------------------------------------------------------------------------
+  __Static__() function DeepCopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[DeepCopy(orig_key)] = DeepCopy(orig_value)
+        end
+        setmetatable(copy, DeepCopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+  end
+
+  __Static__() function ShallowCopy(self, orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+  end
+
+  __Static__() function IsTableEqual(t1, t2, ignoreMT)
+   local ty1 = type(t1)
+   local ty2 = type(t2)
+
+      if ty1 ~= ty2 then return false end
+   -- non-table types can be directly compared
+   if ty1 ~= 'table' and ty2 ~= 'table' then return t1 == t2 end
+   -- as well as tables which have the metamethod __eq
+   local mt = getmetatable(t1)
+   if not ignoreMT and mt and mt.__eq then return t1 == t2 end
+   for k1,v1 in pairs(t1) do
+      local v2 = t2[k1]
+      if v2 == nil or not IsTableEqual(v1,v2) then return false end
+   end
+   for k2,v2 in pairs(t2) do
+      local v1 = t1[k2]
+      if v1 == nil or not IsTableEqual(v1,v2) then return false end
+   end
+   return true
+ end
 end)
 
 --------------------------------------------------------------------------------
