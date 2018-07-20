@@ -854,6 +854,8 @@ Class "Tracker" (function(_ENV)
       elseif prop == "displayFunction" then
         id = "display-function"
         self:BuildDisplayFunctionCache()
+      elseif prop == "displayMacro" then
+        id = "display-macro"
       end
       if id and not self.dbReadOnly then
         Database:SetValue(id, new)
@@ -933,7 +935,7 @@ Class "Tracker" (function(_ENV)
   property "displayInCombat"              { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
   property "displayInPetBattle"           { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
   property "displayInArena"               { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
-  property "displayMacro"                 { TYPE = String, DEFAULT = "show" }
+  property "displayMacro"                 { TYPE = String, DEFAULT = "show", HANDLER = UpdateDisplayProps }
   property "displayFunction"              { TYPE = String, DEFAULT = [[function() return true end]],  FIELD = "__displayFunction", HANDLER = UpdateDisplayProps }
 
   __Static__() property "_prefix"         { DEFAULT = "tracker"}

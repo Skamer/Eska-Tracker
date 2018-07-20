@@ -1,2 +1,5 @@
+[1.0.18]
+- ! Fixed Ticket #7 - The conditionals macros will now be correctly saved.
+
 [1.0.17]
 - Bump the toc for Battle for Azeroth.
