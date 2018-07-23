@@ -632,15 +632,13 @@ Class "Tracker" (function(_ENV)
 
   __Arguments__ { Block }
   function RemoveBlock(self, block)
-    block = self.blocks:Remove(block)
-    block:ClearAllPoints()
-    block:SetParent()
+    self.blocks:Remove(block)
     block:Hide()
     block.OnHeightChanged = nil
     block.OnOrderChanged  = nil
     self:RemoveChildObject(block)
 
-    self:Layout()
+    self:ForceLayout()
 
     return block
   end

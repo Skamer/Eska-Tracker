@@ -20,7 +20,13 @@ class "__EnablingOnEvent__" (function(_ENV)
       if owner._Enabled then
         Next()
       else
-        owner._Enabled = cond(owner, Wait(...))
+        local eventInfo = { Wait(...) }
+        local enabled = cond(owner, unpack(eventInfo))
+        if enabled then
+          owner._EnablingEvent = eventInfo[1]
+          owner._EnablingEventArgs = { select(2, unpack(eventInfo)) }
+          owner._Enabled = true
+        end
       end
     end
   end
@@ -110,6 +116,8 @@ class "__SafeActivatingOnEvent__" (function(_ENV)
         if handler then
           handler(select(2, unpack(eventInfo)))
         end
+      elseif not owner._Enabled and enabled then
+        owner._EnablingEvent = eventInfo[1]
       end
       owner._Enabled = enabled
     end
@@ -133,7 +141,13 @@ class "__ActivatingOnEvent__" (function(_ENV)
 
   local function RegisterModule(owner, cond, ...)
     while true do
-      owner._Enabled = cond(owner, Wait(...))
+      local eventInfo = { Wait(...) }
+      local enabled = cond(owner, unpack(eventInfo))
+      if not owner._Enabled and enabled then
+        owner._EnablingEvent = eventInfo[1]
+      end
+
+      owner._Enabled = enabled
     end
   end
 
@@ -145,8 +159,28 @@ class "__ActivatingOnEvent__" (function(_ENV)
     end
   end
 end)
+--------------------------------------------------------------------------------
+--                                                                            --
+--                        __ForceSecureHook__                                 --
+--                                                                            --
+--------------------------------------------------------------------------------
+class "__ForceSecureHook__" (function(_ENV)
+  inherit "__SystemEvent__"
 
+  local function RegisterModule(owner, func, secureFunc)
+      while true do
+        func(NextSecureCall(secureFunc))
+      end
+  end
 
+  function AttachAttribute(self, target, targetType, owner, name)
+    if #self > 0 then
+      ThreadCall(RegisterModule, owner, target, self[1])
+    else
+      ThreadCall(RegisterModule, owner, target, name)
+    end
+  end
+end)
 
 
 class "__BlocksReloader__" (function(_ENV)
