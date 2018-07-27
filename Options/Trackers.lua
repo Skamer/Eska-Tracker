@@ -221,6 +221,7 @@ function AddDisplyingRulesRecipes(self)
   local displayInCombat = CheckBoxRecipe()
   displayInCombat:SetText("Display in Combat")
   displayInCombat:SetWidth(1.0)
+  displayInCombat:SetOrder(10)
   displayInCombat:Get(function(recipe)
     return GetCurrentTracker(recipe).displayInCombat
   end)
@@ -232,47 +233,50 @@ function AddDisplyingRulesRecipes(self)
   local displayInRaid = CheckBoxRecipe()
   displayInRaid:SetText("Display in Raid")
   displayInRaid:SetWidth(1.0)
+  displayInRaid:SetOrder(20)
   displayInRaid:Get(function(recipe)
     return GetCurrentTracker(recipe).displayInRaid
   end)
   displayInRaid:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInCombat = value
+    GetCurrentTracker(recipe).displayInRaid = value
   end)
   OptionBuilder:AddRecipe(displayInRaid, "tracker/displaying-rules/predefined-type")
 
   local displayInGroup = CheckBoxRecipe()
   displayInGroup:SetText("Display in Group")
   displayInGroup:SetWidth(1.0)
+  displayInGroup:SetOrder(30)
   displayInGroup:Get(function(recipe)
     return GetCurrentTracker(recipe).displayInGroup
   end)
   displayInGroup:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInCombat = value
+    GetCurrentTracker(recipe).displayInGroup = value
   end)
   OptionBuilder:AddRecipe(displayInGroup, "tracker/displaying-rules/predefined-type")
 
   local displayInPetBattle = CheckBoxRecipe()
   displayInPetBattle:SetText("Display in Pet Battle")
   displayInPetBattle:SetWidth(1.0)
+  displayInPetBattle:SetOrder(40)
   displayInPetBattle:Get(function(recipe)
-    return GetCurrentTracker(recipe).displayInGroup
+    return GetCurrentTracker(recipe).displayInPetBattle
   end)
   displayInPetBattle:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInCombat = value
+    GetCurrentTracker(recipe).displayInPetBattle = value
   end)
   OptionBuilder:AddRecipe(displayInPetBattle, "tracker/displaying-rules/predefined-type")
 
   local displayInArena = CheckBoxRecipe()
   displayInArena:SetText("Display in Arena")
   displayInArena:SetWidth(1.0)
+  displayInArena:SetOrder(50)
   displayInArena:Get(function(recipe)
-    return GetCurrentTracker(recipe).displayInGroup
+    return GetCurrentTracker(recipe).displayInArena
   end)
   displayInArena:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInCombat = value
+    GetCurrentTracker(recipe).displayInArena = value
   end)
   OptionBuilder:AddRecipe(displayInArena, "tracker/displaying-rules/predefined-type")
-
 
   -- conditionals Macro
   local macro = TextEditRecipe()

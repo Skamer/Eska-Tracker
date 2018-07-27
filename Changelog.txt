@@ -1,3 +1,8 @@
+[1.0.20]
+- Updated the API
+- ! Switching profile will no longer crash the game.
+- ! Fixed Ticket #16.
+
 [1.0.19]
 - ! Remove a block from a tracker will no longer freeze the game for a short moment.
 
