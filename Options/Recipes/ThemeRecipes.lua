@@ -568,7 +568,7 @@ class "ThemeInformationRecipe" (function(_ENV)
   function ThemeInformationRecipe(self)
     super(self)
 
-    self:RegisterEvent("EKT_OPTION_CHANGED")
+    self:RegisterEvent("EKT_SETTING_CHANGED")
     self:RegisterRecipeEvent("SELECT_THEME_CHANGED")
   end
 end)

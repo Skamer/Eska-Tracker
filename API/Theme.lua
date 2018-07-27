@@ -1032,7 +1032,7 @@ class "Themes" (function(_ENV)
     -- In case where no theme has been selected
     if not _CURRENT_THEME then
       -- Check in the DB if the user has selected a theme
-      local selected = Options:Get("theme-selected")
+      local selected = Settings:Get("theme-selected")
       -- The user has slected a theme
       if selected then
         _CURRENT_THEME = self:Get(selected)
@@ -1231,7 +1231,7 @@ class "Themes" (function(_ENV)
 end)
 
 function CheckSelectedTheme(tracker)
-  local selected = Options:Get("theme-selected")
+  local selected = Settings:Get("theme-selected")
   if selected and selected == tracker.name then
     if selected ~= Themes:GetSelected().name then
       Themes:Select(selected, false)

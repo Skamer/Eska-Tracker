@@ -150,6 +150,7 @@ class "Profiles" (function(_ENV)
     return list
   end
 
+  __Async__()
   __Static__() function CheckProfileChange()
     local profile = Database:GetSpec().profile_used or "__global"
     local oldProfile = Profiles.name or "__global"

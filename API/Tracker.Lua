@@ -714,8 +714,8 @@ Class "Tracker" (function(_ENV)
     Profiles:PrepareDatabase()
 
     if Database:SelectTable(false, "trackers", self.id) then
-      self.height               = Database:GetValue("height")
-      self.width                = Database:GetValue("width")
+      self.height               = Database:GetValue("height") or 325
+      self.width                = Database:GetValue("width") or 300
       self.locked               = Database:GetValue("locked")
       self.enabled              = Database:GetValue("enabled")
       self.showScrollbar        = Database:GetValue("showScrollbar")

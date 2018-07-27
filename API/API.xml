@@ -4,7 +4,7 @@
   <Script file="CallbackHandler.lua"/>
   <Script file="Database.lua"/>
   <Script file="Profiles.lua"/>
-  <Script file="Option.lua"/>
+  <Script file="Settings.lua"/>
   <Script file="State.lua"/>
   <Script file="Theme.lua"/>
   <Script file="ObjectManager.lua"/>

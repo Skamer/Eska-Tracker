@@ -488,10 +488,10 @@ class "CheckBoxRecipe" (function(_ENV)
 
     local checkbox = _AceGUI:Create("CheckBox")
     checkbox:SetLabel(self.text)
-    checkbox:SetValue(self:GetOption())
+    checkbox:SetValue(self:GetSetting())
     checkbox:SetType(self.type)
     checkbox:SetCallback("OnValueChanged", function(_, _, value)
-      self:SetOption(value)
+      self:SetSetting(value)
       self:OnValueChanged(value)
     end)
 
@@ -535,7 +535,7 @@ class "RadioRowRecipe" (function(_ENV)
     super.Build(self, context)
 
     local radioSelected
-    local optionValue = self:GetOption()
+    local optionValue = self:GetSetting()
     local first
     for value, display in self.choices:GetIterator() do
       local radio = _AceGUI:Create("CheckBox")
@@ -602,7 +602,7 @@ class "RadioGroupRecipe" (function(_ENV)
     end
 
     local radioSelected
-    local optionValue = self:GetOption()
+    local optionValue = self:GetSetting()
     local first
     for index, info in self.choices:GetIterator() do
       local radio = _AceGUI:Create("CheckBox")
@@ -625,7 +625,7 @@ class "RadioGroupRecipe" (function(_ENV)
           context:SetVariable(self.saveChoiceVariable, radioSelected:GetUserData("value"))
         end
 
-        self:SetOption(info.value)
+        self:SetSetting(info.value)
 
         self:RebuildChildren()
       end)
@@ -777,9 +777,9 @@ class "RangeRecipe" (function(_ENV)
     local range = _AceGUI:Create("Slider")
     range:SetSliderValues(self.min, self.max, self.step)
     range:SetLabel(self.text or "")
-    range:SetValue(self:GetOption() or 0)
+    range:SetValue(self:GetSetting() or 0)
     range:SetCallback("OnValueChanged", function(_, _, value)
-      self:SetOption(value)
+      self:SetSetting(value)
       self:OnValueChanged(value)
     end)
 
@@ -845,8 +845,8 @@ class "SelectRecipe" (function(_ENV)
     if self.getListFunc then
       select:SetList(self.getListFunc())
     end
-    select:SetValue(self:GetOption())
-    select:SetCallback("OnValueChanged", function(_, _, value) self:OnValueChanged(value) ; self:SetOption(value) end)
+    select:SetValue(self:GetSetting())
+    select:SetCallback("OnValueChanged", function(_, _, value) self:OnValueChanged(value) ; self:SetSetting(value) end)
     context.parentWidget:AddChild(select)
 
     -- Register the frame in the cache
@@ -866,7 +866,7 @@ class "SelectRecipe" (function(_ENV)
 
   function Refresh(self)
     if self.cache["select"] then
-      self.cache["select"]:SetValue(self:GetOption())
+      self.cache["select"]:SetValue(self:GetSetting())
       self.cache["select"]:SetList(self.getListFunc())
     end
   end
@@ -894,9 +894,9 @@ class "LineEditRecipe" (function(_ENV)
 
     local lineEdit = _AceGUI:Create("EditBox")
     lineEdit:SetLabel(self.text)
-    lineEdit:SetText(self:GetOption())
+    lineEdit:SetText(self:GetSetting())
     lineEdit:SetCallback("OnTextChanged", function(_, _, value) self:OnValueChanged(value) end)
-    lineEdit:SetCallback("OnEnterPressed", function(_, _, value) self:OnValueConfirmed(value) ; self:SetOption(value) end)
+    lineEdit:SetCallback("OnEnterPressed", function(_, _, value) self:OnValueConfirmed(value) ; self:SetSetting(value) end)
     context.parentWidget:AddChild(lineEdit)
   end
 
@@ -922,10 +922,10 @@ class "TextEditRecipe" (function(_ENV)
     local textEdit = self.luaSyntaxHighlighting and _AceGUI:Create("EskaTrackerMultiLineEditBox") or _AceGUI:Create("MultiLineEditBox")
     textEdit:SetLabel(self.text)
     textEdit:DisableButton(self.disableButton)
-    textEdit:SetText(self:GetOption() or "")
+    textEdit:SetText(self:GetSetting() or "")
     textEdit:SetNumLines(self.numLines)
     textEdit:SetCallback("OnTextChanged", function(_, _, value) self:OnValueChanged(value) end)
-    textEdit:SetCallback("OnEnterPressed", function(_, _, value) self:OnValueConfirmed(value) ; self:SetOption(value) end)
+    textEdit:SetCallback("OnEnterPressed", function(_, _, value) self:OnValueConfirmed(value) ; self:SetSetting(value) end)
     context.parentWidget:AddChild(textEdit)
 
     -- Do specific stuff when the lua syntax highlighting is enabled

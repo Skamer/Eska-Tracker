@@ -51,7 +51,7 @@ function EKT_THEMES_LOADED()
   selectThemeRecipe:RefreshOnEvent("EKT_THEME_DELETED")
   selectThemeRecipe:SetOrder(10)
 
-    --OptionBuilder:AddRecipe(SelectRecipe():SetText("Select a theme"):SetList(GetThemeList):SetOrder(10):BindOption("theme-selected"), "themes/general")
+    --OptionBuilder:AddRecipe(SelectRecipe():SetText("Select a theme"):SetList(GetThemeList):SetOrder(10):BindSetting("theme-selected"), "themes/general")
     OptionBuilder:AddRecipe(selectThemeRecipe, "themes/general")
     OptionBuilder:AddRecipe(HeadingRecipe():SetText("Theme Information"):SetOrder(20), "themes/general")
     OptionBuilder:AddRecipe(ThemeInformationRecipe():SetOrder(30), "themes/general")

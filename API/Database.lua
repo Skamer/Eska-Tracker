@@ -86,6 +86,56 @@ class "Database" (function(_ENV)
     ClearEmptyTables(EskaTrackerDB)
   end
 
+  __Arguments__ { ClassType, String, String }
+  __Static__() function RenameAllTables(self, sourceName, destName)
+    local function RenameTables(t)
+      for k,v in pairs(t) do
+        if k ~= sourceName and type(v) == "table" then
+          RenameTables(v)
+        elseif k == sourceName then
+          local tb = t[k]
+          t[destName] = tb
+          t[k] = nil
+        end
+      end
+    end
+
+    RenameTables(EskaTrackerDB)
+  end
+
+  --[[__Arguments__ { ClassType, Variable.Rest(String) }
+  __Static__() function MoveTable(self, ...)
+    local function deepcopy(orig)
+      local orig_type = type(orig)
+      local copy
+      if orig_type == 'table' then
+          copy = {}
+          for orig_key, orig_value in next, orig, nil do
+              copy[deepcopy(orig_key)] = deepcopy(orig_value)
+          end
+          setmetatable(copy, deepcopy(getmetatable(orig)))
+      else -- number, string, boolean, etc
+          copy = orig
+      end
+      return copy
+    end
+
+    local copy = deepcopy(CURRENT_TABLE)
+    local oldTable = CURRENT_TABLE
+    local tables = { ... }
+    local destName = tables[#tables]
+    tables[#tables] = nil
+
+    self:SelectRoot()
+
+    if #tables > 0 then
+      if self:SelectTable(true, unpack(tables)) then
+        Database:SetValue(destName, copy)
+        wipe(oldTable)
+      end
+    end
+  end--]]
+
   __Arguments__ { ClassType, Variable.Rest(String) }
   __Static__() function MoveTable(self, ...)
     local function deepcopy(orig)
@@ -118,6 +168,18 @@ class "Database" (function(_ENV)
       end
     end
   end
+
+  __Arguments__ { ClassType, String, String }
+  __Static__() function RenameTable(self, sourceName, newName)
+    local table = self:GetCurrentTable()[sourceName]
+    if table then
+      self:GetCurrentTable()[newName] = API:DeepCopy(table)
+      self:GetCurrentTable()[sourceName] = nil
+      table = nil
+    end
+  end
+
+
 
   __Arguments__ { ClassType, Path}
   __Static__() function GetCopyTable(self, sourcePath)

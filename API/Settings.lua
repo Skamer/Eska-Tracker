@@ -3,16 +3,17 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio             "EskaTracker.API.Option"                                  ""
+Scorpio            "EskaTracker.API.Settings"                                 ""
 --============================================================================--
-namespace "EKT"
+namespace                "EKT"
 --============================================================================--
-class "Option" (function(_ENV)
-
-  property "id" { Type = String }
-  property "default" { Type = Any }
-  property "func" { Type = Callable + String }
-
+class "Setting" (function(_ENV)
+  property "id" { TYPE = String }
+  property "default" { TYPE = Any }
+  property "func" { TYPE = Callable + String }
+  ------------------------------------------------------------------------------
+  --                          Meta-Methods                                    --
+  ------------------------------------------------------------------------------
   function __call(self, ...)
     if self.func then
       if type(self.func) == "string" then
@@ -22,19 +23,19 @@ class "Option" (function(_ENV)
       end
     end
   end
-
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
   __Arguments__ { String, Any, Variable.Optional(Callable + String) }
-  function Option(self, id,  default, func)
-    self.id = id
-    self.default = default
-    self.func = func
+  function Setting(self, id, default, func)
+    self.id         = id
+    self.default    = default
+    self.func       = func
   end
-
 end)
 
-
-class "Options" (function(_ENV)
-  OPTIONS = Dictionary()
+class "Settings" (function(_ENV)
+  SETTINGS = Dictionary()
 
   __Arguments__ { ClassType }
   __Static__() function SelectCurrentProfile(self)
@@ -50,31 +51,30 @@ class "Options" (function(_ENV)
     end
   end
 
-
   __Arguments__ { ClassType, String }
-  __Static__() function Get(self, option)
+  __Static__() function Get(self, setting)
     -- select the current profile (global, char or spec)
     Profiles:PrepareDatabase()
 
-    if Database:SelectTable(false, "options") then
-      local value = Database:GetValue(option)
+    if Database:SelectTable(false, "settings") then
+      local value = Database:GetValue(setting)
       if value ~= nil then
         return value
       end
     end
 
-    if OPTIONS[option] then
-      return OPTIONS[option].default
+    if SETTINGS[setting] then
+      return SETTINGS[setting].default
     end
   end
 
   __Arguments__ { ClassType, String }
-  __Static__() function Exists(self, option)
+  __Static__() function Exists(self, setting)
       -- select the current profile (global, char or spec)
       Profiles:PrepareDatabase()
 
-      if Database:SelectTable(false, "options") then
-        local value = Database:GetValue(option)
+      if Database:SelectTable(false, "settings") then
+        local value = Database:GetValue(setting)
         if value then
           return true
         end
@@ -83,23 +83,23 @@ class "Options" (function(_ENV)
   end
 
   __Arguments__ { ClassType, String, Variable.Optional(), Variable.Optional(Boolean, true), Variable.Optional(Boolean, true)}
-  __Static__() function Set(self, option, value, useHandler, passValue)
+  __Static__() function Set(self, setting, value, useHandler, passValue)
     -- select the current profile (global, char or spec)
     Profiles:PrepareDatabase()
 
-    Database:SelectTable("options")
-    local oldValue = Database:GetValue(option)
+    Database:SelectTable("settings")
+    local oldValue = Database:GetValue(setting)
     local newValue = value
-    local defaultValue = OPTIONS[option] and OPTIONS[option].default
+    local defaultValue = SETTINGS[setting] and SETTINGS[setting].default
 
     if oldValue == nil then
       oldValue = defaultValue
     end
 
     if value and value == defaultValue then
-      Database:SetValue(option, nil)
+      Database:SetValue(setting, nil)
     else
-      Database:SetValue(option, value)
+      Database:SetValue(setting, value)
     end
 
     if newValue == nil then
@@ -107,13 +107,13 @@ class "Options" (function(_ENV)
     end
 
     if newValue ~= oldValue then
-      Frame:BroadcastOption(option, newValue, oldValue)
-      Scorpio.FireSystemEvent("EKT_OPTION_CHANGED", option, newValue, oldValue)
+      Frame:BroadcastSetting(setting, newValue, oldValue)
+      Scorpio.FireSystemEvent("EKT_SETTING_CHANGED", setting, newValue, oldValue)
     end
 
     -- Call the handler if needed
     if useHandler then
-      local opt = OPTIONS[option]
+      local opt = SETTINGS[setting]
       if opt then
         if passValue then
           opt(value)
@@ -124,15 +124,14 @@ class "Options" (function(_ENV)
     end
   end
 
-
   __Arguments__ { ClassType, String, Any, Variable.Optional(Callable + String) }
-  __Static__() function Register(self, option, default, func)
-    self:Register(Option(option, default, func))
+  __Static__() function Register(self, setting, default, func)
+    self:Register(Setting(setting, default, func))
   end
 
-  __Arguments__ { ClassType, Option }
-  __Static__() function Register(self, option)
-      OPTIONS[option.id] = option
+  __Arguments__ { ClassType, Setting }
+  __Static__() function Register(self, setting)
+    SETTINGS[setting.id] = setting
   end
 
   __Arguments__ { ClassType, Variable.Optional(String, "global") }
@@ -161,25 +160,18 @@ class "Options" (function(_ENV)
     return "global"
   end
 
-
   __Arguments__ { ClassType, String }
-  function ResetOption(self, id)
-      self:Set(id, nil)
+  function ResetSetting(self, id)
+    self:Set(id, nil)
   end
-
-  function ResetAllOptions(self)
-
-  end
-
 end)
-
 
 __SystemEvent__()
 function EKT_PROFILE_CHANGED(profile, oldProfile)
   local oldProfileData = DiffMap()
   Profiles:PrepareDatabase(oldProfile)
 
-  if Database:SelectTable(false, "options") then
+  if Database:SelectTable(false, "settings") then
     for k, v in Database:IterateTable() do
       oldProfileData:SetValue(k, v)
     end
@@ -188,26 +180,26 @@ function EKT_PROFILE_CHANGED(profile, oldProfile)
   local newProfileData = DiffMap()
   Profiles:PrepareDatabase(profile)
 
-  if Database:SelectTable(false, "options") then
+  if Database:SelectTable(false, "settings") then
     for k, v in Database:IterateTable() do
       newProfileData:SetValue(k, v)
     end
   end
 
   local diff = oldProfileData:Diff(newProfileData)
-  for index, option in ipairs(diff) do
-    local value = Options:Get(option)
+  for index, setting in ipairs(diff) do
+    local value = Settings:Get(setting)
     if option == "theme-selected" then
       Themes:Select(value, false)
     else
-      Frame:BroadcastOption(option, value)
+      Frame:BroadcastSetting(setting, value)
     end
   end
 end
 
 __SystemEvent__()
 function EKT_COPY_PROFILE_PROCESS(sourceDB, destDB, destProfile)
-  if sourceDB["options"] then
-    destDB["options"] = sourceDB["options"]
+  if sourceDB["settings"] then
+    destDB["settings"] = sourceDB["settings"]
   end
 end

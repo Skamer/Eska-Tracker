@@ -44,7 +44,7 @@ function OnLoad(self)
   _DB = SVManager("EskaTrackerDB")
 
   -- Register the options
-  Options:Register("replace-blizzard-objective-tracker", true, "Blizzard/UpdateTrackerVisibility")
+  Settings:Register("replace-blizzard-objective-tracker", true, "Blizzard/UpdateTrackerVisibility")
   -- Register callbacks
   CallbackHandlers:Register("Blizzard/UpdateTrackerVisibility", CallbackHandler(function(replace) BLIZZARD_TRACKER_VISIBLITY_CHANGED(not replace) end))
 
@@ -55,12 +55,23 @@ function OnLoad(self)
   -- Setup the minimap button
   self:SetupMinimapButton()
 
-  Options:Register("theme-selected", "Eska")
+  Settings:Register("theme-selected", "Eska")
+
+  self:MigrateOptionsToSettings()
 
 end
 
+function MigrateOptionsToSettings(self)
+  if Database:GetVersion() <= 2 then
+    Database:RenameAllTables("options", "settings")
+    Database:SetVersion(3)
+  end
+end
+
+
+
 function OnEnable(self)
-  BLIZZARD_TRACKER_VISIBLITY_CHANGED(not Options:Get("replace-blizzard-objective-tracker"))
+  BLIZZARD_TRACKER_VISIBLITY_CHANGED(not Settings:Get("replace-blizzard-objective-tracker"))
 end
 
 __SystemEvent__()

@@ -534,12 +534,12 @@ class "Notifications" (function(_ENV)
 
 
   __Arguments__ { String }
-  function IsRegisteredOption(self, option)
+  function IsRegisteredSetting(self, option)
     if option == "link-notifications-to-a-tracker" or option == "tracker-used-for-notifications" then
       return true
     end
 
-    return super.IsRegisteredOption(self, option)
+    return super.IsRegisteredSetting(self, option)
   end
 
   function GetTrackerUsed(self)
@@ -551,9 +551,9 @@ class "Notifications" (function(_ENV)
   end
 
   __Arguments__ { String, Variable.Optional(), Variable.Optional() }
-  function OnOption(self, option, new, old)
+  function OnSetting(self, option, new, old)
     if option == "tracker-used-for-notifications" then
-      if Options:Get("link-notifications-to-a-tracker") then
+      if Settings:Get("link-notifications-to-a-tracker") then
         local oldTracker = self:GetTrackerUsed()
         if oldTracker and oldTracker.id ~= new then
           oldTracker:DisableNotifications()
@@ -567,7 +567,7 @@ class "Notifications" (function(_ENV)
         end
       end
     elseif option == "link-notifications-to-a-tracker" then
-      local trackerUsed = Options:Get("tracker-used-for-notifications")
+      local trackerUsed = Settings:Get("tracker-used-for-notifications")
       local tracker = Trackers:Get(trackerUsed)
 
       if new and tracker then
@@ -624,23 +624,23 @@ end)
 
 
 function OnLoad(self)
-  Options:Register("link-notifications-to-a-tracker", true)
-  Options:Register("tracker-used-for-notifications", "main")
+  Settings:Register("link-notifications-to-a-tracker", true)
+  Settings:Register("tracker-used-for-notifications", "main")
 end
 
 __SystemEvent__()
 function EKT_PROFILES_LOADED()
-  Notifications():LoadOption("link-notifications-to-a-tracker")
-  Notifications():LoadOption("tracker-used-for-notifications")
+  Notifications():LoadSetting("link-notifications-to-a-tracker")
+  Notifications():LoadSetting("tracker-used-for-notifications")
 end
 
 __SystemEvent__()
 function EKT_TRACKER_REGISTERED(tracker)
-  local trackerLinked = Options:Get("link-notifications-to-a-tracker")
+  local trackerLinked = Settings:Get("link-notifications-to-a-tracker")
   if trackerLinked then
-    local trackerUsed = Options:Get("tracker-used-for-notifications")
+    local trackerUsed = Settings:Get("tracker-used-for-notifications")
     if trackerUsed == tracker.id then
-      Notifications():HandleOption("tracker-used-for-notifications", trackerUsed)
+      Notifications():HandleSetting("tracker-used-for-notifications", trackerUsed)
     end
   end
 end

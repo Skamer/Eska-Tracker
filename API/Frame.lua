@@ -627,7 +627,7 @@ class "Frame" (function(_ENV)
 
   --- Whether the compact mode is enabled
   function CompactModeEnabled(self)
-    return Options:Get("compact-mode-enabled")
+    return Settings:Get("compact-mode-enabled")
   end
   ------------------------------------------------------------------------------
   --                   Skin Methods                                           --
@@ -686,50 +686,48 @@ class "Frame" (function(_ENV)
   function GetClassPrefix(self)
     return Class.GetObjectClass(self)._prefix
   end
+
   ------------------------------------------------------------------------------
-  --                   Option Methods                                         --
+  --                   Setting Methods                                         --
   ------------------------------------------------------------------------------
-  --- Say if the option given is registered by frames, and must be alerted when
-  --  the option is changed
+  --- Say if the setting given is registered by frame, and must be notified when
+  -- the setting has changed
   __Arguments__ { String }
-  function IsRegisteredOption(self, option)
+  function IsRegisteredSetting(self, setting)
     return false
   end
 
-  --- This function is called when an option event is triggered.
-  -- This is called by 'HandleOption', 'LoadOption' and when the option has changed.
   __Arguments__ { String, Variable.Optional(), Variable.Optional() }
-  function OnOption(self, option, newValue, oldValue) end
-
+  function OnSetting(self, setting, newValue, oldValue) end
 
   __Arguments__ { String, Variable.Optional(), Variable.Optional() }
-  function HandleOption(self, option, newValue, oldValue)
-    self:OnOption(option, newValue, oldValue)
-  end
-
-  __Arguments__{ String }
-  function LoadOption(self, option)
-    local value = Options:Get(option)
-    self:HandleOption(option, value)
+  function HandleSetting(self, setting, newValue, oldValue)
+    self:OnSetting(setting, newValue, oldValue)
   end
 
   __Arguments__ { String }
-  function AddPendingOption(self, option)
-    if not self._pendingOptionList then
-      self._pendingOptionList = {}
-    end
-
-    self._pendingOptionList[option] = true
+  function LoadSetting(self, setting)
+    local value = Settings:Get(setting)
+    self:HandleSetting(setting, value)
   end
 
-  function ProcessPendingOption(self)
-    if not self._pendingOptionList then
+  __Arguments__ { String }
+  function AddPendingSetting(self, setting)
+    if not self._pendingSettingList then
+      self._pendingSettingList = {}
+    end
+
+    self._pendingSettingList[setting] = true
+  end
+
+  function ProcessPendingSetting(self)
+    if not self._pendingSettingList then
       return
     end
 
-    for option in pairs(self._pendingOptionList) do
-      local value = Options:Get(option)
-      self:OnOptionChanged(option, value)
+    for setting in pairs(self._pendingSettingList) do
+      local value = Settings:Get(option)
+      self:OnSetting(setting, value)
     end
 
     self._pendingOptionList = nil
@@ -813,16 +811,16 @@ class "Frame" (function(_ENV)
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
   ------------------------------------------------------------------------------
-  --- Broadcast the options to the frames
+  --- Broadcast the setting hcange to frames
   __Arguments__ { ClassType, String, Variable.Optional(), Variable.Optional(), Variable.Optional(Table) }
-  __Static__() function BroadcastOption(class, option, newValue, oldValue, objectList)
+  __Static__() function BroadcastSetting(self, setting, newValue, oldValue, objectList)
     local objects = objectList and objectList or _FrameCache
     for obj in pairs(objects) do
-      if obj:IsRegisteredOption(option) then
+      if obj:IsRegisteredSetting(setting) then
         if not obj.isReusable then
-          obj:OnOption(option, newValue, oldValue)
+          obj:OnSetting(setting, newValue, oldValue)
         else
-          obj:AddPendingOption(option)
+          obj:AddPendingSetting(setting)
         end
       end
     end
@@ -878,6 +876,7 @@ class "Frame" (function(_ENV)
   property "_pendingSkin"     { TYPE = Boolean, DEFAULT = false }
   property "_pendingLayout"   { TYPE = Boolean, DEFAULT = false }
   property "_pendingOption"   { TYPE = Boolean, DEFAULT = false }
+  property "_pendingSetting"  { TYPE = Boolean, DEFAULT = false }
   property "_needDraw"        { TYPE = Boolean, DEFAULT = false }
   property "_needSkin"        { TYPE = Boolean, DEFAULT = false }
   property "_needDoLayout"    { TYPE = Boolean, DEFAULT = false }

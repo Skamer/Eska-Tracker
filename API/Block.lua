@@ -278,8 +278,8 @@ class "Block" (function(_ENV)
   --                   Static Functions                                       --
   ------------------------------------------------------------------------------
   __Arguments__ { ClassType, Variable.Optional(String), Variable.Optional(), Variable.Optional() }
-  __Static__() function BroadcastOption(class, option, newValue, oldValue)
-    Frame:BroadcastOption(option, newValue, oldValue, _FrameCache)
+  __Static__() function BroadcastSetting(class, option, newValue, oldValue)
+    Frame:BroadcastSetting(option, newValue, oldValue, _FrameCache)
   end
 
   __Arguments__ { ClassType, Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String)}

@@ -141,7 +141,7 @@ function AddNotificationRecipes(self)
   OptionBuilder:AddRecipe(TreeItemRecipe():SetID("notifications"):SetText("Notifications"):SetBuildingGroup("notifications/children"):SetOrder(400), "RootTree")
 
   local linkNotificationToTrackerRecipe = CheckBoxRecipe()
-  linkNotificationToTrackerRecipe:BindOption("link-notifications-to-a-tracker")
+  linkNotificationToTrackerRecipe:BindSetting("link-notifications-to-a-tracker")
   linkNotificationToTrackerRecipe:SetText("Link notifications to a tracker")
   linkNotificationToTrackerRecipe:SetWidth(1.0)
   linkNotificationToTrackerRecipe:SetOrder(10)
@@ -159,7 +159,7 @@ function AddNotificationRecipes(self)
   local selectTracker = SelectRecipe()
   selectTracker:SetText("Select a tracker to link")
   selectTracker:SetList(GetTrackerList)
-  selectTracker:BindOption("tracker-used-for-notifications")
+  selectTracker:BindSetting("tracker-used-for-notifications")
   --[[selectTracker:Get(function()
     local tracker
     for _, tracker in Trackers:GetIterator() do

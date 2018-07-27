@@ -229,10 +229,10 @@ class "OptionRecipe" (function(_ENV)
     end
   end
 
-  --- Link the recipe to a option, and will use 'Options' API
+  --- Link the recipe to a setting, and will use 'Settings' API
   __Arguments__ { String }
-  function BindOption(self, option)
-    self.option = option
+  function BindSetting(self, setting)
+    self.setting = setting
     return self
   end
 
@@ -261,12 +261,12 @@ class "OptionRecipe" (function(_ENV)
   end
 
 
-  --- Will set the option linked, and use the set function if there is exists.
-  -- By the way, the option linked will call its handler.
+  --- Will set the setting linked, and use the set function if there is exists.
+  -- By the way, the setting linked will call its handler.
   __Arguments__ { Any }
-  function SetOption(self, value)
-    if self.option then
-      Options:Set(self.option, value)
+  function SetSetting(self, value)
+    if self.setting then
+      Settings:Set(self.setting, value)
     end
 
     if self.setFunc then
@@ -274,11 +274,11 @@ class "OptionRecipe" (function(_ENV)
     end
   end
 
-  --- This function return the value related to option linked.
-  -- If no option linked, the function will use the 'Get'
-  function GetOption(self)
-    if self.option then
-      return Options:Get(self.option)
+  --- This function return the value related to setting linked.
+  -- If no option setting, the function will use the 'Get'
+  function GetSetting(self)
+    if self.setting then
+      return Settings:Get(self.setting)
     end
 
     if self.getFunc then
@@ -441,7 +441,7 @@ class "OptionRecipe" (function(_ENV)
   property "id"               { TYPE = String, DEFAULT = nil }
   property "text"             { TYPE = String, DEFAULT = "" }
   property "width"            { TYPE = Number  }
-  property "option"           { TYPE = String, DEFAULT = nil }
+  property "setting"          { TYPE = String, DEFAULT = nil }
   property "context"          { TYPE = OptionContext, DEFAULT = nil }
   property "buildingGroup"    { TYPE = String, DEFAULT = nil, SET = "SetBuildingGroup",  FIELD = "__buildingGroup" }
   property "needResolveGroup" { TYPE = Boolean, DEFAULT = false }
