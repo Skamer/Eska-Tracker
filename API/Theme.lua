@@ -1020,7 +1020,7 @@ class "Themes" (function(_ENV)
       _CURRENT_THEME = theme
 
       if saveInDB then
-        Options:Set("theme-selected", themeName)
+        Settings:Set("theme-selected", themeName)
       end
 
       Frame:SkinAll()

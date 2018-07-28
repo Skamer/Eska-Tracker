@@ -3,7 +3,7 @@
 -- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
 -- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
 -- ========================================================================== --
-Scorpio                 "EskaTracker"                                   "1.0.20"
+Scorpio                 "EskaTracker"                                   "1.0.21"
 --============================================================================--
 import "EKT"
 -- =======================[[ Localization ]}====================================
@@ -107,7 +107,7 @@ function SetupMinimapButton(self)
     OnTooltipShow = function(tooltip)
       tooltip:AddDoubleLine("Eska Tracker", _EKT_VERSION, 1, 106/255, 0, 1, 1, 1)
       tooltip:AddLine(" ")
-      tooltip:AddLine(L["LDB_tooltip_left_click_text"])
+      -- tooltip:AddLine(L["LDB_tooltip_left_click_text"])
       tooltip:AddLine(L["LDB_tooltip_right_click_text"])
     end,
   })

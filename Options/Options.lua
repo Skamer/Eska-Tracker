@@ -71,11 +71,22 @@ function OnLoad(self)
   OptionBuilder:AddRecipe(rootTree, "Root")
 
   OptionBuilder:AddRecipe(TabRecipe():SetBuildingGroup("RootTree/Default/Tabs"), "RootTree/Default")
-  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Addon Info"):SetID("addon-info"):SetBuildingGroup("AddonInfo"), "RootTree/Default/Tabs")
+  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Addon Info"):SetID("addon-info"):SetBuildingGroup("AddonInfo"):SetOrder(10), "RootTree/Default/Tabs")
 
+  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Global options"):SetID("addon-global-options"):SetBuildingGroup("addon/global-options"):SetOrder(20), "RootTree/Default/Tabs")
 
-  OptionBuilder:AddRecipe(TreeItemRecipe():SetID("context-menu"):SetText("Context Menu"):SetOrder(300), "RootTree")
-
+  local enableMinimapIcon = CheckBoxRecipe()
+  enableMinimapIcon:SetText("Enable Minimap icon")
+  enableMinimapIcon:Get(function() return not _DB.minimap.hide end)
+  enableMinimapIcon:Set(function(_, value)
+    if value then
+      _LibDBIcon:Show("EskaTracker")
+    else
+      _LibDBIcon:Hide("EskaTracker")
+    end
+    _DB.minimap.hide = not value
+  end)
+  OptionBuilder:AddRecipe(enableMinimapIcon, "addon/global-options")
 
   OptionBuilder:AddRecipe(AddonInfoRecipe(), "AddonInfo")
   self:AddNotificationRecipes()

@@ -3,11 +3,11 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio               "EskaTracker.API.Frame"                            ""
+Scorpio                   "EskaTracker.API.Frame"                             ""
 --============================================================================--
-namespace "EKT"
+namespace                         "EKT"
 --============================================================================--
-Ceil = math.ceil
+Ceil  = math.ceil
 --============================================================================--
 class "__WidgetEvent__" (function(_ENV)
     local function handler (delegate, owner, eventname)
@@ -545,11 +545,11 @@ class "Frame" (function(_ENV)
         parent:HookScript("OnSizeChanged", function(f, width, height)
           if f._ekt_objects then
             for obj in pairs(f._ekt_objects) do
-              if f:GetWidth() ~= Ceil(width) then
+              if f:GetWidth() ~= width then
                 obj:OnParentWidthChanged(Ceil(width))
               end
 
-              if f:GetHeight() ~= Ceil(height) then
+              if f:GetHeight() ~= height then
                 obj:OnParentHeightChanged(Ceil(height))
               end
             end
