@@ -545,11 +545,11 @@ class "Frame" (function(_ENV)
         parent:HookScript("OnSizeChanged", function(f, width, height)
           if f._ekt_objects then
             for obj in pairs(f._ekt_objects) do
-              if f:GetWidth() ~= width then
+              if f:GetWidth() ~= Ceil(width) then
                 obj:OnParentWidthChanged(Ceil(width))
               end
 
-              if f:GetHeight() ~= height then
+              if f:GetHeight() ~= Ceil(height) then
                 obj:OnParentHeightChanged(Ceil(height))
               end
             end
