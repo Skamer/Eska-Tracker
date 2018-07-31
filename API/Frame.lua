@@ -28,164 +28,62 @@ class "__WidgetEvent__" (function(_ENV)
     end
 end)
 
-__Abstract__()
-class "BaseObject" (function(_ENV)
+
+class "SkinQueue" (function(_ENV)
   ------------------------------------------------------------------------------
   --                             Methods                                      --
   ------------------------------------------------------------------------------
-  enum "MessageDirection" {
-    "PARENTS",
-    "CHILDREN"
-  }
-
-
-  __Default__(1)
-  enum "ConsumeType" {
-    ForAll = 1,
-    OnlyForItsChildren = 2
-  }
-
-  __Arguments__ { BaseObject }
-  function AddChildObject(self, object)
-    if not self._childrenObject then
-      self._childrenObject = setmetatable({}, { __mode = "k"} )
+  function AddSkinRequest(self, flags, target)
+    if not self.queue:Contains(target) then
+      self.queue:Insert(target)
     end
 
-    self._childrenObject[object] = true
-
-    object:__SetParentObject(self)
-    object:OnParentObjectSet(self)
+    local targetFlags = self.flags[flags]
+    targetFlags = targetFlags and Utils.Enum.AddFlag(targetFlags, flags) or flags
   end
 
-  __Arguments__ { BaseObject }
-  function RemoveChildObject(self, obj)
-    if self._childrenObject then
-      obj:OnParentObjectUnset(self)
-
-      self._childrenObject[obj] = nil
-      obj:__SetParentObject()
-    end
+  function HasFullSkinRequest(self)
+    return self.queue:Contains("__all") and true or false
   end
 
-  function RemoveChildObjects(self)
-    if self._childrenObject then
-      for child in pairs(self._childrenObject) do
-        child:OnParentObjectUnset(self)
-        child:__SetParentObject(nil)
-        self._childrenObject[child] = nil
-      end
-    end
-  end
-
-  function GetChildObjects(self)
-    return self._childrenObject
-  end
-
-
-
-  __Arguments__ { Variable.Optional(BaseObject) }
-  function SetParentObject(self, obj)
-    local parent = self:GetParentObject()
-    if parent and (not obj or parent ~= obj) then
-      parent:RemoveChildObject(self)
+  function GetCombinedFlags(self, tarFlags)
+    local flags
+    for _, flag in self.flags:GetIterator() do
+      flags = flags and Utils.Enum.AddFlag(flags, flag) or flag
     end
 
-    if obj then
-      obj:AddChildObject(self)
-    end
+    return tarFlags and Utils.Enum.AddFlag(tarFlags, flags) or flags
   end
 
-  __Arguments__ { Variable.Optional(BaseObject) }
-  function __SetParentObject(self, obj)
-    self._parentObject = obj
+  function ProcessSkinRequest(self, target, tarFlags)
+    self.queue:Remove(target)
+
+    local flag = self.flags[target]
+    self.flags[target] = nil
+
+    return tarFlags and Utils.Enum:AddFlag(tarFlags, flag) or flag
   end
 
-  function GetParentObject(self)
-    return self._parentObject
+  function GetIterator(self)
+    return self.queue:GetIterator()
   end
 
-  --- Send a message for children or parents?
-  __Arguments__ { String, MessageDirection, Variable.Rest() }
-  function SendMessage(self, direction, msg, ...)
-    if direction == "PARENTS" then
-      self:SendMessageToParents(self, msg, ...)
-    elseif direction == "CHILDREN" then
-      self:SendMessageToChildren(self, msg, ...)
-    end
+  function ClearAll(self)
+    self.queue:Clear()
+
+    for k in self.flags:GetIterator() do self.flags[k] = nil end
   end
-
-  --- Send a message for parents
-  __Arguments__ { String, Variable.Rest() }
-  function SendMessageToParents(self, msg, ...)
-    local parent    = self:GetParentObject()
-    local continue  = true
-    while parent and continue do
-      continue  = not parent:OnChildMessage(msg, ...)
-      parent    = parent:GetParentObject()
-    end
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function SkinQueue(self)
+    self.queue = Array[String]()
+    self.flags = Dictionary()
   end
-
-
-  --- Send a message for its children
-  __Arguments__ { String, Variable.Rest() }
-  function SendMessageToChildren(self, msg, ...)
-    if self._childrenObject then
-      for obj in pairs(self._childrenObject) do
-        obj:OnParentMessage(msg, ...)
-        obj:SendMessageToChildren(msg, ...)
-      end
-    end
-  end
-
-  --- May be overloaded for answering to children message.
-  -- Returning true will consume the message (will no longer be dispatched)
-  __Arguments__ { String, Variable.Rest() }
-  function OnChildMessage(self, msg, ...) end
-
-  --- May be overloaded for answering to parent message.
-  -- Returning true will consume the message (will no longer be dispatched)
-  __Arguments__ { String, Variable.Rest() }
-  function OnParentMessage(self, msg, ...)  end
-
-
-  --- Send a request to parents which needs to be confirmed by them.
-  -- If the request has been confirmed, OnConfirmedRequest will be called.
-  __Arguments__ { String, Variable.Rest() }
-  function SendRequest(self, msg, ...)
-    local parent = self:GetParentObject()
-    local continue = true
-    while parent and continue do
-      continue = not parent:OnChildRequest(self, msg, ...)
-      parent   = parent:GetParentObject()
-    end
-  end
-
-  --- This method may be overloaded for confirming the child requests
-  __Arguments__ { BaseObject, String, Variable.Rest() }
-  function OnChildRequest(self, child, msg, ...) end
-
-  --- This method may be overloaded for answering to requests have been confirmed
-  __Arguments__ { String, Variable.Rest() }
-  function OnConfirmedRequest(self, child, msg, ...) end
-
-
-  __Arguments__ { BaseObject }
-  function OnParentObjectSet(self, parent) end
-
-  __Arguments__ { BaseObject }
-  function OnParentObjectUnset(self, parent) end
-end)
-
-
-struct "IdleCountdownInfo" (function(_ENV)
-  member "countdown" { TYPE = Number, REQUIRE = true }
-  member "duration"  { TYPE = Number, REQUIRE = true }
-  member "applyToChildren" { TYPE = Boolean, DEFAULT = false }
 end)
 
 
 class "Frame" (function(_ENV)
-  inherit "BaseObject"
 
   _FrameCache = setmetatable({}, { __mode = "k"})
   event "OnWidthChanged"
@@ -230,22 +128,6 @@ class "Frame" (function(_ENV)
 
   local function UpdateLayout(self)
     self:Layout()
-  end
-  ------------------------------------------------------------------------------
-  --                    Comm Methods                                          --
-  ------------------------------------------------------------------------------
-  __Arguments__ { BaseObject }
-  function AddChildObject(self, object)
-    super.AddChildObject(self, object)
-
-    self:SendMessageToParents("REGISTER_FRAME", object)
-  end
-
-  __Arguments__ { BaseObject }
-  function RemoveChildObject(self, object)
-    super.RemoveChildObject(self, object)
-
-    self:SendMessageToParents("UNREGISTER_FRAME", object)
   end
   ------------------------------------------------------------------------------
   --                        Size Methods                                      --
@@ -451,67 +333,6 @@ class "Frame" (function(_ENV)
     end
   end
   ------------------------------------------------------------------------------
-  --                    Idle Mode Methods                                     --
-  ------------------------------------------------------------------------------
-  __Arguments__ { Variable.Optional(Boolean, false) }
-  function RefreshIdleModeAlpha(self, ignoreChildren)
-    if not self.idleModeEnabled then
-      return
-    end
-
-    if self.isInIdleMode then
-      self:SetEffectiveAlpha(self.idleModeAlpha)
-    else
-      self:SetAlpha(1.0)
-    end
-
-    if not ignoreChildren then
-      local childrens = self:GetChildObjects()
-      if childrens then
-        for child in pairs(childrens) do
-          if child.RefreshIdleModeAlpha then
-            child:RefreshIdleModeAlpha()
-          end
-        end
-      end
-    end
-  end
-
-  __Arguments__ { Variable.Optional(Boolean, false ) }
-  function OnLeaveIdleMode(self, ignoreChildren)
-    self:RefreshIdleModeAlpha(ignoreChildren)
-  end
-
-  __Arguments__ { Number }
-  function OnIdleModeAlphaChange(self, alpha)
-    if self.isInIdleMode then
-      self:SetEffectiveAlpha(alpha, true)
-    end
-  end
-
-  function WakeUpTracker(self)
-    self.wakeUpRequest = true
-    self:SendRequest("WAKE_UP_TRACKER")
-  end
-
-  -- TO DELETE
-  function PauseTrackerIdleCountdown(self)
-    self:SendRequest("PAUSE_TRACKER_IDLE_COUNTDOWN")
-  end
-
-  -- TO DELETE
-  function ResumeTrackerIdleCountdown(self)
-    self:SendRequest("RESUME_TRACKER_IDLE_COUNTDOWN")
-  end
-
-  function PauseIdleCountdown(self)
-    self:SendRequest("PAUSE_IDLE_COUNTDOWN", self)
-  end
-
-  function ResumeIdleCountdown(self)
-    self:SendRequest("RESUME_IDLE_COUNTDOWN", self)
-  end
-  ------------------------------------------------------------------------------
   --                    SetParent Methods                                     --
   ------------------------------------------------------------------------------
   -- Set the frame's parent
@@ -584,6 +405,7 @@ class "Frame" (function(_ENV)
         if Interface.IsSubType(getmetatable(self), IReusable) and self.isReusable then
           self._needDoLayout = true
           aborted = true
+
         end
 
         if not aborted then
@@ -650,9 +472,15 @@ class "Frame" (function(_ENV)
     end
   end
 
+
+
+
+--[[
   --- Request the object to be skinned.
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
   function Skin(self, flags, target)
+    self:AddPendingSkin(flags, target)
+
     if not self._pendingSkin then
       self._pendingSkin = true
       Scorpio.Delay(0.1, function()
@@ -663,19 +491,74 @@ class "Frame" (function(_ENV)
         end
 
         if not aborted then
-          self:ForceSkin(flags, target)
+          if self._pendingSkinInfo["__all"] then
+            self:ForceSkin(self._pendingSkinInfo["__flags"])
+          else
+            for target, fl in self._pendingSkinInfo:GetIterator() do
+              if target ~= "__all" and target ~= "__flags" then
+                self:ForceSkin(target, fl)
+              end
+            end
+          end
         end
 
+        self._pendingSkinInfo:Clear()
         self._pendingSkin = false
+        self._needSkin = false
       end)
     end
   end
+--]]
+
+__Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
+function Skin(self, flags, target)
+  if not self._skinQueue then
+    self._skinQueue = SkinQueue()
+  end
+
+  self._skinQueue:AddSkinRequest(flags, target or "__all")
+
+  if not self._pendingSkin then
+    self._pendingSkin = true
+    Scorpio.Delay(0.1, function()
+      local aborted = false
+      if Interface.IsSubType(getmetatable(self), IReusable) and self.isReusable then
+        self._needSkin = true
+        aborted = true
+      end
+
+      if not aborted then
+        if self._skinQueue:HasFullSkinRequest() then
+          self:OnSkin(self._skinQueue:GetCombinedFlags())
+        else
+          for _, tar in self._skinQueue:GetIterator() do
+            self:OnSkin(self._skinQueue:ProcessSkinRequest(tar), tar)
+          end
+        end
+      end
+
+      self._skinQueue:ClearAll()
+      self._pendingSkin = false
+    end)
+  end
+end
 
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
   function ForceSkin(self, flags, target)
+    if self._skinQueue then
+      -- We check if there is already a request for this target in the queue.
+      if target then
+        flags = self._skinQueue:ProcessSkinRequest(target, flags)
+      else
+        flags = self._skinQueue:GetCombinedFlags(flags)
+        self._skinQueue:ClearAll()
+        self._needSkin = false
+      end
+    end
+
     self:OnSkin(flags, target)
-    self._needSkin = false
   end
+
 
   --- This function is called when the object needs to be skinned
   __Arguments__ { Variable.Optional(SkinFlags, Theme.DefaultSkinFlags), Variable.Optional(String) }
@@ -749,7 +632,6 @@ class "Frame" (function(_ENV)
     self:Hide()
     self:ClearAllPoints()
     self:SetParent()
-    self:SetParentObject()
     self:SetAlpha(1)
 
     -- Remove event handlers

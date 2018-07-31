@@ -443,7 +443,6 @@ class "Notifications" (function(_ENV)
   function Add(self, notification)
     self.notifications:Insert(notification)
     notification:SetParent(self)
-    notification:SetParentObject(self)
 
     notification.OnFinished = function(obj) self:Remove(obj) end
     notification.OnHeightChanged = function(notification, new, old)
@@ -468,7 +467,6 @@ class "Notifications" (function(_ENV)
   function Remove(self, notification )
     self.notifications:Remove(notification)
     notification:SetParent()
-    notification:SetParentObject()
     notification:ClearAllPoints()
     notification:Hide()
     notification.OnFinished = nil

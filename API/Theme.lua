@@ -149,8 +149,6 @@ __Serializable__() class "Theme" (function(_ENV)
       -- Background texture
       if Enum.ValidateFlags(flags, SkinFlags.FRAME_BACKGROUND_TEXTURE) then
         local background = _LibSharedMedia:Fetch("background", theme:GetElementProperty(elementID, "background-texture", inheritElementID))
-        --color = theme:GetElementProperty(elementID, "background-color", inheritElementID)
-        --print("background", background, theme:GetElementProperty(elementID, "background-texture", inheritElementID))
         local r,g,b,a = frame:GetBackdropColor()
         frame:SetBackdrop({
           bgFile = background,

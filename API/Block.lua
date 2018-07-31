@@ -47,12 +47,6 @@ class "BlockCategory" (function(_ENV)
     end
   end
 
-
---[[
-  function GetTracker(self)
-    print("GetTracker", self.__tracker)
-  end--]]
-
   function GetTracker(self)
     if not self.__tracker then
       Profiles:PrepareDatabase()
@@ -203,6 +197,28 @@ class "Block" (function(_ENV)
       local tracker = Trackers:GetTrackerByBlockCategoryID(self.category)
       tracker:RemoveBlockByCategoryID(self.category)
     end
+  end
+  ------------------------------------------------------------------------------
+  --                        Idle. Methods                                     --
+  ------------------------------------------------------------------------------
+  __Arguments__ { Variable.Optional(Any), Variable.Optional(Number), Variable.Optional(Boolean) }
+  function AddIdleCountdown(self, id, duration, paused)
+    id = id or self
+    IdleMode:AddCountdown(self, id, duration, paused)
+  end
+
+  __Arguments__ { Variable.Optional(Any) }
+  function ResumeIdleCountdown(self, id)
+    id = id or self
+
+    IdleMode:ResumeCountdown(self, id)
+  end
+
+  __Arguments__ { Variable.Optional(Any) }
+  function PauseIdleCountdown(self, id)
+    id = id or self
+
+    IdleMode:PauseCountdown(self, id)
   end
   ------------------------------------------------------------------------------
   --                             Methods                                      --

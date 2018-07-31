@@ -12,4 +12,5 @@
   <Script file="Themes.lua"/>
   <Script file="Profiles.lua"/>
   <Script file="Blocks.lua"/>
+  <Script file="IdleMode.lua"/>
 </Ui>

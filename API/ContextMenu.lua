@@ -203,7 +203,6 @@ class "ContextMenu" (function(_ENV)
 
   __Arguments__ { String, Variable.Optional(String), Variable.Optional(Callable )}
   function AddItem(self, text, icon, onClick)
-    --print("(AddItem)", self, text, icon, onClick)
     local item = ObjectManager:Get(MenuItem)
     item.text = text
     item.icon = icon

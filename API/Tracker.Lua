@@ -113,7 +113,6 @@ Class "Tracker" (function(_ENV)
 
     Notifications():ClearAllPoints()
     Notifications():SetParent(self.content)
-    Notifications():SetParentObject(self)
     Notifications():SetPoint("TOP")
     Notifications():SetPoint("LEFT")
     Notifications():SetPoint("RIGHT")
@@ -133,7 +132,6 @@ Class "Tracker" (function(_ENV)
 
     Notifications():ClearAllPoints()
     Notifications():SetParent()
-    Notifications():SetParentObject()
 
     self.displayNotifications = false
 
@@ -211,123 +209,6 @@ Class "Tracker" (function(_ENV)
     end
   end
   ------------------------------------------------------------------------------
-  --                        Comm. Methods                                     --
-  ------------------------------------------------------------------------------
-  function OnChildRequest(self, child, request, ...)
-    if request == "WAKE_UP_TRACKER" then
-      child.wakeUpRequest = false
-      self:AddIdleCountdown(child, self.inactivityTimer)
-      self:OnWakeUp()
-    elseif request == "PAUSE_TRACKER_IDLE_COUNTDOWN" then
-      self:PauseIdleCountdown(self)
-    elseif request == "RESUME_TRACKER_IDLE_COUNTDOWN" then
-      self:ResumeIdleCountdown(self)
-    elseif request == "RESUME_IDLE_COUNTDOWN" then
-      self:ResumeIdleCountdown(child)
-    elseif request == "PAUSE_IDLE_COUNTDOWN" then
-      self:PauseIdleCountdown(child)
-    end
-  end
-
-  function OnChildMessage(self, msg, ...)
-    if msg == "REGISTER_FRAME" then
-      local object = ...
-      self:CheckWakeUpRequests(object)
-    end
-  end
-
-  __Arguments__ { BaseObject }
-  function AddChildObject(self, object)
-    super.AddChildObject(self, object)
-
-    self:LoadAndAddIdleCountdowns(object)
-    self:CheckWakeUpRequests(object)
-  end
-
-  __Arguments__ { BaseObject }
-  function RemoveChildObject(self, object)
-    super.RemoveChildObject(self, object)
-
-    self:RemoveAndSaveIdleCountdowns(object)
-  end
-
-  function RemoveAndSaveIdleCountdowns(self, object)
-    if self.idleCountdowns then
-      local countdownInfo = self.idleCountdowns[object]
-      if countdownInfo then
-        object.idleCountdownInfo = countdownInfo
-        self.idleCountdowns[object] = nil
-      end
-
-      local subChildren = object:GetChildObjects()
-      if subChildren then
-        for subChild in pairs(subChildren) do
-          self:RemoveAndSaveIdleCountdowns(subChild)
-        end
-      end
-    end
-  end
-
-  function LoadAndAddIdleCountdowns(self, object)
-    if object.idleCountdownInfo then
-      self:AddIdleCountdown(object, object.idleCountdownInfo)
-      self:OnWakeUp()
-      object.idleCountdownInfo = nil
-    end
-
-    local subChildren = object:GetChildObjects()
-    if subChildren then
-      for subChild in pairs(subChildren) do
-        self:LoadAndAddIdleCountdowns(subChild)
-      end
-    end
-  end
-
-
-  function CheckWakeUpRequests(self, object)
-    local hasRequest = false
-
-    if self.wakeUpRequest then
-      hasRequest = true
-      self.wakeUpRequest = nil
-      self:AddIdleCountdown(object, self.inactivityTimer)
-    end
-
-    local function check(object)
-      local hasRequest = false
-
-      if object.wakeUpRequest then
-        hasRequest = true
-        object.wakeUpRequest = nil
-        self:AddIdleCountdown(object, self.inactivityTimer)
-      end
-
-      local subChildren = object:GetChildObjects()
-      if subChildren then
-        for subChild in pairs(subChildren) do
-          if check(subChild) then
-            hasRequest = true
-          end
-        end
-      end
-
-      return hasRequest
-    end
-
-    local subChildren = object:GetChildObjects()
-    if subChildren then
-      for subChild in pairs(subChildren) do
-        if check(subChild) then
-          hasRequest = true
-        end
-      end
-    end
-
-    if hasRequest then
-      self:OnWakeUp()
-    end
-  end
-  ------------------------------------------------------------------------------
   --                        Idle. Methods                                     --
   ------------------------------------------------------------------------------
   local function IsInIdleModeChanged(self, new)
@@ -364,12 +245,16 @@ Class "Tracker" (function(_ENV)
     end
 
     if new then
-      self:AddIdleCountdown(self, self.inactivityTimer)
-      self:StartInactivityTimer()
+      --self:AddIdleCountdown(self, self.inactivityTimer)
+      --self:StartInactivityTimer()
+
+      IdleMode:AddCountdown(self, self)
+      IdleMode:EnableForTracker(self)
     else
-      self:ClearIdleCountdowns()
+      --self:ClearIdleCountdowns()
+      IdleMode:DisableForTracker(self)
     end
-      self.isInIdleMode = false
+      --self.isInIdleMode = false
   end
 
   local function IdleModeAlphaChanged(self, new)
@@ -387,7 +272,7 @@ Class "Tracker" (function(_ENV)
 
   function OnWakeUp(self)
     self.isInIdleMode = false
-    self:StartInactivityTimer()
+    --self:StartInactivityTimer()
   end
 
 
@@ -405,93 +290,25 @@ Class "Tracker" (function(_ENV)
     self.idleCountdowns[id] = countdownInfo
   end
 
-  __Arguments__ { Any }
-  function RemoveIdleCountdown(self, id)
-    if self.idleCountdowns then
-      self.idleCountdowns[owner] = nil
-    end
+
+  __Arguments__ { Variable.Optional(Any), Variable.Optional(Number), Variable.Optional(Boolean) }
+  function AddIdleCountdown(self, id, duration, paused)
+    id = id or self
+    IdleMode:AddCountdown(self, id, duration, paused)
   end
 
-  function ClearIdleCountdowns(self)
-    if self.idleCountdowns then
-      for k in pairs(self.idleCountdowns) do
-        self.idleCountdowns[k] = nil
-      end
-    end
-  end
-
-  __Arguments__ { Number }
-  function UpdateIdleCountdowns(self, delta)
-    if self.idleCountdowns then
-      for id, info in self.idleCountdowns:GetIterator() do
-        if not info.paused then
-          local result = math.max(0, info.countdown-delta)
-          if result == 0 then
-            self.idleCountdowns[id] = nil
-          else
-            info.countdown = result
-          end
-        end
-      end
-    end
-  end
-
-  __Arguments__ { Any }
-  function PauseIdleCountdown(self, id)
-    if self.idleCountdowns then
-      local info = self.idleCountdowns[id]
-      if info then
-        info.paused = true
-      end
-    end
-  end
-
-  __Arguments__ { Any }
+  __Arguments__ { Variable.Optional(Any) }
   function ResumeIdleCountdown(self, id)
-    if self.idleCountdowns then
-      local info = self.idleCountdowns[id]
-      if info then
-        info.paused = false
-      end
-    end
+    id = id or self
+
+    IdleMode:ResumeCountdown(self, id)
   end
 
-  function GetEffectiveIdleCountdown(self)
-    local maximum = 0
-    if self.idleCountdowns then
-      for id, info in self.idleCountdowns:GetIterator() do
-        if info.countdown > maximum then
-          maximum = info.countdown
-        end
-      end
-    end
+  __Arguments__ { Variable.Optional(Any) }
+  function PauseIdleCountdown(self, id)
+    id = id or self
 
-    return maximum
-  end
-
-  __Async__()
-  function StartInactivityTimer(self)
-    if self._inactivityTimerStarted then
-      return
-    end
-
-    self._inactivityTimerStarted = true
-    -- Update rate
-    local updateRate = 0.1
-
-    while self.enabled and self.idleModeEnabled do
-      Delay(updateRate)
-
-      if not self.isInIdleMode and not self.idleModePaused then
-        local countdown = self:GetEffectiveIdleCountdown()
-        if countdown <= 0 and self.idleModeEnabled then
-          self.isInIdleMode = true
-        end
-        self:UpdateIdleCountdowns(updateRate)
-      end
-    end
-
-    self._inactivityTimerStarted = nil
+    IdleMode:PauseCountdown(self, id)
   end
 
   __Arguments__ { Boolean }
@@ -499,10 +316,9 @@ Class "Tracker" (function(_ENV)
     super.OnHover(self, hover)
 
     if hover then
-      self.isInIdleMode = false
-      self:AddIdleCountdown("hover", 3, nil, true)
+      IdleMode:AddCountdown(self, "hover", 3, true)
     else
-      self:ResumeIdleCountdown("hover")
+      IdleMode:ResumeCountdown(self, "hover")
     end
   end
   ------------------------------------------------------------------------------
@@ -623,8 +439,6 @@ Class "Tracker" (function(_ENV)
         self:Layout()
       end
 
-      -- Add Block in the child object list for message broacast system and IWakeUpTracker
-      self:AddChildObject(block)
     end
 
     self:Layout()
@@ -636,7 +450,6 @@ Class "Tracker" (function(_ENV)
     block:Hide()
     block.OnHeightChanged = nil
     block.OnOrderChanged  = nil
-    self:RemoveChildObject(block)
 
     self:ForceLayout()
 
@@ -922,10 +735,8 @@ Class "Tracker" (function(_ENV)
   property "showScrollbar"                { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
   property "isInIdleMode"                 { TYPE = Boolean, DEFAULT = false, HANDLER = IsInIdleModeChanged }
   property "inactivityTimer"              { TYPE = Number, DEFAULT = 20, HANDLER = InactivityTimerChanged }
-  property "idleModeTimer"                { TYPE = Number, DEFAULT = 0 }
   property "idleModeEnabled"              { TYPE = Boolean, DEFAULT = false, HANDLER = IdleModeEnabledChanged }
   property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.35, HANDLER = IdleModeAlphaChanged }
-  property "idleModePaused"               { TYPE = Boolean, DEFAULT = false }
   --- Display conditionals
   property "displayRulesType"             { TYPE = String, DEFAULT = "predefined-type", HANDLER = UpdateDisplayProps }
   property "displayInRaid"                { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }

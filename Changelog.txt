@@ -1,3 +1,10 @@
+[1.0.22]
+- Updated the API
+- ! Reworked the IdleMode.
+- + Added a 'IdleMode' category in the options.
+- - Removed the BFA file. 
+
+
 [1.0.21]
 - ! Fixed an error preventing the theme be changed.
 - + Implemented #19 - Added a way to disable the minimap icon.

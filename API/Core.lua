@@ -315,7 +315,7 @@ class "Utils" (function(_ENV)
   --                         Enum
   ------------------------------------------------------------------------------
   class "Enum" (function(_ENV)
-    __Static__() function AddFlag(flag, flag)
+    __Static__() function AddFlag(flags, flag)
       if not Enum.ValidateFlags(flags, flag) then
         flags = flags + flag
       end

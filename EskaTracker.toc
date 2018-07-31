@@ -3,7 +3,7 @@
 ## Author: Skamer
 ## Notes: EskaTracker
 ## SavedVariables: EskaTrackerDB
-## Version: 1.0.21
+## Version: 1.0.22
 ## X-Stage: Beta
 ## Dependencies: PLoop, Scorpio
 ## OptionalDeps: LibStub, LibSharedMedia-3.0
@@ -11,9 +11,6 @@ embeds.xml
 
 # Localization files
 Locales\locales.xml
-
-# Battle for Azeroth Support
-BFA.lua
 
 # Loader Files
 Loader.lua
