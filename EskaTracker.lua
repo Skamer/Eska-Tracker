@@ -3,7 +3,7 @@
 -- @Author   : Skamer <https://mods.curse.com/members/DevSkamer>              --
 -- @Website  : https://wow.curseforge.com/projects/eska-quest-tracker         --
 -- ========================================================================== --
-Scorpio                 "EskaTracker"                                   "1.0.22"
+Scorpio                 "EskaTracker"                                         ""
 --============================================================================--
 import "EKT"
 -- =======================[[ Localization ]}====================================
@@ -27,7 +27,6 @@ _LibDataBroker       = LibStub("LibDataBroker-1.1")
 _LibDBIcon           = LibStub("LibDBIcon-1.0")
 -- ========================[[ Addon version ]]------------------------------- ==
 _EKT_VERSION         = GetAddOnMetadata("EskaTracker", "Version")
-_EKT_STAGE           = GetAddOnMetadata("EskaTracker", "X-Stage")
 -- =========================[[ Dependencies Version ]]======================= --
 _SCORPIO_VERSION     = tonumber(GetAddOnMetadata("Scorpio", "Version"):match("%d+$"))
 _PLOOP_VERSION       = tonumber(GetAddOnMetadata("PLoop", "Version"):match("%d+$"))

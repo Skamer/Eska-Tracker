@@ -23,7 +23,7 @@ class "AddonInfoRecipe" inherit "OptionRecipe"
     do
       local group =  _AceGUI:Create("SimpleGroup")
       group:SetLayout("Flow")
-      for key, value in pairs({ ["Version"] = _EKT_VERSION, ["Stage"] = _EKT_STAGE }) do
+      for key, value in pairs({ ["Version"] = _EKT_VERSION }) do
         local label = _AceGUI:Create("Label")
         label:SetText(key)
         label:SetFont(font, fontSize)

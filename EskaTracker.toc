@@ -4,7 +4,6 @@
 ## Notes: EskaTracker
 ## SavedVariables: EskaTrackerDB
 ## Version: 1.0.22
-## X-Stage: Beta
 ## Dependencies: PLoop, Scorpio
 ## OptionalDeps: LibStub, LibSharedMedia-3.0
 embeds.xml

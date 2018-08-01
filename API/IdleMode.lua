@@ -177,7 +177,7 @@ class "IdleMode" (function(_ENV)
 
       for tracker in pairs(ENABLED_TRACKER) do
         local elapsed, id = self:GetEffectiveCountdown(tracker)
-        if elapsed >= tracker.inactivityTimer then
+        if self.enabled and elapsed >= tracker.inactivityTimer then
           tracker.isInIdleMode = true
         else
           tracker.isInIdleMode = false
@@ -185,26 +185,28 @@ class "IdleMode" (function(_ENV)
       end
     end
 
+    self.inactivityTickerStarted = nil
+
   end
 
-  __Static__() property "enabled" { TYPE = Boolean, DEFAULT = true }
+  local function UpdateEnabled(self, new, old, prop)
+    if new then
+      IdleMode:StartInactivityTicker()
+    end
+  end
+
+  __Static__() property "enabled" { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateEnabled }
   __Static__() property "inactivityTickerStarted" { TYPE = Boolean, DEFAULT = false }
+
 end)
 
 
 function OnLoad(self)
-  IdleMode:StartInactivityTicker()
+  Settings:Register("idle-mode-enabled", false, "idle-mode/enable")
+
+  CallbackHandlers:Register("idle-mode/enable", CallbackHandler(function(enabled)
+    IdleMode.enabled = enabled
+  end))
+
+  IdleMode.enabled = Settings:Get("idle-mode-enabled")
 end
-
--- Tracker:WakeUp()
--- Tracker:WakeUpPermanently
--- Tracker:AddIdleCountdown()
--- Tracker:ResumeIdleCountdown()
--- Tracker:PauseIdleCountdown()
-
--- Tracker:AddIdleCountdown()
--- Tracker:PauseIdleCountdown()
-
--- Block:WakeUpTracker()
--- Block:WakeUpTrackerPermanently()
---

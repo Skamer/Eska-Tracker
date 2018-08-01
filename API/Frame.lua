@@ -358,6 +358,8 @@ class "Frame" (function(_ENV)
       oldParent._ekt_objects[self] = nil
     end
 
+    self._firstParentHeightChangedOccured = nil
+
     -- Install Layout part
     if parent then
       if not parent._ekt_objects then
