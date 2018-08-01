@@ -3,7 +3,7 @@
 ## Author: Skamer
 ## Notes: EskaTracker
 ## SavedVariables: EskaTrackerDB
-## Version: 1.0.22
+## Version: @project-version@
 ## Dependencies: PLoop, Scorpio
 ## OptionalDeps: LibStub, LibSharedMedia-3.0
 embeds.xml

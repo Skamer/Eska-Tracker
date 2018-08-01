@@ -59,8 +59,8 @@ class "IdleMode" (function(_ENV)
   end
 
   __Arguments__ { ClassType, Block, Any }
-  __Static__() function ResumeCountdown(self, tracker, id)
-    local countdowns = BLOCK_COUNTDOWNS[tracker]
+  __Static__() function ResumeCountdown(self, block, id)
+    local countdowns = BLOCK_COUNTDOWNS[block]
     if countdowns then
       if countdowns[id] then
         countdowns[id].paused = false
@@ -79,8 +79,8 @@ class "IdleMode" (function(_ENV)
   end
 
   __Arguments__ { ClassType, Block, Any }
-  __Static__() function PauseCountdown(self, tracker, id)
-    local countdowns = BLOCK_COUNTDOWNS[tracker]
+  __Static__() function PauseCountdown(self, block, id)
+    local countdowns = BLOCK_COUNTDOWNS[block]
     if countdowns then
       if countdowns[id] then
         countdowns[id].paused = true
@@ -110,11 +110,12 @@ class "IdleMode" (function(_ENV)
 
   __Arguments__ { ClassType, Number, Number, Number }
   __Static__() function GetEffectiveElapsed(self,  elapsed, duration, inactivityTimer)
-    if duration == 0 or elapsed >= duration then
-      return elapsed
+
+    if duration > 0  then
+      return inactivityTimer - ( duration - elapsed )
     end
 
-    return inactivityTimer - (duration - elapsed)
+    return elapsed
   end
 
   __Arguments__ { ClassType, Tracker }
