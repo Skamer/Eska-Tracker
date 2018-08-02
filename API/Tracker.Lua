@@ -109,7 +109,19 @@ Class "Tracker" (function(_ENV)
       self:Layout()
     end
 
+    self.OnNotificationAddedHandler = function(notifications)
+      self:AddIdleCountdown(notifications, nil, true)
+    end
+
+    self.OnNotificationRemovedHandler = function(notifications)
+      if notifications.notificationCount == 0 then
+        self:ResumeIdleCountdown(notifications)
+      end
+    end
+
     Notifications().OnHeightChanged = Notifications().OnHeightChanged + self.OnNotificationHeightHandler
+    Notifications().OnNotificationAdded = Notifications().OnNotificationAdded + self.OnNotificationAddedHandler
+    Notifications().OnNotificationRemoved = Notifications().OnNotificationRemoved + self.OnNotificationRemovedHandler
 
     Notifications():ClearAllPoints()
     Notifications():SetParent(self.content)
@@ -122,6 +134,10 @@ Class "Tracker" (function(_ENV)
     self:Layout()
 
     Notifications():CalculateHeight()
+
+    if Notifications().notificationCount > 0 then
+      self:AddIdleCountdown(Notifications(), nil, true)
+    end
   end
 
 
@@ -130,12 +146,22 @@ Class "Tracker" (function(_ENV)
       Notifications().OnHeightChanged = Notifications().OnHeightChanged - self.OnNotificationHeightHandler
     end
 
+    if self.OnNotificationAddedHandler then
+      Notifications().OnNotificationAdded = Notifications().OnNotificationAdded - self.OnNotificationAddedHandler
+    end
+
+    if self.OnNotificationRemovedHandler then
+      Notifications().OnNotificationRemoved = Notifications().OnNotificationRemoved - self.OnNotificationRemovedHandler
+    end  
+
     Notifications():ClearAllPoints()
     Notifications():SetParent()
 
     self.displayNotifications = false
 
     self:Layout()
+
+    self:ResumeIdleCountdown(Notifications())
   end
 
 

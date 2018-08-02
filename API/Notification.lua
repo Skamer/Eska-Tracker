@@ -436,21 +436,35 @@ end)
 class "Notifications" (function(_ENV)
   inherit "Frame"
   _Obj = nil
+
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  --- Fire when a notification has been added
+  event "OnNotificationAdded"
+
+  --- Fire when a notification has been removed
+  event "OnNotificationRemoved"
   ------------------------------------------------------------------------------
   --                         Methods                                          --
   ------------------------------------------------------------------------------
   __Arguments__ { BaseNotification }
   function Add(self, notification)
-    self.notifications:Insert(notification)
-    notification:SetParent(self)
+    if not self.notifications:Contains(notification) then
+      self.notifications:Insert(notification)
+      notification:SetParent(self)
 
-    notification.OnFinished = function(obj) self:Remove(obj) end
-    notification.OnHeightChanged = function(notification, new, old)
-      self.height = self.height + (new - old)
+      notification.OnFinished = function(obj) self:Remove(obj) end
+      notification.OnHeightChanged = function(notification, new, old)
+        self.height = self.height + (new - old)
+      end
+
+      self:OnNotificationAdded(self, notification)
+
+      self:Draw()
     end
-
-    self:Draw()
   end
+
 
   __Arguments__ { Number + String }
   function Get(self, id)
@@ -464,17 +478,17 @@ class "Notifications" (function(_ENV)
   end
 
   __Arguments__ { BaseNotification }
-  function Remove(self, notification )
-    self.notifications:Remove(notification)
-    notification:SetParent()
-    notification:ClearAllPoints()
-    notification:Hide()
-    notification.OnFinished = nil
-    notification.OnHeightChanged = nil
-    self:Layout()
+  function Remove(self, notification)
+    local found = self.notifications:Remove(notification)
+    if found then
+      self:OnNotificationRemoved(notification)
 
-    if self.notifications.Count == 0 then
-      -- TODO: Add ResumeIdleCountdown
+      notification:SetParent()
+      notification:ClearAllPoints()
+      notification:Hide()
+      notification.OnFinished = nil
+      notification.OnHeightChanged = nil
+      self:Layout()
     end
   end
 
@@ -583,6 +597,9 @@ class "Notifications" (function(_ENV)
   --                         Properties                                       --
   ------------------------------------------------------------------------------
   property "notificationsPaused" { TYPE = Boolean, DEFAULT = false }
+  property "notificationCount"   { TYPE = Number, GET = function(self)
+    return self.notifications.Count
+  end}
   ------------------------------------------------------------------------------
   --                         Constructor                                      --
   ------------------------------------------------------------------------------

@@ -1,8 +1,11 @@
+[1.0.23]
+- ! The tracker will become active when there is a notification. 
+
 [1.0.22]
 - Updated the API
 - ! Reworked the IdleMode.
 - + Added a 'IdleMode' category in the options.
-- - Removed the BFA file. 
+- - Removed the BFA file.
 
 
 [1.0.21]
