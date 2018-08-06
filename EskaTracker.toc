@@ -15,6 +15,7 @@ Locales\locales.xml
 Loader.lua
 
 # Core API Files
+BlockModule.lua
 API\API.xml
 
 # Main files
