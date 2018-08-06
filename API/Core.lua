@@ -263,6 +263,23 @@ end)
 -- [[[ END DEPRECRATED ]]]
 
 class "Utils" (function(_ENV)
+  class "Instance" (function(_ENV)
+    __Static__() function IsInBattleground(self)
+      local inInstance, instanceType = IsInInstance()
+      if IsInInstance and instanceType == "pvp" then
+        return true
+      end
+      return false
+    end
+
+    __Static__() function IsInDungeon(self)
+      local inInstance, instanceType = IsInInstance()
+      if IsInInstance and instanceType == "party" then
+        return true
+      end
+      return false
+    end
+  end)
   ------------------------------------------------------------------------------
   --                         String
   ------------------------------------------------------------------------------
@@ -456,7 +473,6 @@ class "Utils" (function(_ENV)
       end
     end
   end)
-
   ------------------------------------------------------------------------------
   --                         Misc
   ------------------------------------------------------------------------------
