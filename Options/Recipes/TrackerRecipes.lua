@@ -302,3 +302,187 @@ class "BlockCategoryRowRecipe" (function(_ENV)
     self.CategoryUnchecked = CategoryUncheckedHandler
   end
 end)
+
+class "DisplayingRulesRecipe" (function(_ENV)
+  inherit "OptionRecipe"
+
+  _UP_ARROW_ICON = [[Interface\AddOns\EskaTracker\Media\up_arrow_icon]]
+  _DOWN_ARROW_ICON = [[Interface\AddOns\EskaTracker\Media\down_arrow_icon]]
+  _CONTINUE_ARROW_ICON = [[Interface\AddOns\EskaTracker\Media\continue_arrow_icon]]
+  _REMOVE_ICON = [[Interface\AddOns\EskaTracker\Media\failed_icon]]
+
+  local function RemoveTrackerSuffix(id)
+    return id:gsub("(%-tracker)$", "")
+  end
+
+  local function SortedByGroup(a, b)
+    if a.category and b.category then
+      return a.category < b.category
+    elseif a.category and not b.category then
+      return true
+    elseif not a.category and b.category then
+      return false
+    end
+  end
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
+  function Build(self, context)
+    -- Call our super build method (will set some usefull properties so don't forget it)
+    super.Build(self, context)
+
+    local trackerSelected = RemoveTrackerSuffix(context("tracker_selected"))
+    local tracker = Trackers:Get(trackerSelected)
+
+    if not tracker then
+      return
+    end
+
+    local group = _AceGUI:Create("SimpleGroup")
+    group:SetLayout("List")
+    group:SetRelativeWidth(1.0)
+    context.parentWidget:AddChild(group)
+
+    self.cache["group"]   = group
+    self.cache["tracker"] = tracker
+
+    self:CreateRows()
+  end
+
+  function CreateRows(self)
+    local tracker = self.cache["tracker"]
+    local group = self.cache["group"]
+
+    local rules = tracker:GetDisplaingRules()
+    for index, rule in rules:GetIterator() do
+      local row = self:CreateRow(tracker, rule, index, index == 1, index == rules.Count)
+      group:AddChild(row)
+    end
+  end
+
+  __Arguments__ { Tracker, DisplayingRule, Number, Variable.Optional(Boolean, false), Variable.Optional(Boolean, false) }
+  function CreateRow(self, tracker, rule, index, first, last)
+    local group = _AceGUI:Create("SimpleGroup")
+    group:SetLayout("Flow")
+    group:SetRelativeWidth(1.0)
+
+    local removeIcon = _AceGUI:Create("Icon")
+    removeIcon:SetImage(_REMOVE_ICON)
+    removeIcon:SetImageSize(16, 16)
+    removeIcon:SetWidth(20)
+    removeIcon.frame:SetBackdropColor(0, 0, 0, 0)
+    removeIcon:SetCallback("OnClick", function()
+      tracker:RemoveDisplayingRule(rule)
+    end)
+    group:AddChild(removeIcon)
+
+    local labelSpace = _AceGUI:Create("Label")
+    labelSpace:SetText("")
+    labelSpace:SetWidth(16)
+    group:AddChild(labelSpace)
+
+    local numLabel = _AceGUI:Create("Label")
+    numLabel:SetText(string.format("%i.", index))
+    numLabel:SetWidth(24)
+    group:AddChild(numLabel)
+
+    local dropdown = _AceGUI:Create("EKT-Dropdown")
+    dropdown:SetLabel("If")
+    dropdown:SetWidth(200)
+    dropdown:SetCallback("OnValueChanged", function(_, _, value)
+      rule.ifValue = value
+      tracker:SaveDisplayingRule(rule)
+    end)
+    group:AddChild(dropdown)
+
+    local statusCategory = {}
+    local statusFunctions = StatusFunctions:GetAll().Values:ToList()
+    for index, statusFunction in statusFunctions:Sort(SortedByGroup):GetIterator() do
+      dropdown:AddItem(statusFunction.id, statusFunction.text, statusFunction.category)
+    end
+    dropdown:SetValue(rule.ifValue)
+
+    local valueDropdown = _AceGUI:Create("Dropdown")
+    valueDropdown:SetWidth(72)
+    valueDropdown:SetList({
+      ["true"] = "True",
+      ["false"] = "False",
+    })
+
+    if rule.condValue == nil then
+      valueDropdown:SetValue("")
+    else
+      valueDropdown:SetValue(rule.condValue and "true" or "false")
+    end
+
+    valueDropdown:SetCallback("OnValueChanged", function(_, _, value)
+      if value == "true" then
+        rule.condValue = true
+      elseif value == "false" then
+        rule.condValue = false
+      end
+      tracker:SaveDisplayingRule(rule)
+    end)
+    group:AddChild(valueDropdown)
+
+    local behaviorDropdown = _AceGUI:Create("Dropdown")
+    behaviorDropdown:SetWidth(200)
+    behaviorDropdown:SetLabel("Then")
+    behaviorDropdown:SetList({
+      ["hide-tracker"] = "|cffff0000Hide the tracker|r",
+      ["show-tracker"] = "|cff00ff00Show the tracker|r",
+    })
+    group:AddChild(behaviorDropdown)
+    behaviorDropdown:SetCallback("OnValueChanged", function(_, _, value)
+      rule.thenValue = value
+      tracker:SaveDisplayingRule(rule)
+    end)
+    behaviorDropdown:SetValue(rule.thenValue)
+
+    local continueCheckbox = _AceGUI:Create("CheckBox")
+    continueCheckbox:SetLabel(string.format("|T%s:16:16|t", _CONTINUE_ARROW_ICON))
+    continueCheckbox:SetWidth(62)
+    continueCheckbox:SetValue(rule.continue)
+    continueCheckbox:SetCallback("OnValueChanged", function(_, _, value)
+      rule.continue = value
+      tracker:SaveDisplayingRule(rule)
+    end)
+    group:AddChild(continueCheckbox)
+
+    if not first then
+      local upIcon = _AceGUI:Create("Icon")
+      upIcon.frame:SetBackdropColor(0, 0, 0, 0)
+      upIcon:SetImage(_UP_ARROW_ICON)
+      upIcon:SetImageSize(16, 16)
+      upIcon:SetWidth(24)
+      upIcon:SetCallback("OnClick", function()
+        tracker:UpDisplayingRuleOrder(rule)
+      end)
+      group:AddChild(upIcon)
+    end
+
+    if not last then
+      local downIcon = _AceGUI:Create("Icon")
+      downIcon:SetImage(_DOWN_ARROW_ICON)
+      downIcon:SetImageSize(16, 16)
+      downIcon:SetWidth(24)
+      downIcon:SetCallback("OnClick", function()
+        tracker:DownDisplayingRuleOrder(rule)
+      end)
+      group:AddChild(downIcon)
+    end
+
+    return group
+  end
+
+  function Refresh(self)
+    if self.cache["group"] then
+      self.cache["group"]:ReleaseChildren()
+      self:CreateRows()
+    end
+
+    -- Update the layout
+    self:FireRecipeEvent("UPDATE_LAYOUT")
+  end
+
+end)

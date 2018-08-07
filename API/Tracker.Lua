@@ -19,6 +19,43 @@ struct "IdleCountdownInfo" (function(_ENV)
   end
 end)
 
+class "DisplayingRule" ( function(_ENV)
+  ------------------------------------------------------------------------------
+  --                         Properties                                       --
+  ------------------------------------------------------------------------------
+  property "ifValue" { TYPE = Stirng, DEFAULT = "" }
+  property "condValue" { TYPE = Boolean  }
+  property "thenValue" { TYPE = String }
+  property "continue" { TYPE = Boolean, DEFAULT = true }
+  ------------------------------------------------------------------------------
+  --                          Meta-Methods                                    --
+  ------------------------------------------------------------------------------
+  function __call(self)
+    if not self.handler and self.ifValue ~= "" then
+      local status = StatusFunctions:Get(self.ifValue)
+      if status then
+        self.handler = status.func
+      end
+    end
+
+    if not self.handler then
+      return nil
+    end
+
+    return self.handler()
+  end
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function DisplayingRule(self, ifValue, condValue, thenValue, continue)
+    self.ifValue = ifValue
+    self.condValue = condValue
+    self.thenValue = thenValue
+    self.continue = continue
+  end
+
+end)
+
 
 Class "Tracker" (function(_ENV)
   inherit "BorderFrame"
@@ -152,7 +189,7 @@ Class "Tracker" (function(_ENV)
 
     if self.OnNotificationRemovedHandler then
       Notifications().OnNotificationRemoved = Notifications().OnNotificationRemoved - self.OnNotificationRemovedHandler
-    end  
+    end
 
     Notifications():ClearAllPoints()
     Notifications():SetParent()
@@ -545,6 +582,145 @@ Class "Tracker" (function(_ENV)
 
   end
 
+  __Arguments__ { DisplayingRule, Variable.Optional(Boolean, false) }
+  function AddDisplayingRule(self, rule, silent)
+    self.displayingRules:Insert(rule)
+
+    if not self.dbReadOnly then
+      self:SaveDisplayingRules()
+    end
+
+    if not silent then
+      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_ADDED")
+    end
+  end
+
+  __Arguments__ { DisplayingRule, Variable.Optional(Boolean, false) }
+  function RemoveDisplayingRule(self, rule, silent)
+    self.displayingRules:Remove(rule)
+
+    if not self.dbReadOnly then
+      self:SaveDisplayingRules()
+    end
+
+    if not silent then
+      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_REMOVED", rule)
+    end
+  end
+
+
+  function LoadDisplayingRules(self)
+    -- Database Read Only for avoiding the properties writing during the loading.
+    self.dbReadOnly = true
+
+    -- Load the properties value contained in the profile
+    Profiles:PrepareDatabase()
+
+    if Database:SelectTable(false, "trackers", self.id, "displaying-rules") then
+      for index, rule in Database:IterateTable() do
+        print("Index", rule)
+        self:AddDisplayingRule(DisplayingRule(rule.ifValue, rule.condValue, rule.thenValue, rule.continue), true)
+      end
+    end
+
+    -- remove the read only mode for Database
+    self.dbReadOnly = false
+  end
+
+  function SaveDisplayingRules(self)
+    if not self.dbReadOnly then
+      -- Prepare the database
+      Profiles:PrepareDatabase()
+
+      if Database:SelectTable("trackers", self.id) then
+        Database:SetValue("displaying-rules", {})
+        if Database:SelectTable("displaying-rules") then
+          for index, rule in self.displayingRules:GetIterator() do
+            Database:SetValue(index, {
+              ifValue = rule.ifValue,
+              condValue = rule.condValue,
+              thenValue = rule.thenValue,
+              continue = rule.continue,
+            })
+          end
+        end
+      end
+    end
+  end
+
+  __Arguments__ { DisplayingRule }
+  function SaveDisplayingRule(self, rule)
+    if not self.dbReadOnly then
+
+      local ruleIndex = self.displayingRules:IndexOf(rule)
+
+      -- Prepare the database
+      Profiles:PrepareDatabase()
+
+      if Database:SelectTable("trackers", self.id, "displaying-rules") then
+        Database:SetValue(ruleIndex, {
+          ifValue = rule.ifValue,
+          condValue = rule.condValue,
+          thenValue = rule.thenValue,
+          continue = rule.continue,
+        })
+      end
+    end
+  end
+
+  __Arguments__ { Number }
+  function SaveDisplayingRule(self, index)
+    self:SaveDisplayingRule(self.displayingRules[index])
+  end
+
+  function GetDisplaingRules(self)
+    return self.displayingRules
+  end
+
+  function UpDisplayingRuleOrder(self, rule)
+    local ruleIndex = self.displayingRules:IndexOf(rule)
+
+    if not ruleIndex and ruleIndex == 1 then
+      return
+    end
+
+    -- Get the rule which will be replaced
+    local replacedRule = self.displayingRules[ruleIndex-1]
+
+    if not replacedRule then
+      return
+    end
+
+    self.displayingRules[ruleIndex-1] = rule
+    self.displayingRules[ruleIndex] = replacedRule
+
+    self:SaveDisplayingRules()
+
+    Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED", self)
+  end
+
+  function DownDisplayingRuleOrder(self, rule)
+    local ruleIndex = self.displayingRules:IndexOf(rule)
+
+    if not ruleIndex and ruleIndex == self.displayingRules.Count then
+      return
+    end
+
+    -- Get the rule which will be replaced
+    local replacedRule = self.displayingRules[ruleIndex+1]
+
+    if not replacedRule then
+      return
+    end
+
+    self.displayingRules[ruleIndex+1] = rule
+    self.displayingRules[ruleIndex] = replacedRule
+
+    self:SaveDisplayingRules()
+
+    Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED", self)
+  end
+
   function LoadPropsFromDatabase(self)
     -- Database Read Only for avoiding the properties writing during the loading.
     self.dbReadOnly = true
@@ -565,78 +741,18 @@ Class "Tracker" (function(_ENV)
       self.displayRulesType     = Database:GetValue("display-rules-type")
       self.displayMacro         = Database:GetValue("display-macro")
       self.displayFunction      = Database:GetValue("display-function")
-      self.displayInRaid        = Database:GetValue("display-in-raid")
-      self.displayInGroup       = Database:GetValue("display-in-group")
-      self.displayInPetBattle   = Database:GetValue("display-in-pet-battle")
-      self.displayInCombat      = Database:GetValue("display-in-combat")
-      self.displayInArena       = Database:GetValue("display-in-arena")
+      self.defaultDisplayState  = Database:GetValue("default-display-state")
       self:SetPosition(Database:GetValue("xPos"), Database:GetValue("yPos"), false)
     end
+
+    self:RunDisplayRulesTicker()
 
     -- remove the read only mode for Database
     self.dbReadOnly = false
   end
 
-  function OnHide(self)
-    super.OnHide(self)
-
-    Profiles:PrepareDatabase()
-    if Database:SelectTable("trackers", self.id) then
-      Database:SetValue("show", false)
-    end
-  end
-
-  function OnShow(self)
-    super.OnShow(self)
-
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(false, "trackers", self.id) then
-      Database:SetValue("show", nil)
-    end
-  end
-
   __Static__() function GetIDFromName(self, name)
     return name:lower()
-  end
-
-  function ValidateDisplayRules(self)
-    if self.displayRulesType == "predefined-type" then
-      if UnitAffectingCombat("player") and not self.displayInCombat then
-        return false
-      end
-
-      if IsInRaid() and not self.displayInRaid then
-        return false
-      end
-
-      if IsInGroup() and not self.displayInGroup then
-        return false
-      end
-
-      if C_PetBattles.IsInBattle() and not self.displayInPetBattle then
-        return false
-      end
-
-      if IsActiveBattlefieldArena() and not self.displayInArena then
-        return false
-      end
-    end
-
-    return true
-  end
-
-
-  function UpdateDisplay(self)
-      if not self.enabled or not self.displayRulesType == "predefined-type" then
-        return
-      end
-
-    local show = self:ValidateDisplayRules()
-    if show then
-      self:Show()
-    else
-      self:Hide()
-    end
   end
 
   local function UpdateEnabled(self, new)
@@ -648,13 +764,7 @@ Class "Tracker" (function(_ENV)
     end
 
     if new then
-      if self.displayRulesType == "predefined-type" then
-        self:UpdateDisplay()
-      elseif self.displayRulesType == "macro-type" then
-        self:RunDisplayMacroTicker()
-      elseif self.displayRulesType == "function-type" then
-        self:RunDisplayFunctionTicker()
-      end
+      self:RunDisplayRulesTicker()
     else
       self:Hide()
     end
@@ -664,84 +774,113 @@ Class "Tracker" (function(_ENV)
     Profiles:PrepareDatabase()
     if Database:SelectTable("trackers", self.id) then
       local id
-      if prop == "displayInRaid" then
-        id = "display-in-raid"
-        self:UpdateDisplay()
-      elseif prop == "displayInGroup" then
-        id = "display-in-group"
-        self:UpdateDisplay()
-      elseif prop == "displayInCombat" then
-        id = "display-in-combat"
-        self:UpdateDisplay()
-      elseif prop == "displayInPetBattle" then
-        id = "display-in-pet-battle"
-        self:UpdateDisplay()
-      elseif prop == "displayInArena" then
-        id = "display-in-arena"
-        self:UpdateDisplay()
-      elseif prop == "displayRulesType" then
+      if prop == "displayRulesType" then
         id = "display-rules-type"
-        if new == "macro-type" then
-          self:RunDisplayMacroTicker()
-        elseif new == "function-type" then
-          self:RunDisplayFunctionTicker()
-        elseif new == "predefined-type" then
-          self:UpdateDisplay()
-        end
       elseif prop == "displayFunction" then
         id = "display-function"
         self:BuildDisplayFunctionCache()
       elseif prop == "displayMacro" then
         id = "display-macro"
+      elseif prop == "defaultDisplayState" then
+        id = "default-display-state"
       end
+
       if id and not self.dbReadOnly then
         Database:SetValue(id, new)
       end
     end
   end
 
-  __Async__()
-  function RunDisplayMacroTicker(self)
-    if not self.__displayMacroTickerRunning then
-      while self.displayRulesType == "macro-type" and self.enabled do
-        local show = false
-        local result = SecureCmdOptionParse(self.displayMacro)
-        if result and result == "show" then
-          show = true
-        end
+  function GetDisplayByFunction(self)
+    local show
+    if self.displayFunctionCache then
+      show = self.displayFunctionCache()
+    end
 
-        if show and not self:IsShown() then
-          self:Show()
-        elseif not show and self:IsShown() then
-          self:Hide()
-        end
+    if show == nil then
+      show = self.defaultDisplayState
+    end
 
-        Delay(0.1)
+    return show
+  end
+
+  function GetDisplayByMacro(self)
+    local show
+    local result = SecureCmdOptionParse(self.displayMacro)
+    if result then
+      if result == "show" then
+        show = true
+      elseif result == "hide" then
+        show = false
       end
-      self.__displayMacroTickerRunning = nil
+    end
+
+    if show == nil then
+      show = self.defaultDisplayState
+    end
+
+    return show
+  end
+
+  function GetDisplayByPredefined(self)
+    for _, rule in self.displayingRules:GetIterator() do
+      local statusValue = rule()
+      local isChecked
+      if statusValue == nil then
+        isChecked = false
+      else
+        isChecked = statusValue
+      end
+
+
+      if isChecked then
+        if rule.thenValue == "hide-tracker" then
+          return false
+        elseif rule.thenValue == "show-tracker" then
+          return true
+        end
+      end
+
+      if not rule.continue then
+        if self.defaultDisplayState == "hide" then
+          return false
+        elseif self.defaultDisplayState == "show" then
+          return true
+        end
+      end
+    end
+
+    if self.defaultDisplayState == "hide" then
+      return false
+    elseif self.defaultDisplayState == "show" then
+      return true
     end
   end
 
   __Async__()
-  function RunDisplayFunctionTicker(self)
-    if not self.__displayFunctionTickerRunning then
-      self.__displayFunctionTickerRunning = true
-      while self.displayRulesType == "function-type" and self.enabled do
-        local show = false
-        if self.displayFunctionCache then
-          show = self.displayFunctionCache()
+  function RunDisplayRulesTicker(self)
+    if not self.__displayRulesTickerRunning then
+      self.__displayRulesTickerRunning = true
+      while self.enabled do
+        local show
+        if self.displayRulesType == "function-type" then
+          show = self:GetDisplayByFunction()
+        elseif self.displayRulesType == "macro-type" then
+          show = self:GetDisplayByMacro()
+        elseif self.displayRulesType == "predefined-type" then
+          show = self:GetDisplayByPredefined()
         end
 
-        if show and not self:IsShown() then
-          self:Show()
-        elseif not show and self:IsShown() then
-          self:Hide()
+        if show then
+          self:ForceShow()
+        else
+          self:ForceHide()
         end
 
         Delay(0.1)
       end
-      self.__displayFunctionTickerRunning = nil
     end
+    self.__displayRulesTickerRunning = nil
   end
 
   function BuildDisplayFunctionCache(self)
@@ -764,12 +903,8 @@ Class "Tracker" (function(_ENV)
   property "idleModeEnabled"              { TYPE = Boolean, DEFAULT = false, HANDLER = IdleModeEnabledChanged }
   property "idleModeAlpha"                { TYPE = Number, DEFAULT = 0.35, HANDLER = IdleModeAlphaChanged }
   --- Display conditionals
+  property "defaultDisplayState"          { TYPE = String, DEFAULT = "show", HANDLER = UpdateDisplayProps }
   property "displayRulesType"             { TYPE = String, DEFAULT = "predefined-type", HANDLER = UpdateDisplayProps }
-  property "displayInRaid"                { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
-  property "displayInGroup"               { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
-  property "displayInCombat"              { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
-  property "displayInPetBattle"           { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
-  property "displayInArena"               { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateDisplayProps }
   property "displayMacro"                 { TYPE = String, DEFAULT = "show", HANDLER = UpdateDisplayProps }
   property "displayFunction"              { TYPE = String, DEFAULT = [[function() return true end]],  FIELD = "__displayFunction", HANDLER = UpdateDisplayProps }
 
@@ -883,6 +1018,7 @@ Class "Tracker" (function(_ENV)
     end
 
     self.blocks = Array[Block]()
+    self.displayingRules = Array[DisplayingRule]()
   end
 
 end)
@@ -1025,6 +1161,7 @@ function OnLoad(self)
 
   -- Load the properties contained in the profile
   for _, tracker in Trackers:GetIterator() do
+      tracker:LoadDisplayingRules()
       tracker:LoadPropsFromDatabase()
   end
 
@@ -1035,6 +1172,7 @@ __SystemEvent__()
 function EKT_PROFILE_CHANGED()
   -- Update props contained in the new profils
   for _, tracker in Trackers:GetIterator() do
+      tracker:LoadDisplayingRules()
       tracker:LoadPropsFromDatabase()
   end
 
@@ -1055,12 +1193,5 @@ function EKT_COPY_PROFILE_PROCESS(sourceDB, destDB, destProfile)
         destDB["trackers"][trackerID] = trackerDB
       end
     end
-  end
-end
-
-__SystemEvent__ "PLAYER_REGEN_ENABLED" "PLAYER_REGEN_DISABLED" "PLAYER_ENTERING_WORLD" "PARTY_MEMBERS_CHANGED" "GROUP_ROSTER_UPDATE" "PET_BATTLE_OPENING_START"
-function UpdateTrackersVisibility()
-  for trackerID, tracker in Trackers:GetIterator() do
-    tracker:UpdateDisplay()
   end
 end

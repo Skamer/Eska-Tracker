@@ -183,6 +183,11 @@ class "TreeRecipe" (function(_ENV)
     content:SetFullWidth(true)
     scrollContainer:AddChild(content)
 
+    self.cache["content"] = content
+    self.cache["widget"] = widget
+    self.cache["scrollContained"] = scrollContained
+
+
     -- Helpful function to select a category.
     -- A TreeItemRecipe is considered as category.
     local function SelectCategory(id, mustChangeUrlPart)
@@ -254,11 +259,23 @@ class "TreeRecipe" (function(_ENV)
     self.icon = icon
     return self
   end
+
+  function Refresh(self)
+    self.cache["content"]:DoLayout()
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
   property "defaultBuildingGroup" { TYPE = String }
   property "icon"                 { TYPE = String + Number }
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function TreeRecipe(self)
+    super(self)
+
+    self:RefreshOnRecipeEvent("UPDATE_LAYOUT")
+  end
 end)
 --------------------------------------------------------------------------------
 --                                                                            --
@@ -325,6 +342,8 @@ class "TabRecipe" (function(_ENV)
     end
 
     context.parentWidget:AddChild(widget)
+
+    self.cache["widget"] = widget
   end
 
   __Arguments__ { String }
@@ -332,10 +351,24 @@ class "TabRecipe" (function(_ENV)
     self.saveChoiceVariable = variableName
     return self
   end
+
+  function Refresh(self)
+    if self.cache["widget"] then
+      self.cache["widget"]:DoLayout()
+    end
+  end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
   property "saveChoiceVariable" { TYPE = String }
+  ------------------------------------------------------------------------------
+  --                            Constructors                                  --
+  ------------------------------------------------------------------------------
+  function TabRecipe(self)
+    super(self)
+
+    self:RefreshOnRecipeEvent("UPDATE_LAYOUT")
+  end
 end)
 --------------------------------------------------------------------------------
 --                                                                            --

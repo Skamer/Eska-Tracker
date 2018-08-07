@@ -123,14 +123,6 @@ function AddGeneralTabRecipes(self)
   end)
   OptionBuilder:AddRecipe(lockRecipe, "tracker/general/top-options")
 
-  -- Show
-  local showRecipe = ButtonRecipe()
-  showRecipe:SetText("Show/Hide")
-  showRecipe.OnClick = showRecipe.OnClick + function(recipe)
-    GetCurrentTracker(recipe):Toggle()
-  end
-  OptionBuilder:AddRecipe(showRecipe, "tracker/general/top-options")
-
 
   -- Size options group
   OptionBuilder:AddRecipe(InlineGroupRecipe():SetText("Size"):SetBuildingGroup("tracker/general/size"), "tracker/general")
@@ -205,6 +197,19 @@ function AddDisplyingRulesRecipes(self)
   -- Create displaying item
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Displaying Rules"):SetID("displaying-rules"):SetBuildingGroup("[tracker&:tracker_selected:]/displaying-rules"):SetOrder(40), "tracker/tabs")
 
+  local defaultState = SelectRecipe()
+  defaultState:SetText("By default, the tracker is:")
+  defaultState:SetOrder(10)
+  defaultState:Get(function(recipe) return GetCurrentTracker(recipe).defaultDisplayState end)
+  defaultState:Set(function(recipe, value) GetCurrentTracker(recipe).defaultDisplayState = value end)
+  defaultState:SetList({
+    ["show"] = "|cff00ff00Displayed|r",
+    ["hide"] = "|cffff0000Hidden|r",
+   })
+   OptionBuilder:AddRecipe(defaultState, "tracker/displaying-rules")
+   OptionBuilder:AddRecipe(HeadingRecipe(), "tracker/displaying-rules")
+
+
   local displayRulesType = RadioGroupRecipe()
   displayRulesType:SetOrder(101)
   displayRulesType:AddChoice("predefined-type", "Predefined")
@@ -217,66 +222,24 @@ function AddDisplyingRulesRecipes(self)
   displayRulesType:SetAddSeparator(true)
   OptionBuilder:AddRecipe(displayRulesType, "tracker/displaying-rules")
 
-  -- Predefined type
-  local displayInCombat = CheckBoxRecipe()
-  displayInCombat:SetText("Display in Combat")
-  displayInCombat:SetWidth(1.0)
-  displayInCombat:SetOrder(10)
-  displayInCombat:Get(function(recipe)
-    return GetCurrentTracker(recipe).displayInCombat
-  end)
-  displayInCombat:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInCombat = value
-  end)
-  OptionBuilder:AddRecipe(displayInCombat, "tracker/displaying-rules/predefined-type")
 
-  local displayInRaid = CheckBoxRecipe()
-  displayInRaid:SetText("Display in Raid")
-  displayInRaid:SetWidth(1.0)
-  displayInRaid:SetOrder(20)
-  displayInRaid:Get(function(recipe)
-    return GetCurrentTracker(recipe).displayInRaid
-  end)
-  displayInRaid:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInRaid = value
-  end)
-  OptionBuilder:AddRecipe(displayInRaid, "tracker/displaying-rules/predefined-type")
+   local addNewRuleButton = ButtonRecipe()
+   addNewRuleButton:SetText("Add a new rule")
+   addNewRuleButton:SetOrder(20)
+   addNewRuleButton.OnClick = addNewRuleButton.OnClick + function(recipe)
+     GetCurrentTracker(recipe):AddDisplayingRule(DisplayingRule())
+   end
 
-  local displayInGroup = CheckBoxRecipe()
-  displayInGroup:SetText("Display in Group")
-  displayInGroup:SetWidth(1.0)
-  displayInGroup:SetOrder(30)
-  displayInGroup:Get(function(recipe)
-    return GetCurrentTracker(recipe).displayInGroup
-  end)
-  displayInGroup:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInGroup = value
-  end)
-  OptionBuilder:AddRecipe(displayInGroup, "tracker/displaying-rules/predefined-type")
 
-  local displayInPetBattle = CheckBoxRecipe()
-  displayInPetBattle:SetText("Display in Pet Battle")
-  displayInPetBattle:SetWidth(1.0)
-  displayInPetBattle:SetOrder(40)
-  displayInPetBattle:Get(function(recipe)
-    return GetCurrentTracker(recipe).displayInPetBattle
-  end)
-  displayInPetBattle:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInPetBattle = value
-  end)
-  OptionBuilder:AddRecipe(displayInPetBattle, "tracker/displaying-rules/predefined-type")
+   local displayingRulesRecipe = DisplayingRulesRecipe()
+   displayingRulesRecipe:SetOrder(40)
+   displayingRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAYING_RULE_ADDED")
+   displayingRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAYING_RULE_REMOVED")
+   displayingRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED")
 
-  local displayInArena = CheckBoxRecipe()
-  displayInArena:SetText("Display in Arena")
-  displayInArena:SetWidth(1.0)
-  displayInArena:SetOrder(50)
-  displayInArena:Get(function(recipe)
-    return GetCurrentTracker(recipe).displayInArena
-  end)
-  displayInArena:Set(function(recipe, value)
-    GetCurrentTracker(recipe).displayInArena = value
-  end)
-  OptionBuilder:AddRecipe(displayInArena, "tracker/displaying-rules/predefined-type")
+  OptionBuilder:AddRecipe(addNewRuleButton, "tracker/displaying-rules/predefined-type")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(30), "tracker/displaying-rules/predefined-type")
+  OptionBuilder:AddRecipe(displayingRulesRecipe, "tracker/displaying-rules/predefined-type")
 
   -- conditionals Macro
   local macro = TextEditRecipe()
@@ -351,6 +314,21 @@ function AddIdleModeRecipes(self)
   OptionBuilder:AddRecipe(alpha, "tracker/idle-mode")
 end
 
+
+__SystemEvent__()
+function EKT_TRACKER_DISPLAYING_RULE_ADDED(rule)
+
+end
+
+__SystemEvent__()
+function EKT_TRACKER_DISPLAYING_RULE_REMOVED(rule)
+
+end
+
+__SystemEvent__()
+function EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED()
+
+end
 
 
 --- Register the recipes related to tracker registered
