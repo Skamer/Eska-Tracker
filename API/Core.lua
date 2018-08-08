@@ -331,35 +331,32 @@ class "Utils" (function(_ENV)
   ------------------------------------------------------------------------------
   --                         Enum
   ------------------------------------------------------------------------------
-  class "Enum" (function(_ENV)
-    __Static__() function AddFlag(flags, flag)
-      if not Enum.ValidateFlags(flags, flag) then
-        flags = flags + flag
-      end
-
-      return flags
+  __Static__() function AddEnumFlag(flags, flag)
+    print("AddEnumFlag", flags, flag)
+    if not Enum.ValidateFlags(flags, flag) then
+      flags = flags + flag
     end
 
-    __Static__() function RemoveFlag(flags, flag)
-      if Enum.ValidateFlags(flags, flag) then
-        flags = flags - flag
-      end
+    return flags
+  end
 
-      return flags
+  __Static__() function RemoveEnumFlag(flags, flag)
+    if Enum.ValidateFlags(flags, flag) then
+      flags = flags - flag
     end
-  end)
+
+    return flags
+  end
   ------------------------------------------------------------------------------
   --                         Class
   ------------------------------------------------------------------------------
-  class "Class" (function(_ENV)
-    __Static__() function GetDefaultValueFromClass(class, prop)
+  __Static__() function GetDefaultValueFromClass(class, prop)
       return Class.GetFeature(class, prop):GetDefault()
-    end
+  end
 
-    __Static__() function GetDefaultValueFromObj(obj, prop)
+  __Static__() function GetDefaultValueFromObj(obj, prop)
       return Class.GetFeature(Class.GetObjectClass(obj), prop):GetDefault()
-    end
-  end)
+  end
   ------------------------------------------------------------------------------
   --                         Network
   ------------------------------------------------------------------------------

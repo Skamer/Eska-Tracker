@@ -19,7 +19,7 @@ struct "IdleCountdownInfo" (function(_ENV)
   end
 end)
 
-class "DisplayingRule" ( function(_ENV)
+class "DisplayRule" ( function(_ENV)
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ class "DisplayingRule" ( function(_ENV)
   ------------------------------------------------------------------------------
   --                            Constructors                                  --
   ------------------------------------------------------------------------------
-  function DisplayingRule(self, ifValue, condValue, thenValue, continue)
+  function DisplayRule(self, ifValue, condValue, thenValue, continue)
     self.ifValue = ifValue
     self.condValue = condValue
     self.thenValue = thenValue
@@ -582,44 +582,43 @@ Class "Tracker" (function(_ENV)
 
   end
 
-  __Arguments__ { DisplayingRule, Variable.Optional(Boolean, false) }
-  function AddDisplayingRule(self, rule, silent)
-    self.displayingRules:Insert(rule)
+  __Arguments__ { DisplayRule, Variable.Optional(Boolean, false) }
+  function AddDisplayRule(self, rule, silent)
+    self.displayRules:Insert(rule)
 
     if not self.dbReadOnly then
-      self:SaveDisplayingRules()
+      self:SaveDisplayRules()
     end
 
     if not silent then
-      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_ADDED")
+      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAY_RULE_ADDED")
     end
   end
 
-  __Arguments__ { DisplayingRule, Variable.Optional(Boolean, false) }
-  function RemoveDisplayingRule(self, rule, silent)
-    self.displayingRules:Remove(rule)
+  __Arguments__ { DisplayRule, Variable.Optional(Boolean, false) }
+  function RemoveDisplayRule(self, rule, silent)
+    self.displayRules:Remove(rule)
 
     if not self.dbReadOnly then
-      self:SaveDisplayingRules()
+      self:SaveDisplayRules()
     end
 
     if not silent then
-      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_REMOVED", rule)
+      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAY_RULE_REMOVED", rule)
     end
   end
 
 
-  function LoadDisplayingRules(self)
+  function LoadDisplayRules(self)
     -- Database Read Only for avoiding the properties writing during the loading.
     self.dbReadOnly = true
 
     -- Load the properties value contained in the profile
     Profiles:PrepareDatabase()
 
-    if Database:SelectTable(false, "trackers", self.id, "displaying-rules") then
+    if Database:SelectTable(false, "trackers", self.id, "display-rules") then
       for index, rule in Database:IterateTable() do
-        print("Index", rule)
-        self:AddDisplayingRule(DisplayingRule(rule.ifValue, rule.condValue, rule.thenValue, rule.continue), true)
+        self:AddDisplayRule(DisplayRule(rule.ifValue, rule.condValue, rule.thenValue, rule.continue), true)
       end
     end
 
@@ -627,15 +626,15 @@ Class "Tracker" (function(_ENV)
     self.dbReadOnly = false
   end
 
-  function SaveDisplayingRules(self)
+  function SaveDisplayRules(self)
     if not self.dbReadOnly then
       -- Prepare the database
       Profiles:PrepareDatabase()
 
       if Database:SelectTable("trackers", self.id) then
-        Database:SetValue("displaying-rules", {})
-        if Database:SelectTable("displaying-rules") then
-          for index, rule in self.displayingRules:GetIterator() do
+        Database:SetValue("display-rules", {})
+        if Database:SelectTable("display-rules") then
+          for index, rule in self.displayRules:GetIterator() do
             Database:SetValue(index, {
               ifValue = rule.ifValue,
               condValue = rule.condValue,
@@ -648,16 +647,16 @@ Class "Tracker" (function(_ENV)
     end
   end
 
-  __Arguments__ { DisplayingRule }
-  function SaveDisplayingRule(self, rule)
+  __Arguments__ { DisplayRule }
+  function SaveDisplayRule(self, rule)
     if not self.dbReadOnly then
 
-      local ruleIndex = self.displayingRules:IndexOf(rule)
+      local ruleIndex = self.displayRules:IndexOf(rule)
 
       -- Prepare the database
       Profiles:PrepareDatabase()
 
-      if Database:SelectTable("trackers", self.id, "displaying-rules") then
+      if Database:SelectTable("trackers", self.id, "display-rules") then
         Database:SetValue(ruleIndex, {
           ifValue = rule.ifValue,
           condValue = rule.condValue,
@@ -669,56 +668,56 @@ Class "Tracker" (function(_ENV)
   end
 
   __Arguments__ { Number }
-  function SaveDisplayingRule(self, index)
-    self:SaveDisplayingRule(self.displayingRules[index])
+  function SaveDisplayRule(self, index)
+    self:SaveDisplayRule(self.displayRules[index])
   end
 
-  function GetDisplaingRules(self)
-    return self.displayingRules
+  function GetDisplayRules(self)
+    return self.displayRules
   end
 
-  function UpDisplayingRuleOrder(self, rule)
-    local ruleIndex = self.displayingRules:IndexOf(rule)
+  function UpDisplayRuleOrder(self, rule)
+    local ruleIndex = self.displayRules:IndexOf(rule)
 
     if not ruleIndex and ruleIndex == 1 then
       return
     end
 
     -- Get the rule which will be replaced
-    local replacedRule = self.displayingRules[ruleIndex-1]
+    local replacedRule = self.displayRules[ruleIndex-1]
 
     if not replacedRule then
       return
     end
 
-    self.displayingRules[ruleIndex-1] = rule
-    self.displayingRules[ruleIndex] = replacedRule
+    self.displayRules[ruleIndex-1] = rule
+    self.displayRules[ruleIndex] = replacedRule
 
-    self:SaveDisplayingRules()
+    self:SaveDisplayRules()
 
-    Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED", self)
+    Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAY_RULE_ORDER_CHANGED", self)
   end
 
-  function DownDisplayingRuleOrder(self, rule)
-    local ruleIndex = self.displayingRules:IndexOf(rule)
+  function DownDisplayRuleOrder(self, rule)
+    local ruleIndex = self.displayRules:IndexOf(rule)
 
-    if not ruleIndex and ruleIndex == self.displayingRules.Count then
+    if not ruleIndex and ruleIndex == self.displayRules.Count then
       return
     end
 
     -- Get the rule which will be replaced
-    local replacedRule = self.displayingRules[ruleIndex+1]
+    local replacedRule = self.displayRules[ruleIndex+1]
 
     if not replacedRule then
       return
     end
 
-    self.displayingRules[ruleIndex+1] = rule
-    self.displayingRules[ruleIndex] = replacedRule
+    self.displayRules[ruleIndex+1] = rule
+    self.displayRules[ruleIndex] = replacedRule
 
-    self:SaveDisplayingRules()
+    self:SaveDisplayRules()
 
-    Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED", self)
+    Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAY_RULE_ORDER_CHANGED", self)
   end
 
   function LoadPropsFromDatabase(self)
@@ -737,7 +736,6 @@ Class "Tracker" (function(_ENV)
       self.idleModeAlpha        = Database:GetValue("idle-mode-alpha")
       self.inactivityTimer      = Database:GetValue("inactivity-timer")
       self.idleModeEnabled      = Database:GetValue("idle-mode-enabled")
-      self.displayRulesType     = Database:GetValue("display-rules-type")
       self.displayRulesType     = Database:GetValue("display-rules-type")
       self.displayMacro         = Database:GetValue("display-macro")
       self.displayFunction      = Database:GetValue("display-function")
@@ -823,15 +821,14 @@ Class "Tracker" (function(_ENV)
   end
 
   function GetDisplayByPredefined(self)
-    for _, rule in self.displayingRules:GetIterator() do
+    for _, rule in self.displayRules:GetIterator() do
       local statusValue = rule()
       local isChecked
       if statusValue == nil then
         isChecked = false
       else
-        isChecked = statusValue
+        isChecked = (statusValue == rule.condValue)
       end
-
 
       if isChecked then
         if rule.thenValue == "hide-tracker" then
@@ -1018,7 +1015,7 @@ Class "Tracker" (function(_ENV)
     end
 
     self.blocks = Array[Block]()
-    self.displayingRules = Array[DisplayingRule]()
+    self.displayRules = Array[DisplayRule]()
   end
 
 end)
@@ -1161,7 +1158,7 @@ function OnLoad(self)
 
   -- Load the properties contained in the profile
   for _, tracker in Trackers:GetIterator() do
-      tracker:LoadDisplayingRules()
+      tracker:LoadDisplayRules()
       tracker:LoadPropsFromDatabase()
   end
 
@@ -1172,7 +1169,7 @@ __SystemEvent__()
 function EKT_PROFILE_CHANGED()
   -- Update props contained in the new profils
   for _, tracker in Trackers:GetIterator() do
-      tracker:LoadDisplayingRules()
+      tracker:LoadDisplayRules()
       tracker:LoadPropsFromDatabase()
   end
 

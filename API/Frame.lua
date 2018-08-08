@@ -39,7 +39,7 @@ class "SkinQueue" (function(_ENV)
     end
 
     local targetFlags = self.flags[flags]
-    targetFlags = targetFlags and Utils.Enum.AddFlag(targetFlags, flags) or flags
+    targetFlags = targetFlags and Utils.AddEnumFlag(targetFlags, flags) or flags
   end
 
   function HasFullSkinRequest(self)
@@ -47,12 +47,13 @@ class "SkinQueue" (function(_ENV)
   end
 
   function GetCombinedFlags(self, tarFlags)
+
     local flags
     for _, flag in self.flags:GetIterator() do
-      flags = flags and Utils.Enum.AddFlag(flags, flag) or flag
+      flags = flags and Utils.AddEnumFlag(flags, flag) or flag
     end
 
-    return tarFlags and Utils.Enum.AddFlag(tarFlags, flags) or flags
+    return tarFlags and Utils.AddEnumFlag(tarFlags, flags) or flags
   end
 
   function ProcessSkinRequest(self, target, tarFlags)
@@ -61,7 +62,13 @@ class "SkinQueue" (function(_ENV)
     local flag = self.flags[target]
     self.flags[target] = nil
 
-    return tarFlags and Utils.Enum:AddFlag(tarFlags, flag) or flag
+    if flag and targetFlags then
+      return Utils.AddEnumFlag(tarFlags, flag)
+    elseif flag and not tarFlags then
+      return flag
+    elseif not flag and tarFlags then
+      return tarFlags
+    end
   end
 
   function GetIterator(self)

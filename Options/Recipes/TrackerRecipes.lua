@@ -303,7 +303,7 @@ class "BlockCategoryRowRecipe" (function(_ENV)
   end
 end)
 
-class "DisplayingRulesRecipe" (function(_ENV)
+class "DisplayRulesRecipe" (function(_ENV)
   inherit "OptionRecipe"
 
   _UP_ARROW_ICON = [[Interface\AddOns\EskaTracker\Media\up_arrow_icon]]
@@ -353,14 +353,14 @@ class "DisplayingRulesRecipe" (function(_ENV)
     local tracker = self.cache["tracker"]
     local group = self.cache["group"]
 
-    local rules = tracker:GetDisplaingRules()
+    local rules = tracker:GetDisplayRules()
     for index, rule in rules:GetIterator() do
       local row = self:CreateRow(tracker, rule, index, index == 1, index == rules.Count)
       group:AddChild(row)
     end
   end
 
-  __Arguments__ { Tracker, DisplayingRule, Number, Variable.Optional(Boolean, false), Variable.Optional(Boolean, false) }
+  __Arguments__ { Tracker, DisplayRule, Number, Variable.Optional(Boolean, false), Variable.Optional(Boolean, false) }
   function CreateRow(self, tracker, rule, index, first, last)
     local group = _AceGUI:Create("SimpleGroup")
     group:SetLayout("Flow")
@@ -372,7 +372,7 @@ class "DisplayingRulesRecipe" (function(_ENV)
     removeIcon:SetWidth(20)
     removeIcon.frame:SetBackdropColor(0, 0, 0, 0)
     removeIcon:SetCallback("OnClick", function()
-      tracker:RemoveDisplayingRule(rule)
+      tracker:RemoveDisplayRule(rule)
     end)
     group:AddChild(removeIcon)
 
@@ -391,7 +391,7 @@ class "DisplayingRulesRecipe" (function(_ENV)
     dropdown:SetWidth(200)
     dropdown:SetCallback("OnValueChanged", function(_, _, value)
       rule.ifValue = value
-      tracker:SaveDisplayingRule(rule)
+      tracker:SaveDisplayRule(rule)
     end)
     group:AddChild(dropdown)
 
@@ -421,7 +421,7 @@ class "DisplayingRulesRecipe" (function(_ENV)
       elseif value == "false" then
         rule.condValue = false
       end
-      tracker:SaveDisplayingRule(rule)
+      tracker:SaveDisplayRule(rule)
     end)
     group:AddChild(valueDropdown)
 
@@ -435,7 +435,7 @@ class "DisplayingRulesRecipe" (function(_ENV)
     group:AddChild(behaviorDropdown)
     behaviorDropdown:SetCallback("OnValueChanged", function(_, _, value)
       rule.thenValue = value
-      tracker:SaveDisplayingRule(rule)
+      tracker:SaveDisplayRule(rule)
     end)
     behaviorDropdown:SetValue(rule.thenValue)
 
@@ -445,7 +445,7 @@ class "DisplayingRulesRecipe" (function(_ENV)
     continueCheckbox:SetValue(rule.continue)
     continueCheckbox:SetCallback("OnValueChanged", function(_, _, value)
       rule.continue = value
-      tracker:SaveDisplayingRule(rule)
+      tracker:SaveDisplayRule(rule)
     end)
     group:AddChild(continueCheckbox)
 
@@ -456,7 +456,7 @@ class "DisplayingRulesRecipe" (function(_ENV)
       upIcon:SetImageSize(16, 16)
       upIcon:SetWidth(24)
       upIcon:SetCallback("OnClick", function()
-        tracker:UpDisplayingRuleOrder(rule)
+        tracker:UpDisplayRuleOrder(rule)
       end)
       group:AddChild(upIcon)
     end
@@ -467,7 +467,7 @@ class "DisplayingRulesRecipe" (function(_ENV)
       downIcon:SetImageSize(16, 16)
       downIcon:SetWidth(24)
       downIcon:SetCallback("OnClick", function()
-        tracker:DownDisplayingRuleOrder(rule)
+        tracker:DownDisplayRuleOrder(rule)
       end)
       group:AddChild(downIcon)
     end

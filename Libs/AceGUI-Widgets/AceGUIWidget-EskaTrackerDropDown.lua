@@ -205,34 +205,6 @@ do
 	end
 
 	-- exported
-	--[[local function AddItem(self, value, text, category)
-		if category then
-			if not self.categoryPullouts[category] then
-				local pullout = CreatePullout(self)
-				local menuItem = AceGUI:Create("Dropdown-Item-Menu")
-				menuItem:SetText(category)
-				menuItem.userdata.obj = self
-				menuItem:SetMenu(pullout)
-
-				self.items[category] = menuItem
-				self.pullout:AddItem(menuItem)
-
-				self.categoryPullouts[category] = pullout
-			end
-		end
-
-		local item = AceGUI:Create("Dropdown-Item-Execute")
-		item:SetText(text)
-		item.userdata.obj = self
-		item.userdata.value = value
-
-		if category then
-			self.categoryPullouts[category]:AddItem(item)
-		else
-			self.pullout:AddItem(item)
-		end
-	end--]]
-
 	local function AddItem(self, value, text, category)
 		local item = AceGUI:Create("Dropdown-Item-Toggle")
 		item:SetText(text)
@@ -261,7 +233,6 @@ do
 	end
 
 
-	-- exported
 	local function GetValue(self)
 		return self.value
 	end

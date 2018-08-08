@@ -1,5 +1,11 @@
+[1.0.25]
+- ! Fixed a error about Enums.
+- ! Trying to fix #29.
+- + Improved the options of 'Display Rules' for tracker
+- - Removed the Show/Hide button for tracker (use 'Display rules' instead of)
+
 [1.0.23]
-- ! The tracker will become active when there is a notification. 
+- ! The tracker will become active when there is a notification.
 
 [1.0.22]
 - Updated the API

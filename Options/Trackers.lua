@@ -33,8 +33,6 @@ local function GetTrackerList()
   return list
 end
 
-
-
 function OnLoad(self)
   OptionBuilder:AddRecipe(TreeItemRecipe():SetID("trackers"):SetText("Trackers"):SetBuildingGroup("trackers/children"):SetOrder(10), "RootTree")
 
@@ -195,7 +193,7 @@ end
 
 function AddDisplyingRulesRecipes(self)
   -- Create displaying item
-  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Displaying Rules"):SetID("displaying-rules"):SetBuildingGroup("[tracker&:tracker_selected:]/displaying-rules"):SetOrder(40), "tracker/tabs")
+  OptionBuilder:AddRecipe(TabItemRecipe():SetText("Display Rules"):SetID("display-rules"):SetBuildingGroup("[tracker&:tracker_selected:]/display-rules"):SetOrder(40), "tracker/tabs")
 
   local defaultState = SelectRecipe()
   defaultState:SetText("By default, the tracker is:")
@@ -206,8 +204,8 @@ function AddDisplyingRulesRecipes(self)
     ["show"] = "|cff00ff00Displayed|r",
     ["hide"] = "|cffff0000Hidden|r",
    })
-   OptionBuilder:AddRecipe(defaultState, "tracker/displaying-rules")
-   OptionBuilder:AddRecipe(HeadingRecipe(), "tracker/displaying-rules")
+   OptionBuilder:AddRecipe(defaultState, "tracker/display-rules")
+   OptionBuilder:AddRecipe(HeadingRecipe(), "tracker/display-rules")
 
 
   local displayRulesType = RadioGroupRecipe()
@@ -217,29 +215,29 @@ function AddDisplyingRulesRecipes(self)
   displayRulesType:AddChoice("function-type", "Status function")
   displayRulesType:Get(function(recipe) return GetCurrentTracker(recipe).displayRulesType end)
   displayRulesType:Set(function(recipe, value) GetCurrentTracker(recipe).displayRulesType = value end)
-  displayRulesType:SetBuildingGroup("tracker/displaying-rules/[type&:tracker_display_rules_type:]")
+  displayRulesType:SetBuildingGroup("tracker/display-rules/[type&:tracker_display_rules_type:]")
   displayRulesType:SetSaveChoiceVariable("tracker_display_rules_type")
   displayRulesType:SetAddSeparator(true)
-  OptionBuilder:AddRecipe(displayRulesType, "tracker/displaying-rules")
+  OptionBuilder:AddRecipe(displayRulesType, "tracker/display-rules")
 
 
    local addNewRuleButton = ButtonRecipe()
    addNewRuleButton:SetText("Add a new rule")
    addNewRuleButton:SetOrder(20)
    addNewRuleButton.OnClick = addNewRuleButton.OnClick + function(recipe)
-     GetCurrentTracker(recipe):AddDisplayingRule(DisplayingRule())
+     GetCurrentTracker(recipe):AddDisplayRule(DisplayRule())
    end
 
 
-   local displayingRulesRecipe = DisplayingRulesRecipe()
-   displayingRulesRecipe:SetOrder(40)
-   displayingRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAYING_RULE_ADDED")
-   displayingRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAYING_RULE_REMOVED")
-   displayingRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED")
+   local displayRulesRecipe = DisplayRulesRecipe()
+   displayRulesRecipe:SetOrder(40)
+   displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_ADDED")
+   displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_REMOVED")
+   displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_ORDER_CHANGED")
 
-  OptionBuilder:AddRecipe(addNewRuleButton, "tracker/displaying-rules/predefined-type")
-  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(30), "tracker/displaying-rules/predefined-type")
-  OptionBuilder:AddRecipe(displayingRulesRecipe, "tracker/displaying-rules/predefined-type")
+  OptionBuilder:AddRecipe(addNewRuleButton, "tracker/display-rules/predefined-type")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(30), "tracker/display-rules/predefined-type")
+  OptionBuilder:AddRecipe(displayRulesRecipe, "tracker/display-rules/predefined-type")
 
   -- conditionals Macro
   local macro = TextEditRecipe()
@@ -249,7 +247,7 @@ function AddDisplyingRulesRecipes(self)
   macro:DisableButton(false)
   macro:Get(function(recipe) return GetCurrentTracker(recipe).displayMacro end)
   macro.OnValueConfirmed = function(recipe, macro) GetCurrentTracker(recipe).displayMacro = macro end
-  OptionBuilder:AddRecipe(macro, "tracker/displaying-rules/macro-type")
+  OptionBuilder:AddRecipe(macro, "tracker/display-rules/macro-type")
 
   -- status function
   local statusFunction = TextEditRecipe()
@@ -260,7 +258,7 @@ function AddDisplyingRulesRecipes(self)
   statusFunction:SetLUASyntaxHighlighting(true)
   statusFunction:Get(function(recipe) return GetCurrentTracker(recipe).displayFunction end)
   statusFunction.OnValueConfirmed = function(recipe, funcStr) GetCurrentTracker(recipe).displayFunction = funcStr end
-  OptionBuilder:AddRecipe(statusFunction, "tracker/displaying-rules/function-type")
+  OptionBuilder:AddRecipe(statusFunction, "tracker/display-rules/function-type")
 
 end
 
@@ -313,23 +311,6 @@ function AddIdleModeRecipes(self)
   end)
   OptionBuilder:AddRecipe(alpha, "tracker/idle-mode")
 end
-
-
-__SystemEvent__()
-function EKT_TRACKER_DISPLAYING_RULE_ADDED(rule)
-
-end
-
-__SystemEvent__()
-function EKT_TRACKER_DISPLAYING_RULE_REMOVED(rule)
-
-end
-
-__SystemEvent__()
-function EKT_TRACKER_DISPLAYING_RULE_ORDER_CHANGED()
-
-end
-
 
 --- Register the recipes related to tracker registered
 __SystemEvent__()

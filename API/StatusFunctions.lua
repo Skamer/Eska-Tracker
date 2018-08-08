@@ -37,7 +37,7 @@ end)
 
 -- Dungeon
 StatusFunctions:Register(StatusFunction("is-in-dungeon", "Is in Dungeon", Utils.Instance.IsInDungeon, "Dungeon"))
-StatusFunctions:Register(StatusFunction("is-in-keystone", "Is in Mythic +", function() return C_ChallengeMode.GetActiveKeystoneInfo > 0 end, "Dungeon"))
+StatusFunctions:Register(StatusFunction("is-in-keystone", "Is in Mythic +", function() return C_ChallengeMode.GetActiveKeystoneInfo() > 0 end, "Dungeon"))
 -- Battlegorund
 StatusFunctions:Register(StatusFunction("is-in-battleground", "Is in Battleground", Utils.Instance.IsInBattleground, "Battleground"))
 -- Arena
