@@ -4,7 +4,7 @@
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
 PLoop(function(_ENV)
-  _G.BlockModule = class "BlockModule" (function(_ENV)
+  _G.Eska = class "Eska" (function(_ENV)
     inherit "Scorpio"
     ----------------------------------------------------------------------------
     --                             Methods                                    --
@@ -19,6 +19,15 @@ PLoop(function(_ENV)
         return true
       end
 
+      return false
+    end
+
+
+    __Arguments__ { String }
+    function IsActiveByEvent(self, evt)
+      if self._ActiveByEvent and self._ActiveByEvent == evt then
+        return true
+      end
       return false
     end
 
@@ -44,39 +53,58 @@ PLoop(function(_ENV)
       end
     end
 
+    __Arguments__ { String }
+    function HasActiveEvent(self, evt)
+      if self._ActiveOnEvents and self._ActiveOnEvents:Contains(evt) then
+        return true
+      end
+
+      return false
+    end
+
+    __Arguments__ { String }
+    function HasInactiveEvent(self, evt)
+      if self._InactiveOnEvents and self._InactiveOnEvents:Contains(evt) then
+        return true
+      end
+
+      return false
+    end
+
     __Arguments__{ NEString, (NEString + Function)/nil }:Throwable()
     function RegisterEvent(self, evt, handler)
       handler = handler or evt
       if type(handler) == "string" then handler = self[handler] end
 
-      if self:IsRegisteredEventByActiveSystem(evt) then
         local newHandler = function(...)
-          if self._Inactive and self._ActiveOnEvents:Contains(evt) then
-            self._Active = self._ActiveOnHandler(self, evt, ...)
+          if self._Inactive and self:HasActiveEvent(evt) then
+            local active = self._ActiveOnHandler(self, evt, ...)
+            if active then
+              self._ActiveByEvent = evt
+            end
+
+            self._Active = active
           end
 
           -- Call the orig handler only if the module is active
           if self._Active then
-            handler(evt, ...)
+            handler(...)
           end
 
           -- NOTE: _eventActiveChanged is here for avoiding to call two cond
           -- handler in same event.
           if self._Active and not self._eventActiveChanged then
-            if self._InactiveOnEvents then
-              if self._InactiveOnEvents:Contains(evt) then
+            if self._InactiveOnHandler then
+              if self:HasInactiveEvent(evt) then
                 self._Active = not self._InactiveOnHandler(self, evt, ...)
               end
-            else
+            elseif self:HasActiveEvent(evt) then
               self._Active = self._ActiveOnHandler(self, evt, ...)
             end
           end
           self._eventActiveChanged = nil
         end
         super.RegisterEvent(self, evt, newHandler)
-      else
-        super.RegisterEvent(self, evt, handler)
-      end
     end
 
     --- Call when the module become  active
@@ -86,7 +114,7 @@ PLoop(function(_ENV)
     ----------------------------------------------------------------------------
     --                         Properties                                     --
     ----------------------------------------------------------------------------
-    property "_Active" { TYPE = Boolean, DEFAULT = false, HANDLER = function(self, new)
+    property "_Active" { TYPE = Boolean, DEFAULT = true, HANDLER = function(self, new)
       if new then
         self:OnActive()
         self._eventActiveChanged = true
@@ -115,11 +143,9 @@ PLoop(function(_ENV)
               if not handler then
                  handler = function() end
                end
-               -- NOTE the order is important, AddActiveEvent must be called
-               -- before RegisterEvent
-               owner:AddActiveEvent(evt)
                owner:RegisterEvent(evt, handler)
             end
+            owner:AddActiveEvent(evt)
           end
         else
           if not owner:IsRegisteredEventByActiveSystem(evt) then
@@ -127,11 +153,9 @@ PLoop(function(_ENV)
             if not handler then
               handler = function() end
             end
-            -- NOTE the order is important, AddActiveEvent must be called
-            -- before RegisterEvent
-            owner:AddActiveEvent(name)
             owner:RegisterEvent(name, handler)
           end
+          owner:AddActiveEvent(name)
         end
         owner._ActiveOnHandler = target
       end
@@ -152,11 +176,10 @@ PLoop(function(_ENV)
               if not handler then
                  handler = function() end
                end
-               -- NOTE the order is important, AddActiveEvent must be called
-               -- before RegisterEvent
-               owner:AddInactiveEvent(evt)
                owner:RegisterEvent(evt, handler)
             end
+
+            owner:AddInactiveEvent(evt)
           end
         else
           if not owner:IsRegisteredEventByActiveSystem(evt) then
@@ -164,11 +187,9 @@ PLoop(function(_ENV)
             if not handler then
               handler = function() end
             end
-            -- NOTE the order is important, AddActiveEvent must be called
-            -- before RegisterEvent
-            owner:AddInactiveEvent(name)
             owner:RegisterEvent(name, handler)
           end
+          owner:AddInactiveEvent(name)
         end
         owner._InactiveOnHandler = target
       end

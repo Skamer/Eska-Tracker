@@ -3,7 +3,7 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio                 "EskaTracker.Localization.esES"                       ""
+Eska                    "EskaTracker.Localization.esES"                       ""
 --============================================================================--
 local L = _Locale("esES")
 

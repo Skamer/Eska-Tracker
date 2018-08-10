@@ -3,7 +3,7 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio            "EskaTracker.API.Settings"                                 ""
+Eska                  "EskaTracker.API.Settings"                              ""
 --============================================================================--
 namespace                "EKT"
 --============================================================================--

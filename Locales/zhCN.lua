@@ -3,7 +3,7 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio                 "EskaTracker.Localization.zhCN"                       ""
+Eska                    "EskaTracker.Localization.zhCN"                       ""
 --============================================================================--
 local L = _Locale("zhCN")
 

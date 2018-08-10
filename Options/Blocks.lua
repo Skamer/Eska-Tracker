@@ -3,7 +3,7 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio             "EskaTracker.Options.Blocks"                              ""
+Eska                "EskaTracker.Options.Blocks"                              ""
 --============================================================================--
 import                       "EKT"
 --============================================================================--

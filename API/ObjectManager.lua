@@ -3,7 +3,7 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio               "EskaTracker.API.ObjectManager"                         ""
+Eska                 "EskaTracker.API.ObjectManager"                          ""
 -- ========================================================================== --
 namespace                          "EKT"
 import                        "System.Recycle"

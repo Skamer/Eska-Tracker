@@ -1,3 +1,7 @@
+[1.0.26]
+- ! Removed a debug print
+- ! Moved all modules to new module type 'Eska'.
+
 [1.0.25]
 - ! Fixed a error about Enums.
 - ! Trying to fix #29.

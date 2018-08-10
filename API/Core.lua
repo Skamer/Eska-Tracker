@@ -3,7 +3,7 @@
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Scorpio             "EskaTracker.API.Core"                               ""
+Eska                       "EskaTracker.API.Core"                             ""
 --============================================================================--
 namespace "EKT"
 --============================================================================--
@@ -332,7 +332,6 @@ class "Utils" (function(_ENV)
   --                         Enum
   ------------------------------------------------------------------------------
   __Static__() function AddEnumFlag(flags, flag)
-    print("AddEnumFlag", flags, flag)
     if not Enum.ValidateFlags(flags, flag) then
       flags = flags + flag
     end

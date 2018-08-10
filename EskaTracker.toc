@@ -8,6 +8,9 @@
 ## OptionalDeps: LibStub, LibSharedMedia-3.0
 embeds.xml
 
+# Module Type file
+EskaModule.lua
+
 # Localization files
 Locales\locales.xml
 
@@ -15,7 +18,6 @@ Locales\locales.xml
 Loader.lua
 
 # Core API Files
-BlockModule.lua
 API\API.xml
 
 # Main files
