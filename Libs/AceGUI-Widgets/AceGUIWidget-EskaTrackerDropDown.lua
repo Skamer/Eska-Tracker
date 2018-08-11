@@ -133,6 +133,11 @@ do
 		end
 
 		AceGUI:Release(self.pullout)
+
+		for _, pullout in pairs(self.categoryPullouts) do
+			AceGUI:Release(pullout)
+		end
+
 		self.pullout = nil
 
 		self:SetText("")

@@ -475,6 +475,7 @@ class "DisplayRulesRecipe" (function(_ENV)
     return group
   end
 
+  __Async__()
   function Refresh(self)
     if self.cache["group"] then
       self.cache["group"]:ReleaseChildren()

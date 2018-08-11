@@ -123,16 +123,19 @@ __Serializable__() class "Theme" (function(_ENV)
     return frame.elementID
   end
 
-  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String) }
-  __Static__() function ProcessSkinFrame(self, frame, flags, state)
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
+  __Static__() function ProcessSkinFrame(self, frame, flags, state, customElementID, customParentID)
     local theme = Themes:GetSelected()
 
     if not theme then return end -- TODO: Add error msg
     if not frame then return end -- TODO: Add error msg
-    if not frame.elementID then return end -- TODO: Add error msg
 
-    local elementID = frame.elementID
-    local inheritElementID = frame.inheritElementID
+    local elementID = customElementID or frame.elementID
+    local inheritElementID = customParentID or frame.inheritElementID
+
+    if not elementID then
+      return
+    end
 
     if state then
       elementID = elementID.."["..state.."]"
@@ -161,12 +164,14 @@ __Serializable__() class "Theme" (function(_ENV)
   end
 
 
-  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String) }
-  __Static__() function SkinFrame(self, frame, flags, state)
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
+  __Static__() function SkinFrame(self, frame, flags, state, customElementID, customParentID)
     local requestInfo = {
-      obj = frame,
-      flags = flags,
-      state = state,
+      obj               = frame,
+      flags             = flags,
+      state             = state,
+      customElementID   = customElementID,
+      customParentID    = customParentID
     }
 
     -- Add in the queue of skin procress
@@ -186,7 +191,7 @@ __Serializable__() class "Theme" (function(_ENV)
     while _SKIN_FRAME_QUEUE.Count >= 1 do
       local requestInfo = _SKIN_FRAME_QUEUE:RemoveByIndex(1)
       if requestInfo then
-        self:ProcessSkinFrame(requestInfo.obj, requestInfo.flags, requestInfo.state)
+        self:ProcessSkinFrame(requestInfo.obj, requestInfo.flags, requestInfo.state, requestInfo.customElementID, requestInfo.customParentID)
       end
       Continue()
     end
@@ -196,8 +201,8 @@ __Serializable__() class "Theme" (function(_ENV)
 
 
 
-  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String) }
-  __Static__() function ProcessSkinText(self, obj, flags, text, state)
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
+  __Static__() function ProcessSkinText(self, obj, flags, text, state, customElementID, customParentID)
     local theme = Themes:GetSelected()
 
     if not theme then return end -- TODO: Add error msg
@@ -211,8 +216,8 @@ __Serializable__() class "Theme" (function(_ENV)
     end
     if not fontstring then return end -- TODO: Add error msg
 
-    local elementID = fontstring.elementID
-    local inheritElementID = fontstring.inheritElementID
+    local elementID = customElementID or fontstring.elementID
+    local inheritElementID = customParentID or fontstring.inheritElementID
 
 
     if not elementID then return end  -- TODO: Add error msg
@@ -287,9 +292,9 @@ __Serializable__() class "Theme" (function(_ENV)
     end
   end
 
-  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String) }
-  __Static__() function SkinText(self, obj, flags, text, state)
-    self:ProcessSkinText(obj, flags, text, state)
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
+  __Static__() function SkinText(self, obj, flags, text, state, customElementID, customParentID)
+    self:ProcessSkinText(obj, flags, text, state, customElementID, customParentID)
     --[[local requestInfo = {
       obj = obj,
       flags = flags,
@@ -322,8 +327,8 @@ __Serializable__() class "Theme" (function(_ENV)
     _SKIN_TEXT_PROCESS_STARTED = false
   end
 
-  __Arguments__{ ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String) }
-  __Static__() function SkinTexture(self, obj, flags, state)
+  __Arguments__{ ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
+  __Static__() function SkinTexture(self, obj, flags, state, customElementID, customParentID)
     local theme = Themes:GetSelected()
 
     if not theme then return end -- TODO: Add error msg
@@ -338,8 +343,8 @@ __Serializable__() class "Theme" (function(_ENV)
 
     if not texture then return end -- TODO: Add error msg
 
-    local elementID = texture.elementID
-    local inheritElementID = texture.inheritElementID
+    local elementID = customElementID or texture.elementID
+    local inheritElementID = customParentID or texture.inheritElementID
 
     if not elementID then return end -- TODO: Add error msg
 
