@@ -591,7 +591,7 @@ Class "Tracker" (function(_ENV)
     end
 
     if not silent then
-      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAY_RULE_ADDED")
+      Scorpio.FireSystemEvent("EKT_TRACKER_DISPLAY_RULE_ADDED", rule)
     end
   end
 

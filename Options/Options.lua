@@ -77,6 +77,7 @@ function OnLoad(self)
 
   local enableMinimapIcon = CheckBoxRecipe()
   enableMinimapIcon:SetText("Enable Minimap icon")
+  enableMinimapIcon:SetOrder(10)
   enableMinimapIcon:Get(function() return not _DB.minimap.hide end)
   enableMinimapIcon:Set(function(_, value)
     if value then
@@ -87,6 +88,8 @@ function OnLoad(self)
     _DB.minimap.hide = not value
   end)
   OptionBuilder:AddRecipe(enableMinimapIcon, "addon/global-options")
+
+  OptionBuilder:AddRecipe(CheckBoxRecipe():SetOrder(20):SetText("Replace completely the Blizzard objective tracker"):SetWidth(1.0):BindSetting("replace-blizzard-objective-tracker"), "addon/global-options")
 
   OptionBuilder:AddRecipe(AddonInfoRecipe(), "AddonInfo")
   self:AddNotificationRecipes()

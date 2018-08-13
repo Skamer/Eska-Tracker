@@ -1,39 +1,6 @@
-[1.0.26]
-- ! Removed a debug print
-- ! Moved all modules to new module type 'Eska'.
+[1.0.28]
+tagged as release.
+- + Added the 'Replace blizzard objective tracker' in the Global options tab.
+- ! Optimized the 'Display rules' control. The number of condition displayed at the same time is now limited to 5 : a page system has been created a this purpose.
 
-[1.0.25]
-- ! Fixed a error about Enums.
-- ! Trying to fix #29.
-- + Improved the options of 'Display Rules' for tracker
-- - Removed the Show/Hide button for tracker (use 'Display rules' instead of)
-
-[1.0.23]
-- ! The tracker will become active when there is a notification.
-
-[1.0.22]
-- Updated the API
-- ! Reworked the IdleMode.
-- + Added a 'IdleMode' category in the options.
-- - Removed the BFA file.
-
-
-[1.0.21]
-- ! Fixed an error preventing the theme be changed.
-- + Implemented #19 - Added a way to disable the minimap icon.
-- - Removed the text for the left click of minimap icon (see #20)
-- - #21 - Removed the 'Context Menu' category from options.
-
-[1.0.20]
-- Updated the API
-- ! Switching profile will no longer crash the game.
-- ! Fixed Ticket #16.
-
-[1.0.19]
-- ! Remove a block from a tracker will no longer freeze the game for a short moment.
-
-[1.0.18]
-- ! Fixed Ticket #7 - The conditionals macros will now be correctly saved.
-
-[1.0.17]
-- Bump the toc for Battle for Azeroth.
+I wish you a 'Good leveling !'. If you encounter issues, thank to let me know on the issues page.

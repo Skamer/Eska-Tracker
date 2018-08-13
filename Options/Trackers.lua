@@ -231,9 +231,9 @@ function AddDisplyingRulesRecipes(self)
 
    local displayRulesRecipe = DisplayRulesRecipe()
    displayRulesRecipe:SetOrder(40)
-   displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_ADDED")
-   displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_REMOVED")
-   displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_ORDER_CHANGED")
+   --displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_ADDED")
+   --displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_REMOVED")
+   --displayRulesRecipe:RefreshOnEvent("EKT_TRACKER_DISPLAY_RULE_ORDER_CHANGED")
 
   OptionBuilder:AddRecipe(addNewRuleButton, "tracker/display-rules/predefined-type")
   OptionBuilder:AddRecipe(HeadingRecipe():SetOrder(30), "tracker/display-rules/predefined-type")
