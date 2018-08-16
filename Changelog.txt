@@ -1,3 +1,6 @@
+[1.0.29]
+- ! Fixed an error when the addon wants remove a block having no tracker linked.
+
 [1.0.28]
 tagged as release.
 - + Added the 'Replace blizzard objective tracker' in the Global options tab.

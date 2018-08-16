@@ -195,7 +195,9 @@ class "Block" (function(_ENV)
       Trackers:TransferBlock(self.category, category.tracker)
     else
       local tracker = Trackers:GetTrackerByBlockCategoryID(self.category)
-      tracker:RemoveBlockByCategoryID(self.category)
+      if tracker then
+        tracker:RemoveBlockByCategoryID(self.category)
+      end
     end
   end
   ------------------------------------------------------------------------------
