@@ -16,12 +16,17 @@ __Serializable__() class "Theme" (function(_ENV)
   extend "ISerializable"
   _REGISTERED_FRAMES = {}
 
+  -- Skin Frame Queue
   _SKIN_FRAME_QUEUE = List()
   _SKIN_FRAME_PROCESS_STARTED = false
 
   -- Skin Text Queue
   _SKIN_TEXT_QUEUE = List()
   _SKIN_TEXT_PROCESS_STARTED = false
+
+  -- Skin Texture Queue
+  _SKIN_TEXTURE_QUEUE = List()
+  _SKIN_TEXTURE_PROCESS_STARTED = false
   ------------------------------------------------------------------------------
   --                       Register Methods                                   --
   ------------------------------------------------------------------------------
@@ -104,6 +109,14 @@ __Serializable__() class "Theme" (function(_ENV)
     SET     = false
   }
 
+  struct "SkinRequest" (function(_ENV)
+    member "obj"              { TYPE = Table }
+    member "flags"            { TYPE = SkinFlags }
+    member "state"            { TYPE = String }
+    member "customElementID"  { TYPE = String }
+    member "customParentID"   { TYPE = String }
+    member "text"             { TYPE = String }
+  end)
 
   __Arguments__ { ClassType, Table, Variable.Optional(String) }
   __Static__() function NeedSkin(self, frame, target)
@@ -166,19 +179,21 @@ __Serializable__() class "Theme" (function(_ENV)
 
   __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
   __Static__() function SkinFrame(self, frame, flags, state, customElementID, customParentID)
-    local requestInfo = {
-      obj               = frame,
-      flags             = flags,
-      state             = state,
-      customElementID   = customElementID,
-      customParentID    = customParentID
-    }
+    -- Create the request
+    local request = SkinRequest()
+    request.obj             = frame
+    request.flags           = flags
+    request.state           = state
+    request.customElementID = customElementID
+    request.customParentID  = customParentID
 
     -- Add in the queue of skin procress
-    _SKIN_FRAME_QUEUE:Insert(requestInfo)
+    _SKIN_FRAME_QUEUE:Insert(request)
 
     -- Run skin process
-    self:RunSkinFrameProcess()
+    if not _SKIN_FRAME_PROCESS_STARTED then
+      self:RunSkinFrameProcess()
+    end
   end
 
   __Async__()
@@ -189,17 +204,14 @@ __Serializable__() class "Theme" (function(_ENV)
 
     _SKIN_FRAME_PROCESS_STARTED = true
     while _SKIN_FRAME_QUEUE.Count >= 1 do
-      local requestInfo = _SKIN_FRAME_QUEUE:RemoveByIndex(1)
-      if requestInfo then
-        self:ProcessSkinFrame(requestInfo.obj, requestInfo.flags, requestInfo.state, requestInfo.customElementID, requestInfo.customParentID)
+      local request = _SKIN_FRAME_QUEUE:RemoveByIndex(1)
+      if request then
+        self:ProcessSkinFrame(request.obj, request.flags, request.state, request.customElementID, request.customParentID)
       end
       Continue()
     end
     _SKIN_FRAME_PROCESS_STARTED = false
   end
-
-
-
 
   __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
   __Static__() function ProcessSkinText(self, obj, flags, text, state, customElementID, customParentID)
@@ -294,19 +306,22 @@ __Serializable__() class "Theme" (function(_ENV)
 
   __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
   __Static__() function SkinText(self, obj, flags, text, state, customElementID, customParentID)
-    self:ProcessSkinText(obj, flags, text, state, customElementID, customParentID)
-    --[[local requestInfo = {
-      obj = obj,
-      flags = flags,
-      text = text,
-      state = state,
-    }
+    -- Create the request
+    local request = SkinRequest()
+    request.obj             = obj
+    request.flags           = flags
+    request.state           = state
+    request.customElementID = customElementID
+    request.customParentID  = customParentID
+    request.text            = text
 
     -- Add in the queue of skin procress
-    _SKIN_TEXT_QUEUE:Insert(requestInfo)
+    _SKIN_TEXT_QUEUE:Insert(request)
 
     -- Run skin process
-    self:RunSkinTextProcess()--]]
+    if not _SKIN_TEXT_PROCESS_STARTED then
+      self:RunSkinTextProcess()
+    end
   end
 
   __Async__()
@@ -317,9 +332,9 @@ __Serializable__() class "Theme" (function(_ENV)
 
     _SKIN_TEXT_PROCESS_STARTED = true
     while _SKIN_TEXT_QUEUE.Count >= 1 do
-      local requestInfo = _SKIN_TEXT_QUEUE:RemoveByIndex(1)
-      if requestInfo then
-        self:ProcessSkinText(requestInfo.obj, requestInfo.flags, requestInfo.text, requestInfo.state)
+      local request = _SKIN_TEXT_QUEUE:RemoveByIndex(1)
+      if request then
+        self:ProcessSkinText(request.obj, request.flags, request.text, request.state, request.customElementID, request.customParentID)
       end
       Continue()
     end
@@ -328,7 +343,7 @@ __Serializable__() class "Theme" (function(_ENV)
   end
 
   __Arguments__{ ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
-  __Static__() function SkinTexture(self, obj, flags, state, customElementID, customParentID)
+  __Static__() function ProcessSkinTexture(self, obj, flags, state, customElementID, customParentID)
     local theme = Themes:GetSelected()
 
     if not theme then return end -- TODO: Add error msg
@@ -356,6 +371,42 @@ __Serializable__() class "Theme" (function(_ENV)
       local color = theme:GetElementProperty(elementID, "texture-color", inheritElementID)
       texture:SetVertexColor(color.r, color.g, color.b, color.a)
     end
+  end
+
+  __Arguments__{ ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
+  __Static__() function SkinTexture(self, obj, flags, state, customElementID, customParentID)
+    -- Create the request
+    local request = SkinRequest()
+    request.obj             = obj
+    request.flags           = flags
+    request.state           = state
+    request.customElementID = customElementID
+    request.customParentID  = customParentID
+
+    -- Add in the queue of skin procress
+    _SKIN_TEXTURE_QUEUE:Insert(request)
+
+    -- Run skin process
+    if not _SKIN_TEXTURE_PROCESS_STARTED then
+      self:RunSkinTextureProcess()
+    end
+  end
+
+  __Async__()
+  __Static__() function RunSkinTextureProcess(self)
+    if _SKIN_TEXTURE_PROCESS_STARTED then
+      return
+    end
+
+    _SKIN_TEXTURE_PROCESS_STARTED = true
+    while _SKIN_TEXTURE_QUEUE.Count >= 1 do
+      local request = _SKIN_TEXTURE_QUEUE:RemoveByIndex(1)
+      if request then
+        self:ProcessSkinTexture(request.obj, request.flags, request.state, request.customElementID, request.customParentID)
+      end
+      Continue()
+    end
+    _SKIN_TEXTURE_PROCESS_STARTED = false
   end
   ------------------------------------------------------------------------------
   --              Element Property Methods                                    --
