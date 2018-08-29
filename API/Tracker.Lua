@@ -913,20 +913,20 @@ Class "Tracker" (function(_ENV)
   function Tracker(self, id)
     local name = string.format("EskaTracker-%s", id)
     self.id = id
-    self.width = 300
-    self.height = 325
-
     -- Call our super constructor
-    super(self, CreateFrame("Frame", name, UIParent))
+    super(self, CreateFrame("Frame", name))
 
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 1, 0, 1)
     self.frame:SetBackdropBorderColor(0, 0, 0, 0)
     self:SetParent(UIParent)
+
+    -- Default size property
+    self.width = 300
+    self.height = 325
+
     self:GetFrameContainer():SetClampedToScreen(true)
     self:GetFrameContainer():SetFrameStrata("LOW")
-    self:GetFrameContainer():SetHeight(200)
-    self:GetFrameContainer():SetWidth(200)
     self:SetPoint("CENTER")
     --self:GetFrameContainer():EnableMouse(not self.locked)
     self:GetFrameContainer():SetMovable(not self.locked)
