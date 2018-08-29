@@ -189,7 +189,7 @@ function EKT_PROFILE_CHANGED(profile, oldProfile)
   local diff = oldProfileData:Diff(newProfileData)
   for index, setting in ipairs(diff) do
     local value = Settings:Get(setting)
-    if option == "theme-selected" then
+    if setting == "theme-selected" then
       Themes:Select(value, false)
     else
       Frame:BroadcastSetting(setting, value)

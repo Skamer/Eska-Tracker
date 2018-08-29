@@ -1294,8 +1294,9 @@ function CheckSelectedTheme(tracker)
 end
 
 
-function OnLoad(self)
-  self:RegisterEvent("EKT_THEME_REGISTERED", CheckSelectedTheme)
+__SystemEvent__()
+function EKT_PROFILES_LOADED()
+  _M:RegisterEvent("EKT_THEME_REGISTERED", CheckSelectedTheme)
   Themes:LoadFromDB()
 
   Scorpio.FireSystemEvent("EKT_THEMES_LOADED")

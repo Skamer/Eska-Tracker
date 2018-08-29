@@ -1123,7 +1123,7 @@ class "Trackers" (function(_ENV)
     end
 
     local destTracker = Trackers:Get(destTrackerID)
-    if destTracker and block then
+    if destTracker and block and block.isActive then
       destTracker:AddBlock(block)
     end
   end
@@ -1142,7 +1142,8 @@ class "Trackers" (function(_ENV)
 end)
 
 
-function OnLoad(self)
+__SystemEvent__()
+function EKT_PROFILES_LOADED()
   -- We need to have at least a tracker
   local mainTracker = Trackers:New("main")
 
