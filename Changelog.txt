@@ -1,3 +1,12 @@
+[1.0.31]
+- ! Fixed #37 - After a loading, the border will no longer displayed if the border width of tracker is 0px.
+- ! Various issues related to borders tracker have been fixed. 
+
+[1.0.30]
+- ! Fixed #44 - the tracker will no longer use an incorrect size.
+- ! Fixed #42 - the profile system should now work as intended.
+- ! The inactive blocks will no longer be displayed when changing profile.
+
 [1.0.29]
 - ! Fixed an error when the addon wants remove a block having no tracker linked.
 

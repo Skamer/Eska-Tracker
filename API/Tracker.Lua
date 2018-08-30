@@ -1010,6 +1010,7 @@ Class "Tracker" (function(_ENV)
     self.OnWidthChanged = OnWidthChanged
     self.OnBorderWidthChanged = function(new, old)
       self:UpdateScrollbarVisibility()
+      self:Layout()
 
       Scorpio.FireSystemEvent("EKT_TRACKER_CONTENT_SIZE_CHANGED", self.id, new)
     end

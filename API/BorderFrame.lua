@@ -1,23 +1,24 @@
 --============================================================================--
---                         Eska Tracker                                       --
+--                          EskaTracker                                       --
 -- Author     : Skamer <https://mods.curse.com/members/DevSkamer>             --
 -- Website    : https://wow.curseforge.com/projects/eskatracker               --
 --============================================================================--
-Eska                  "EskaTracker.API.BorderFrame"                           ""
+Eska                      "EskaTracker.API.BorderFrame"                       ""
 --============================================================================--
-namespace "EKT"
+namespace                       "EKT"
 --============================================================================--
 class "BorderFrame" (function(_ENV)
   inherit "Frame"
-  _BorderFrameCache = setmetatable({}, { __mode = "k" })
-  event  "OnBorderWidthChanged"
   ------------------------------------------------------------------------------
-  --                          Handlers                                        --
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
+  event "OnBorderWidthChanged"
+  ------------------------------------------------------------------------------
+  --                                Handlers                                  --
   ------------------------------------------------------------------------------
   local function UpdateFrame(self, new, old)
-    self:UninstallBorders(old)
-    self:InstallBorders(new)
-
+    self:RemoveBordersAccess(old)
+    self:AddBordersAccess(new)
 
     local container = self:GetFrameContainer()
     new:SetParent(container)
@@ -25,23 +26,10 @@ class "BorderFrame" (function(_ENV)
     self:UpdateBorderAnchors()
   end
 
-  local function UpdateBorderVisibility(self, new, old)
-    if not self.borders then return end
-
-    if new then
-      self:ShowBorder()
-    else
-      self:HideBorder()
-    end
-    self:UpdateBorderAnchors()
-  end
-
   local function UpdateBorderWidth(self, new, old)
-    if not self.borders then return end
-
     if new > 0 then
-      self.showBorder = true
       self:SetBorderWidth(new)
+      self.showBorder = true
     else
       self.showBorder = false
     end
@@ -49,43 +37,48 @@ class "BorderFrame" (function(_ENV)
     OnBorderWidthChanged(self, new, old)
   end
 
-  local function UpdateBorderColor(self, new, old)
-    if not self.borders then return end
+  local function UpdateBorderVisibility(self, new, old)
+    if new then
+      self:ShowBorder()
+    else
+      self:HideBorder()
+    end
 
+    self:UpdateBorderAnchors()
+  end
+
+  local function UpdateBorderColor(self, new)
     self:SetBorderColor(new)
   end
-
-  function GetFrameContainer(self)
-    return self.containerFrame
-  end
   ------------------------------------------------------------------------------
-  --                    Border Methods                                        --
+  --                             Methods                                      --
   ------------------------------------------------------------------------------
   function CreateBorders(self)
     if not self.borders then
       local container = self:GetFrameContainer()
+      local r, g, b, a = self.borderColor.r, self.borderColor.g, self.borderColor.b, self.borderColor.a
       self.borders = {}
 
       local borderLeft = container:CreateTexture(nil , "BORDER")
-      borderLeft:SetColorTexture(0, 0, 0)
+      borderLeft:SetColorTexture(r, g, b, a)
       borderLeft:SetWidth(self.borderWidth)
       borderLeft:Show()
       self.borders.left = borderLeft
 
       local borderTop = container:CreateTexture(nil , "BORDER")
-      borderTop:SetColorTexture(0, 0, 0)
+      borderTop:SetColorTexture(r, g, b, a)
       borderTop:SetHeight(self.borderWidth)
       borderTop:Show()
       self.borders.top = borderTop
 
       local borderRight = container:CreateTexture(nil, "BORDER")
-      borderRight:SetColorTexture(0, 0, 0)
+      borderRight:SetColorTexture(r, g, b, a)
       borderRight:SetWidth(self.borderWidth)
       borderRight:Show()
       self.borders.right = borderRight
 
       local borderBot = container:CreateTexture(nil, "BORDER")
-      borderBot:SetColorTexture(0, 0, 0)
+      borderBot:SetColorTexture(r, g, b, a)
       borderBot:SetHeight(self.borderWidth)
       borderBot:Show()
       self.borders.bottom = borderBot
@@ -102,37 +95,40 @@ class "BorderFrame" (function(_ENV)
 
       borderBot:SetPoint("BOTTOMLEFT", borderLeft, "BOTTOMRIGHT")
       borderBot:SetPoint("BOTTOMRIGHT", borderRight, "BOTTOMLEFT")
-
     end
   end
 
-  -- The function will install the borders in the frame give.
-  -- The border can be retrieved in doing: frame.borders
-  -- e.g: frame.borders.left will return the border left frame
-  function InstallBorders(self, frame)
-    if self.borders then
-      frame.borders = setmetatable({}, { __mode = "v" } )
-      frame.borders.left = self.borders.left
-      frame.borders.top = self.borders.top
-      frame.borders.right = self.borders.right
-      frame.borders.bottom = self.borders.bottom
+  -- The method will add an access to borders in the frame given.
+  -- The borders can be retrieved in using frame.borders table.
+  -- e.g: frame.borders.lef will return the border left.
+  function AddBordersAccess(self, frame)
+    if self.borders and frame then
+      frame.borders = setmetatable({}, { __mode = "v" })
+      frame.borders.left    = self.borders.left
+      frame.borders.top     = self.borders.top
+      frame.borders.right   = self.borders.right
+      frame.borders.bottom  = self.borders.bottom
     end
   end
 
-  -- This method will uninstall the borders from frame given.
-  -- It simply remove metatable containing references to border frames.
-  function UninstallBorders(self, frame)
+  -- The method will rmeove the borders access from frame given.
+  function RemoveBordersAccess(self, frame)
     if frame and frame.borders then
-      frame.borders = nil -- @TODO: Check that
+      frame.borders = nil
     end
   end
-
+  ------------------------------------------------------------------------------
+  --               Border visibility Methods                                  --
+  ------------------------------------------------------------------------------
   function ShowBorder(self)
     if self.borders then
       self.borders.top:Show()
       self.borders.left:Show()
       self.borders.bottom:Show()
       self.borders.right:Show()
+    else
+      self:CreateBorders()
+      self:AddBordersAccess(self.frame)
     end
   end
 
@@ -144,19 +140,20 @@ class "BorderFrame" (function(_ENV)
       self.borders.right:Hide()
     end
   end
-
+  ------------------------------------------------------------------------------
+  --               Border properties Methods                                  --
+  ------------------------------------------------------------------------------
+  __Arguments__ { NaturalNumber }
   function SetBorderWidth(self, width)
-    width = math.ceil(width)
     if self.borders then
       self.borders.left:SetWidth(width)
       self.borders.top:SetHeight(width)
       self.borders.right:SetWidth(width)
       self.borders.bottom:SetHeight(width)
-
-      self:UpdateBorderAnchors ()
     end
   end
 
+  __Arguments__ { Table }
   function SetBorderColor(self, color)
     if self.borders then
       self.borders.top:SetColorTexture(color.r, color.g, color.b, color.a)
@@ -165,17 +162,31 @@ class "BorderFrame" (function(_ENV)
       self.borders.right:SetColorTexture(color.r, color.g, color.b, color.a)
     end
   end
-
+  ------------------------------------------------------------------------------
+  --                       Others Methods                                     --
+  ------------------------------------------------------------------------------
   function UpdateBorderAnchors(self)
+    if not self.frame then return end
+
     if self.showBorder then
-      self.frame:SetPoint("TOP", self.borders.top, "BOTTOM")
+      self.frame:ClearAllPoints()
+      --[[self.frame:SetPoint("TOP", self.borders.top, "BOTTOM")
       self.frame:SetPoint("LEFT", self.borders.left, "RIGHT")
       self.frame:SetPoint("RIGHT", self.borders.right, "LEFT")
-      self.frame:SetPoint("BOTTOM", self.borders.bottom, "TOP")
+      self.frame:SetPoint("BOTTOM", self.borders.bottom, "TOP")--]]
+
+      self.frame:SetPoint("TOPLEFT", self.borders.top, "BOTTOMLEFT")
+      self.frame:SetPoint("TOPRIGHT", self.borders.top, "BOTTOMRIGHT")
+      self.frame:SetPoint("BOTTOMLEFT", self.borders.bottom, "TOPLEFT")
+      self.frame:SetPoint("BOTTOMRIGHT", self.borders.bottom, "TOPRIGHT")
     else
       self.frame:ClearAllPoints()
       self.frame:SetAllPoints(self:GetFrameContainer())
     end
+  end
+
+  function GetFrameContainer(self)
+    return self.containerFrame
   end
   ------------------------------------------------------------------------------
   --                   Refresh & Skin Methods                                 --
@@ -189,20 +200,20 @@ class "BorderFrame" (function(_ENV)
 
     if Enum.ValidateFlags(flags, Theme.SkinFlags.FRAME_BORDER_COLOR) then
       self.borderColor = Themes:GetSelected():GetElementProperty(frame.elementID, "border-color", frame.inheritElementID)
+    end
   end
-end
   ------------------------------------------------------------------------------
   --                         Properties                                       --
   ------------------------------------------------------------------------------
-  property "frame" { TYPE = Table, HANDLER = UpdateFrame }
-  property "containerFrame" { TYPE = Table } -- contains the borders and the content frame
-  property "showBorder" { TYPE = Boolean, DEFAULT = true, HANDLER = UpdateBorderVisibility }
-  property "borderWidth" { TYPE = Number, DEFAULT = 0, HANDLER = UpdateBorderWidth }
-  property "borderColor" { TYPE = Table, DEFAULT = { r = 0, g = 0, b = 0, a = 1}, HANDLER = UpdateBorderColor }
+  property "frame"          { TYPE = Table, HANDLER = UpdateFrame }
+  property "containerFrame" { TYPE = Table }
+  property "showBorder"     { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateBorderVisibility }
+  property "borderWidth"    { TYPE = NaturalNumber, DEFAULT = 0, HANDLER = UpdateBorderWidth }
+  property "borderColor"    { TYPE = Table, DEFAULT = { r = 0, g = 0, b = 0, a = 1}, HANDLER = UpdateBorderColor }
   ------------------------------------------------------------------------------
-  --                         Constructors                                     --
+  --                            Constructors                                  --
   ------------------------------------------------------------------------------
-  __Arguments__ { Variable.Optional(Boolean, false)}
+  __Arguments__ { Variable.Optional(Boolean, false) }
   function BorderFrame(self, isSecure)
     super(self)
 
@@ -211,11 +222,7 @@ end
     else
       self.containerFrame = CreateFrame("Frame")
     end
-    self:CreateBorders()
-
-    _BorderFrameCache[self] = true
   end
-
 
   __Arguments__ { Table, Variable.Optional(Boolean, false) }
   function BorderFrame(self, frame, isSecure)
