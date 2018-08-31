@@ -1,18 +1,2 @@
-[1.0.31]
-- ! Fixed #37 - After a loading, the border will no longer displayed if the border width of tracker is 0px.
-- ! Various issues related to borders tracker have been fixed. 
-
-[1.0.30]
-- ! Fixed #44 - the tracker will no longer use an incorrect size.
-- ! Fixed #42 - the profile system should now work as intended.
-- ! The inactive blocks will no longer be displayed when changing profile.
-
-[1.0.29]
-- ! Fixed an error when the addon wants remove a block having no tracker linked.
-
-[1.0.28]
-tagged as release.
-- + Added the 'Replace blizzard objective tracker' in the Global options tab.
-- ! Optimized the 'Display rules' control. The number of condition displayed at the same time is now limited to 5 : a page system has been created a this purpose.
-
-I wish you a 'Good leveling !'. If you encounter issues, thank to let me know on the issues page.
+[1.1.0]
+- + Implemented #47 - There is now possible to disable the block header and changing its height.

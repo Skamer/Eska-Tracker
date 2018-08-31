@@ -24,7 +24,7 @@ function OnLoad(self)
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Header"):SetID("header"):SetBuildingGroup("[block&:block_category_selected:]/header"), "block/tabs")
   OptionBuilder:AddRecipe(TabItemRecipe():SetText("Content"):SetID("content"):SetBuildingGroup("[block&:block_category_selected:]/content"), "block/tabs")
 
-  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Stripe"):SetOrder(30), "block/header")
+  OptionBuilder:AddRecipe(HeadingRecipe():SetText("Stripe"):SetOrder(300), "block/header")
 
   local order = RangeRecipe()
   order:SetOrder(10)
@@ -37,6 +37,29 @@ function OnLoad(self)
     Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).order = value
   end)
   OptionBuilder:AddRecipe(order, "block/general")
+
+  local showHeader = CheckBoxRecipe()
+  showHeader:SetOrder(10)
+  showHeader:SetText("Show")
+  showHeader:Get(function(recipe)
+    return Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).showHeader
+  end)
+  showHeader:Set(function(recipe, value)
+    Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).showHeader = value
+  end)
+  OptionBuilder:AddRecipe(showHeader, "block/header")
+
+  local headerHeight = RangeRecipe()
+  headerHeight:SetOrder(20)
+  headerHeight:SetText("Height")
+  headerHeight:SetRange(1, 64)
+  headerHeight:Get(function(recipe)
+    return Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).headerHeight
+  end)
+  headerHeight:Set(function(recipe, value)
+    Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).headerHeight = value
+  end)
+  OptionBuilder:AddRecipe(headerHeight, "block/header")
 end
 
 
@@ -58,11 +81,11 @@ function AddCategoryRecipes(self, category, needCheck)
 
   OptionBuilder:AddRecipe(TreeItemRecipe():SetID(id):SetPath("blocks"):SetBuildingGroup(buildingGroup):SetText(category.name), "RootTree")
   OptionBuilder:AddRecipe(ThemePropertyRecipe():SetElementID(string.format("block.%s.frame", category.id)):SetElementParentID("block.frame"), string.format("%s/general", id))
-  OptionBuilder:AddRecipe(ThemePropertyRecipe():SetElementID(string.format("block.%s.header", category.id)):SetElementParentID("block.header"):SetOrder(10), string.format("%s/header", id))
+  OptionBuilder:AddRecipe(ThemePropertyRecipe():SetElementID(string.format("block.%s.header", category.id)):SetElementParentID("block.header"):SetOrder(100), string.format("%s/header", id))
   OptionBuilder:AddRecipe(ThemePropertyRecipe()
   :SetElementID(string.format("block.%s.header.text", category.id))
   :SetElementParentID("block.header.text")
-  :SetOrder(20)
+  :SetOrder(200)
   :ClearFlags()
   :AddFlag(Theme.SkinFlags.TEXT_FONT)
   :AddFlag(Theme.SkinFlags.TEXT_SIZE)
@@ -75,7 +98,7 @@ function AddCategoryRecipes(self, category, needCheck)
   OptionBuilder:AddRecipe(ThemePropertyRecipe()
   :SetElementID(string.format("block.%s.header.stripe", category.id))
   :SetElementParentID("block.header.stripe")
-  :SetOrder(40)
+  :SetOrder(310)
   :ClearFlags()
   :AddFlag(Theme.SkinFlags.TEXTURE_COLOR), string.format("%s/header", id))
 end

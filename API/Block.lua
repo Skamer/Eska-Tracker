@@ -8,9 +8,15 @@ Eska                     "EskaTracker.API.Block"                              ""
 namespace "EKT"
 --============================================================================--
 class "BlockCategory" (function(_ENV)
+  ------------------------------------------------------------------------------
+  --                              Events                                      --
+  ------------------------------------------------------------------------------
   event "OnOrderChanged"
-
-
+  event "OnShowHeaderChanged"
+  event "OnHeaderHeightChanged"
+  ------------------------------------------------------------------------------
+  --                                Handlers                                  --
+  ------------------------------------------------------------------------------
   local function UpdateOrder(self, new)
     Profiles:PrepareDatabase()
     if Database:SelectTable(true, "blocks", "categories", self.id) then
@@ -47,6 +53,26 @@ class "BlockCategory" (function(_ENV)
     end
   end
 
+  local function UpdateShowHeader(self, new)
+    Profiles:PrepareDatabase()
+    if Database:SelectTable(true, "blocks", "categories", self.id) then
+      Database:SetValue("show-header", new)
+    end
+
+    self:OnShowHeaderChanged(new)
+  end
+
+  local function UpdateHeaderHeight(self, new)
+    Profiles:PrepareDatabase()
+    if Database:SelectTable(true, "blocks", "categories", self.id) then
+      Database:SetValue("header-height", new)
+    end
+
+    self:OnHeaderHeightChanged(new)
+  end
+  ------------------------------------------------------------------------------
+  --                             Methods                                      --
+  ------------------------------------------------------------------------------
   function GetTracker(self)
     if not self.__tracker then
       Profiles:PrepareDatabase()
@@ -81,27 +107,6 @@ class "BlockCategory" (function(_ENV)
     end
     self.__tracker = value
   end
-  --[[
-  function TryToGetValidBlock(self)
-    -- Get the block selected by category (return the value by default or set by user if exists)
-    local selected = self.selected
-
-    local blockClass
-    if selected then
-      blockClass = Blocks:Get(selected)
-    end
-
-    -- if block is always nil, this is because the block selected not exists or has been not registered !
-    -- so get the first block found with the category given
-    if not blockClass then
-      blockClass = Blocks:GetFirstForCategory(self.id)
-    end
-
-    if blockClass then
-      selected = API:GetDefaultValueFromClass(blockClass, "id")
-    e
-    return selected, blockClass
-  end --]]
 
   function TryToGetValidBlock(self)
     -- Get the block selected by category
@@ -125,24 +130,32 @@ class "BlockCategory" (function(_ENV)
       -- Load the properties contained in the profile
       Profiles:PrepareDatabase()
 
-      local order, tracker
+      local order, tracker, showHeader, headerHeight
       if Database:SelectTable(false, "blocks", "categories", self.id) then
-        order = Database:GetValue("order")
-        tracker = Database:GetValue("tracker")
+        order        = Database:GetValue("order")
+        tracker      = Database:GetValue("tracker")
+        showHeader   = Database:GetValue("show-header")
+        headerHeight = Database:GetValue("header-height")
       end
 
       -- Assign the values
-      self.order   = order
-      self.tracker =  tracker
+      self.order        = order
+      self.tracker      = tracker
+      self.showHeader   = showHeader
+      self.headerHeight = headerHeight
     end
 
-  property "id" { TYPE = String, FIELD = "__id" }
-  property "name" { TYPE = String, FIELD = "__name" }
-  property "order" { TYPE = Number, HANDLER = UpdateOrder, DEFAULT = function(self) return self._initOrder end, FIELD = "__order" }
-  property "selected" { TYPE = String, HANDLER = UpdateSelected, DEFAULT = function(self) return self._initSelected end, FIELD = "__selected" }
-  property "tracker" { TYPE = String, HANDLER = UpdateTracker, DEFAULT = "main", GET = "GetTracker", SET = "SetTracker" }
-  property "_initOrder" { TYPE = Number, DEFAULT = 100 }
-  property "_initSelected" { TYPE = String }
+  -- displayHeader
+  -- headerHeight
+  property "id"             { TYPE = String, FIELD = "__id" }
+  property "name"           { TYPE = String, FIELD = "__name" }
+  property "order"          { TYPE = Number, HANDLER = UpdateOrder, DEFAULT = function(self) return self._initOrder end, FIELD = "__order" }
+  property "selected"       { TYPE = String, HANDLER = UpdateSelected, DEFAULT = function(self) return self._initSelected end, FIELD = "__selected" }
+  property "tracker"        { TYPE = String, HANDLER = UpdateTracker, DEFAULT = "main", GET = "GetTracker", SET = "SetTracker" }
+  property "showHeader"     { TYPE = Boolean, HANDLER = UpdateShowHeader, DEFAULT = true }
+  property "headerHeight"   { TYPE = NaturalNumber, HANDLER = UpdateHeaderHeight, DEFAULT = 34}
+  property "_initOrder"     { TYPE = Number, DEFAULT = 100 }
+  property "_initSelected"  { TYPE = String }
 
   __Arguments__ { String, String }
   function BlockCategory(self, id, name)
@@ -196,7 +209,7 @@ class "Block" (function(_ENV)
     else
       local tracker = Trackers:GetTrackerByBlockCategoryID(self.category)
       if tracker then
-        tracker:RemoveBlockByCategoryID(self.category)
+        tracker:RemoveBlock(self)
       end
     end
   end
@@ -276,6 +289,36 @@ class "Block" (function(_ENV)
     end
   end
 
+  function ShowHeader(self)
+    if not self.frame.header:IsShown() then
+      self.baseHeight = self.headerHeight
+      self.height = self.height + self.headerHeight
+
+      self.frame.header:Show()
+      self.frame.content:SetPoint("TOP", self.frame.header, "BOTTOM")
+    end
+  end
+
+  function HideHeader(self)
+    if self.frame.header:IsShown() then
+      self.baseHeight = 0
+      self.height = self.height - self.headerHeight
+
+      self.frame.header:Hide()
+      self.frame.content:SetPoint("TOP")
+    end
+  end
+
+  __Arguments__ { NaturalNumber }
+  function SetHeaderHeight(self, height)
+    self.frame.header:SetHeight(height)
+
+    if self.showHeader then
+      self.height = self.height + (height - self.baseHeight)
+      self.baseHeight = height
+    end
+  end
+
   function Init(self)
     local prefix = self:GetClassPrefix()
 
@@ -321,14 +364,17 @@ class "Block" (function(_ENV)
   ------------------------------------------------------------------------------
   --                            Properties                                    --
   ------------------------------------------------------------------------------
-  property "id" { TYPE = String, DEFAULT = "defaultID" }
-  property "text" { TYPE = String, DEFAULT = "Default Header Text", HANDLER = SetText }
-  property "isActive" { TYPE = Boolean, DEFAULT = true, HANDLER = IsActiveChanged }
-  property "order" { TYPE = Number, DEFAULT = 100, EVENT = "OnOrderChanged" } -- is a shortcut of the category order
-  property "category" { TYPE = String }
-  property "tracker" { TYPE = String  }
-  property "expanded" { TYPE = Boolean, DEFAULT = true }
-  property "contentHeight" { TYPE = Number, DEFAULT = 0, HANDLER = SetContentHeight }
+  property "id"             { TYPE = String, DEFAULT = "defaultID" }
+  property "text"           { TYPE = String, DEFAULT = "Default Header Text", HANDLER = SetText }
+  property "isActive"       { TYPE = Boolean, DEFAULT = true, HANDLER = IsActiveChanged }
+  property "order"          { TYPE = Number, DEFAULT = 100, EVENT = "OnOrderChanged" } -- is a shortcut of the category order
+  property "category"       { TYPE = String }
+  property "tracker"        { TYPE = String  }
+  property "expanded"       { TYPE = Boolean, DEFAULT = true }
+  property "contentHeight"  { TYPE = Number, DEFAULT = 0, HANDLER = SetContentHeight }
+  property "headerHeight"   { TYPE = NaturalNumber, DEFAULT = 34 }
+  property "showHeader"     { TYPE = Boolean, DEFAULT = true }
+
 
   __Static__() property "_prefix" { DEFAULT = "block"}
 
@@ -411,6 +457,34 @@ class "Blocks"
         for _, block in tracker:GetBlocks():GetIterator() do
           if block.category == category.id then
             block.order = new
+          end
+        end
+      end
+    end
+
+    category.OnShowHeaderChanged = function(self, new)
+      for _, tracker in Trackers:GetIterator() do
+        for _, block in tracker:GetBlocks():GetIterator() do
+          if block.category == category.id then
+            block.showHeader = new
+            if new then
+              block:ShowHeader()
+            else
+              block:HideHeader()
+            end
+          end
+        end
+      end
+    end
+
+    category.OnHeaderHeightChanged = function(self, new)
+      for _, tracker in Trackers:GetIterator() do
+        for _, block in tracker:GetBlocks():GetIterator() do
+          if block.category == category.id then
+            block.headerHeight = new
+            if new then
+              block:SetHeaderHeight(new)
+            end
           end
         end
       end
@@ -612,6 +686,13 @@ _G.EKT_BLOCK = GetBlock
 
 --- [[ Experimental ]]
 Environment.RegisterGlobalKeyword{ block = GetBlock }
+
+__SystemEvent__()
+function EKT_PROFILES_LOADED()
+  for _, category in Blocks:IterateCategories() do
+    category:LoadPropsFromDatabase()
+  end
+end
 
 __SystemEvent__()
 function EKT_PROFILE_CHANGED()
