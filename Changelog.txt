@@ -1,2 +1,5 @@
+[1.1.1]
+- Fixed #50 - The blocks header will now be correctly hidden after the login or a reload.
+
 [1.1.0]
 - + Implemented #47 - There is now possible to disable the block header and changing its height.

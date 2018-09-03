@@ -145,8 +145,6 @@ class "BlockCategory" (function(_ENV)
       self.headerHeight = headerHeight
     end
 
-  -- displayHeader
-  -- headerHeight
   property "id"             { TYPE = String, FIELD = "__id" }
   property "name"           { TYPE = String, FIELD = "__name" }
   property "order"          { TYPE = Number, HANDLER = UpdateOrder, DEFAULT = function(self) return self._initOrder end, FIELD = "__order" }
@@ -334,6 +332,11 @@ class "Block" (function(_ENV)
     Theme:SkinFrame(self.frame.content)
     Theme:SkinText(self.frame.header.text)
     Theme:SkinTexture(self.frame.header.stripe)
+
+    self.showHeader = Blocks:GetCategory(self.category).showHeader
+    if not self.showHeader then
+      self:HideHeader()
+    end
   end
   ------------------------------------------------------------------------------
   --                   Static Functions                                       --
@@ -450,8 +453,6 @@ class "Blocks"
 
     _CATEGORIES[category.id] = category
 
-    category:LoadPropsFromDatabase()
-
     category.OnOrderChanged = function(self, new)
       for _, tracker in Trackers:GetIterator() do
         for _, block in tracker:GetBlocks():GetIterator() do
@@ -489,6 +490,8 @@ class "Blocks"
         end
       end
     end
+
+    category:LoadPropsFromDatabase()
 
   end
 
@@ -588,58 +591,6 @@ class "__Block__" (function(_ENV)
     return self
   end
 end)
-
---[[Blocks:RegisterCategory(BlockCategory("quests", "Quests", 50, "eska-quests"))
-Blocks:RegisterCategory(BlockCategory("bonus-objectives", "Bonus objectives", 12, "eska-bonus-objectives"))
-Blocks:RegisterCategory(BlockCategory("world-quests", "World quests", 15, "eska-world-quests"))
-Blocks:RegisterCategory(BlockCategory("achievements", "Achievements", 10, "eska-achievements"))
-Blocks:RegisterCategory(BlockCategory("dungeon", "Dungeon", 10, "eska-dungeon"))
-Blocks:RegisterCategory(BlockCategory("keystone", "Keystone", 5, "eska-keystone"))
-Blocks:RegisterCategory(BlockCategory("scenario", "Scenario", 10, "eska-scenario"))--]]
-
-function OnLoad(self)
-
-end
-
---[[
-_G.EKT_BLOCK = function(id)
-  -- Get the category
-  local category = Blocks:GetCategory(id)
-
-  -- Don't continue if the category given has been registed by 'Blocks:RegisterCategory'
-  if not category then
-    return nil
-  end
-
-  -- Get the block selected by category (return the value by default or set by user if exists)
-  local selected = category.selected
-
-  local blockClass
-  if selected then
-    blockClass = Blocks:Get(selected)
-  end
-
-  -- if block is always nil, this is because the block selected not exists or has been not registered !
-  -- so get the first block found with the category given
-  if not blockClass then
-    blockClass = Blocks:GetFirstForCategory(id)
-  end
-
-  -- If block is always nil, don't continue, we have do our possible to have a valid block !
-  if not blockClass then
-    return
-  end
-
-  local block = blockClass()
-  local tracker = Trackers:Get(category.tracker)
-
-  tracker:AddBlock(block)
-
-  return block
-end --]]
-
---Category:GetValidBlockID()
-
 
  local function GetBlock(id)
   -- Get the category
