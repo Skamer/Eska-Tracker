@@ -110,7 +110,7 @@ Class "Tracker" (function(_ENV)
       end
     end
 
-    --self:GetFrameContainer():EnableMouse(true)
+    self:GetFrameContainer():EnableMouse(not new)
     self:GetFrameContainer():SetMovable(not new)
   end
 
@@ -928,7 +928,7 @@ Class "Tracker" (function(_ENV)
     self:GetFrameContainer():SetClampedToScreen(true)
     self:GetFrameContainer():SetFrameStrata("LOW")
     self:SetPoint("CENTER")
-    --self:GetFrameContainer():EnableMouse(not self.locked)
+    self:GetFrameContainer():EnableMouse(not self.locked)
     self:GetFrameContainer():SetMovable(not self.locked)
 
     self.OnMouseDown = function(_, button)

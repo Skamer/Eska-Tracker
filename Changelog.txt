@@ -1,3 +1,6 @@
+[1.1.2]
+- Fixed #51 - The 'click through' will now work as intended when the tracker is locked.
+
 [1.1.1]
 - Fixed #50 - The blocks header will now be correctly hidden after the login or a reload.
 
