@@ -213,6 +213,24 @@ __Serializable__() class "Theme" (function(_ENV)
     _SKIN_FRAME_PROCESS_STARTED = false
   end
 
+  __Arguments__ { ClassType, String, String, Variable.Optional(String), Variable.Optional(String) }
+  __Static__() function GetTransformedText(self, text, elementID, state, parentID)
+    local theme = Themes:GetSelected()
+
+    if state then
+      elementID = elementID.."["..state.."]"
+    end
+
+    local transform = theme:GetElementProperty(elementID, "text-transform", parentID)
+    if transform == "uppercase" then
+      text = text:upper()
+    elseif transform == "lowercase" then
+      text = text:lower()
+    end
+
+    return text
+  end
+
   __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
   __Static__() function ProcessSkinText(self, obj, flags, text, state, customElementID, customParentID)
     local theme = Themes:GetSelected()
@@ -1209,17 +1227,15 @@ class "Themes" (function(_ENV)
           end
           self:Register(theme)
         else
-          Database:SelectRoot()
-          if Database:SelectTable(false, "themes", parentTheme.name) then
-            Database:CopyTable("themes", name)
-            local theme = Theme()
-            theme.lua = false
-            theme.name = name
-            theme.author = author
-            theme.version = version
-            theme.stage = stage
-            self:Register(theme)
-          end
+          local theme = Theme()
+          theme.lua     = false
+          theme.name    = name
+          theme.author  = author
+          theme.version = version
+          theme.stage   = stage
+
+          theme:Override(parentTheme, nil, Theme.OverrideFlags.NONE)
+          self:Register(theme)
         end
       end
     end
