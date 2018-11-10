@@ -116,6 +116,7 @@ __Serializable__() class "Theme" (function(_ENV)
     member "customElementID"  { TYPE = String }
     member "customParentID"   { TYPE = String }
     member "text"             { TYPE = String }
+    member "onEvent"          { TYPE = Function }
   end)
 
   __Arguments__ { ClassType, Table, Variable.Optional(String) }
@@ -231,8 +232,8 @@ __Serializable__() class "Theme" (function(_ENV)
     return text
   end
 
-  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
-  __Static__() function ProcessSkinText(self, obj, flags, text, state, customElementID, customParentID)
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String), Variable.Optional(Function) }
+  __Static__() function ProcessSkinText(self, obj, flags, text, state, customElementID, customParentID, onEventCallback)
     local theme = Themes:GetSelected()
 
     if not theme then return end -- TODO: Add error msg
@@ -320,10 +321,14 @@ __Serializable__() class "Theme" (function(_ENV)
         end
       end
     end
+
+    if onEventCallback then
+      onEventCallback("SKIN_PROCESS_FINISHED")
+    end
   end
 
-  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String) }
-  __Static__() function SkinText(self, obj, flags, text, state, customElementID, customParentID)
+  __Arguments__ { ClassType, Table, Variable.Optional(SkinFlags, DefaultSkinFlags), Variable.Optional(String + Number), Variable.Optional(String), Variable.Optional(String), Variable.Optional(String), Variable.Optional(Function) }
+  __Static__() function SkinText(self, obj, flags, text, state, customElementID, customParentID, onEventCallback)
     -- Create the request
     local request = SkinRequest()
     request.obj             = obj
@@ -332,6 +337,7 @@ __Serializable__() class "Theme" (function(_ENV)
     request.customElementID = customElementID
     request.customParentID  = customParentID
     request.text            = text
+    request.onEvent         = onEventCallback
 
     -- Add in the queue of skin procress
     _SKIN_TEXT_QUEUE:Insert(request)
@@ -352,7 +358,7 @@ __Serializable__() class "Theme" (function(_ENV)
     while _SKIN_TEXT_QUEUE.Count >= 1 do
       local request = _SKIN_TEXT_QUEUE:RemoveByIndex(1)
       if request then
-        self:ProcessSkinText(request.obj, request.flags, request.text, request.state, request.customElementID, request.customParentID)
+        self:ProcessSkinText(request.obj, request.flags, request.text, request.state, request.customElementID, request.customParentID, request.onEvent)
       end
       Continue()
     end
