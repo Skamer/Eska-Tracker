@@ -83,16 +83,20 @@ class "ActionBar" (function(_ENV)
   end
 
   local function UpdateProps(self, new, old, prop)
-    Profiles:PrepareDatabase()
-    if Database:SelectTable(true, "actionbars", self.id) then
-      if prop == "buttonCount" then
-        Database:SetValue("button-count", new)
-      elseif prop == "buttonSize" then
-        Database:SetValue("button-size", new)
-      elseif prop == "buttonSpacing" then
-        Database:SetValue("button-spacing", new)
-      elseif prop == "directionGrowth" then
-        Database:SetValue("direction-growth", new)
+    if not self.dbReadOnly then
+      Profiles:PrepareDatabase()
+      if Database:SelectTable(true, "actionbars", self.id) then
+        if prop == "buttonCount" then
+          Database:SetValue("button-count", new)
+        elseif prop == "buttonSize" then
+          Database:SetValue("button-size", new)
+        elseif prop == "buttonSpacing" then
+          Database:SetValue("button-spacing", new)
+        elseif prop == "directionGrowth" then
+          Database:SetValue("direction-growth", new)
+        elseif prop == "locked" then
+          Database:SetValue("locked", new)
+        end
       end
     end
     self:Layout()
@@ -265,6 +269,9 @@ class "ActionBar" (function(_ENV)
   end
 
   function LoadPropsFromDatabase(self)
+    -- Database Read Only for avoiding the properties writing during the loading.
+    self.dbReadOnly = true
+
     -- Load the properties contained in the profile
     Profiles:PrepareDatabase()
 
@@ -299,6 +306,9 @@ class "ActionBar" (function(_ENV)
     self.buttonCount          = buttonCount
     self.directionGrowth      = directionGrowth
     self:SetPosition(xPos, yPos, false)
+
+    -- remove the read only mode for Database
+    self.dbReadOnly = false
   end
 
   __Static__() function GetIDFromName(self, name)
@@ -313,7 +323,7 @@ class "ActionBar" (function(_ENV)
   property "name"     { TYPE = String }
   property "xPos"     { TYPE = Number, DEFAULT = 0 }
   property "yPos"     { TYPE = Number, DEFAULT = 0 }
-  property "locked"   { TYPE = Boolean, DEFAULT = false }
+  property "locked"   { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateProps }
   property "buttonSize" { TYPE = Number, DEFAULT = 24, HANDLER = UpdateProps }
   property "buttonCount" { TYPE = Number, DEFAULT = 12, HANDLER = UpdateProps }
   property "buttonSpacing" { TYPE = Number, DEFAULT = 2, HANDLER = UpdateProps }
