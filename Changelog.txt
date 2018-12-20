@@ -1,3 +1,6 @@
+[1.1.7]
+- ! Fixed #61 - The lua indentation will no longer cause an infinite loop in {tracker name}/display rules/status function.
+
 [1.1.5]
 - ! Fixed #58 - An issue where the locked property for action bars wasn't correctly persisted.
 
