@@ -1,3 +1,6 @@
+[1.1.8]
+- ! Fixed #62 - An error about a missing file.
+
 [1.1.7]
 - ! Fixed #61 - The lua indentation will no longer cause an infinite loop in {tracker name}/display rules/status function.
 

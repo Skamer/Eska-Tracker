@@ -1,6 +1,5 @@
 <Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
     <Script file="Libs\ForAllIndentsAndPurposes\ForAllIndentsAndPurposes.lua"/>
-    <Script file="Libs\ForAllIndentsAndPurposes\defaulthooks.lua"/>
   <!--@no-lib-strip@-->
     <Script file="Libs\LibStub\LibStub.lua"/>
     <Script file="Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua"/>
