@@ -1,3 +1,6 @@
+[1.1.9]
+- ! Fixed #63 - The tracker is no longer blank with the lastest version of Scorpio (v025).
+
 [1.1.8]
 - ! Fixed #62 - An error about a missing file.
 

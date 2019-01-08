@@ -370,7 +370,7 @@ class "Block" (function(_ENV)
   property "id"             { TYPE = String, DEFAULT = "defaultID" }
   property "text"           { TYPE = String, DEFAULT = "Default Header Text", HANDLER = SetText }
   property "isActive"       { TYPE = Boolean, DEFAULT = true, HANDLER = IsActiveChanged }
-  property "order"          { TYPE = Number, DEFAULT = 100, EVENT = "OnOrderChanged" } -- is a shortcut of the category order
+  property "order"          { TYPE = Number, DEFAULT = 100, EVENT = "OnOrderChanged", FIELD = "__order" } -- is a shortcut of the category order
   property "category"       { TYPE = String }
   property "tracker"        { TYPE = String  }
   property "expanded"       { TYPE = Boolean, DEFAULT = true }
@@ -443,6 +443,7 @@ endclass "Block"
 class "Blocks"
   _CATEGORIES = Dictionary()
   _BLOCKS = Dictionary()
+  _PENDING_BLOCKS = Dictionary()
 
   __Arguments__ { ClassType, BlockCategory }
   __Static__() function RegisterCategory(self, category)
@@ -529,6 +530,23 @@ class "Blocks"
         local category = API:GetDefaultValueFromClass(class, "category")
         if category == id then
           return class
+        end
+      end
+    end
+
+    __Arguments__ { ClassType, Block, String }
+    __Static__() function AddPendingBlock(self, block, trackerID)
+      _PENDING_BLOCKS[block] = trackerID
+    end
+
+    __Static__() function ProcessPendingBlocks(self)
+      for block, trackerID in _PENDING_BLOCKS:GetIterator() do
+        local tracker = Trackers:Get(trackerID)
+        if tracker then
+          if block.isActive then
+            tracker:AddBlock(block)
+          end
+          _PENDING_BLOCKS[block] = nil
         end
       end
     end
@@ -627,6 +645,8 @@ end)
 
   if tracker then
     tracker:AddBlock(block)
+  else
+    Blocks:AddPendingBlock(block, category.tracker)
   end
 
   return block
@@ -658,4 +678,9 @@ function EKT_COPY_PROFILE_PROCESS(sourceDB, destDB, destProfile)
   if sourceDB["blocks"] then
     destDB["blocks"] = sourceDB["blocks"]
   end
+end
+
+__SystemEvent__()
+function EKT_TRACKERS_LOADED()
+  Blocks:ProcessPendingBlocks()
 end
