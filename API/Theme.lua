@@ -9,6 +9,8 @@ namespace "EKT"
 --============================================================================--
 import "System.Serialization"
 _EKTAddon = _Addon
+
+ValidateFlags = API.ValidateFlags
 --------------------------------------------------------------------------------
 --                          THEME SYSTEM                                      --
 --------------------------------------------------------------------------------
@@ -158,13 +160,13 @@ __Serializable__() class "Theme" (function(_ENV)
     if frame.type == "FRAME" then
       local color
       -- Background color
-      if frame.SetBackdropColor and Enum.ValidateFlags(flags, SkinFlags.FRAME_BACKGROUND_COLOR) then
+      if frame.SetBackdropColor and ValidateFlags(flags, SkinFlags.FRAME_BACKGROUND_COLOR) then
         color = theme:GetElementProperty(elementID, "background-color", inheritElementID)
         frame:SetBackdropColor(color.r, color.g, color.b, color.a)
       end
 
       -- Background texture
-      if Enum.ValidateFlags(flags, SkinFlags.FRAME_BACKGROUND_TEXTURE) then
+      if ValidateFlags(flags, SkinFlags.FRAME_BACKGROUND_TEXTURE) then
         local background = _LibSharedMedia:Fetch("background", theme:GetElementProperty(elementID, "background-texture", inheritElementID))
         local r,g,b,a = frame:GetBackdropColor()
         frame:SetBackdrop({
@@ -267,25 +269,25 @@ __Serializable__() class "Theme" (function(_ENV)
     local textColor = {}
     textColor.r, textColor.g, textColor.b, textColor.a = fontstring:GetTextColor()
 
-    if Enum.ValidateFlags(flags, SkinFlags.TEXT_SIZE) then
+    if ValidateFlags(flags, SkinFlags.TEXT_SIZE) then
       size = theme:GetElementProperty(elementID, "text-size", inheritElementID)
     end
 
-    if Enum.ValidateFlags(flags, SkinFlags.TEXT_FONT) then
+    if ValidateFlags(flags, SkinFlags.TEXT_FONT) then
       font = _LibSharedMedia:Fetch("font", theme:GetElementProperty(elementID, "text-font", inheritElementID))
     end
     fontstring:SetFont(font, size, "OUTLINE")
 
-    if Enum.ValidateFlags(flags, SkinFlags.TEXT_COLOR) then
+    if ValidateFlags(flags, SkinFlags.TEXT_COLOR) then
       textColor = theme:GetElementProperty(elementID, "text-color", inheritElementID)
     end
     fontstring:SetTextColor(textColor.r, textColor.g, textColor.b, textColor.a)
 
-    if Enum.ValidateFlags(flags, SkinFlags.TEXT_JUSTIFY_HORIZONTAL) then
+    if ValidateFlags(flags, SkinFlags.TEXT_JUSTIFY_HORIZONTAL) then
       fontstring:SetJustifyH(theme:GetElementProperty(elementID, "text-justify-h", inheritElementID))
     end
 
-    if Enum.ValidateFlags(flags, SkinFlags.TEXT_JUSTIFY_VERTICAL) then
+    if ValidateFlags(flags, SkinFlags.TEXT_JUSTIFY_VERTICAL) then
       fontstring:SetJustifyV(theme:GetElementProperty(elementID, "text-justify-v", inheritElementID))
     end
 
@@ -306,7 +308,7 @@ __Serializable__() class "Theme" (function(_ENV)
       text = fontstringText
     end
 
-    if Enum.ValidateFlags(flags, SkinFlags.TEXT_TRANSFORM) then
+    if ValidateFlags(flags, SkinFlags.TEXT_TRANSFORM) then
       if text then
         if text == "" then
           fontstring:SetText(text)
@@ -391,7 +393,7 @@ __Serializable__() class "Theme" (function(_ENV)
       elementID = elementID.."["..state.."]"
     end
 
-    if Enum.ValidateFlags(flags, SkinFlags.TEXTURE_COLOR) then
+    if ValidateFlags(flags, SkinFlags.TEXTURE_COLOR) then
       local color = theme:GetElementProperty(elementID, "texture-color", inheritElementID)
       texture:SetVertexColor(color.r, color.g, color.b, color.a)
     end
@@ -499,7 +501,7 @@ __Serializable__() class "Theme" (function(_ENV)
       --elementID = elementID:gsub("%s+", "") -- Remove the space
 
       local value
-      if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_DATABASE) then
+      if ValidateFlags(flags, ElementFlags.INCLUDE_DATABASE) then
         value = self:GetElementPropertyFromDB(elementID, property)
         if value then
           return value
@@ -511,8 +513,8 @@ __Serializable__() class "Theme" (function(_ENV)
         return value
       end
 
-      if not Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
-        if Enum.ValidateFlags(flags,ElementFlags.INCLUDE_DEFAULT_VALUES) then
+      if not ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+        if ValidateFlags(flags,ElementFlags.INCLUDE_DEFAULT_VALUES) then
           return Theme:GetDefaultProperty(property)
         end
         return value
@@ -531,7 +533,7 @@ __Serializable__() class "Theme" (function(_ENV)
         end
       else
         for _, id in Theme:GetReadingIDList(elementID, inheritElementID, flags):GetIterator() do
-            if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_DATABASE) then
+            if ValidateFlags(flags, ElementFlags.INCLUDE_DATABASE) then
               value = self:GetElementPropertyFromDB(id, property)
               if value then
                 self:SetElementLink(elementID, property, id)
@@ -547,7 +549,7 @@ __Serializable__() class "Theme" (function(_ENV)
         end
       end
 
-      if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_DEFAULT_VALUES) then
+      if ValidateFlags(flags, ElementFlags.INCLUDE_DEFAULT_VALUES) then
         return Theme:GetDefaultProperty(property)
       end
   end
@@ -584,7 +586,7 @@ __Serializable__() class "Theme" (function(_ENV)
     elementID = string.format("%s[%s]", elementID, state)
 
     for _, id in Theme:GetReadingIDList(elementID, inheritElementID, flags):GetIterator() do
-      if Enum.ValidateFlags(flags, INCLUDE_DATABASE) and self:ElementExistsFromDB(id) then
+      if ValidateFlags(flags, INCLUDE_DATABASE) and self:ElementExistsFromDB(id) then
         return true
       end
 
@@ -667,7 +669,7 @@ __Serializable__() class "Theme" (function(_ENV)
     local list = List()
 
     local parentIDs, parentIDNum
-    if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+    if ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
       if inheritElementID then
         parentIDs = { strsplit(".", inheritElementID) }
         parentIDNum = #parentIDs
@@ -677,19 +679,19 @@ __Serializable__() class "Theme" (function(_ENV)
 
     -- We start to create the list without state
     local currentID = ""
-    if not Enum.ValidateFlags(flags, ElementFlags.IGNORE_WITHOUT_STATE) then
-      if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+    if not ValidateFlags(flags, ElementFlags.IGNORE_WITHOUT_STATE) then
+      if ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
         list:Insert("*")
       end
       for index, category in ipairs(categories) do
-        if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+        if ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
           if parentIDNum and parentIDNum == index then
             list:Insert(inheritElementID)
           end
         end
 
         if index ~= #categories then
-          if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+          if ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
             if inheritElementID then
               list:Insert(parentIDs[index]..".*")
             end
@@ -703,21 +705,21 @@ __Serializable__() class "Theme" (function(_ENV)
     end
 
     -- Then we do the same things with the state if exists
-    if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_STATE) then
+    if ValidateFlags(flags, ElementFlags.INCLUDE_STATE) then
       if states then
         currentID = ""
-        if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+        if ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
           list:Insert("*"..states)
         end
         for index, category in ipairs(categories) do
-          if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+          if ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
             if parentIDNum and parentIDNum == index then
               list:Insert(inheritElementID..states)
             end
           end
 
           if index ~= #categories then
-            if Enum.ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
+            if ValidateFlags(flags, ElementFlags.INCLUDE_PARENT) then
               if inheritElementID then
                 list:Insert(parentIDs[index]..".*"..states)
               end
@@ -988,14 +990,14 @@ __Serializable__() class "Theme" (function(_ENV)
 
   __Arguments__ { Theme, Variable.Optional(SourceType, SourceFlags.DATABASE + SourceFlags.LUA_TABLE), Variable.Optional(OverrideFlags, OverrideFlags.OVERRIDE_THEME_INFO) }
   function Override(self, theme, sourceFlags, overrideFlags)
-    if Enum.ValidateFlags(overrideFlags, OverrideFlags.OVERRIDE_THEME_INFO) then
+    if ValidateFlags(overrideFlags, OverrideFlags.OVERRIDE_THEME_INFO) then
       self.name = theme.name
       self.author = theme.author
       self.version = theme.version
       self.stage = theme.stage
     end
 
-    if Enum.ValidateFlags(sourceFlags, SourceFlags.LUA_TABLE) then
+    if ValidateFlags(sourceFlags, SourceFlags.LUA_TABLE) then
       for elementID, properties in theme.properties:GetIterator() do
         for property, value in properties:GetIterator() do
           self:SetElementPropertyToDB(elementID, property, API:ShallowCopy(value))
@@ -1003,7 +1005,7 @@ __Serializable__() class "Theme" (function(_ENV)
       end
     end
 
-    if Enum.ValidateFlags(sourceFlags, SourceFlags.DATABASE) then
+    if ValidateFlags(sourceFlags, SourceFlags.DATABASE) then
       Database:SelectRoot()
       if Database:SelectTable(false, "themes", theme.name, "properties") then
         for elementID, properties in Database:IterateTable() do

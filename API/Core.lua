@@ -193,8 +193,13 @@ interface "API" (function(_ENV)
    return true
 end
 
+  local band              = _G.bit.band
+  function ValidateFlags(checkValue, targetValue)
+          return band(checkValue or 0, targetValue) > 0
+  end
+
   function AddFlag(self, flags, flag)
-    if not Enum.ValidateFlags(flags, flag) then
+    if not ValidateFlags(flags, flag) then
       flags = flags + flag
     end
 
@@ -202,7 +207,7 @@ end
   end
 
   function RemoveFlag(self, flags, flag)
-    if Enum.ValidateFlags(flags, flag) then
+    if ValidateFlags(flags, flag) then
       flags = flags - flag
     end
 
@@ -332,7 +337,7 @@ class "Utils" (function(_ENV)
   --                         Enum
   ------------------------------------------------------------------------------
   __Static__() function AddEnumFlag(flags, flag)
-    if not Enum.ValidateFlags(flags, flag) then
+    if not ValidateFlags(flags, flag) then
       flags = flags + flag
     end
 
@@ -340,7 +345,7 @@ class "Utils" (function(_ENV)
   end
 
   __Static__() function RemoveEnumFlag(flags, flag)
-    if Enum.ValidateFlags(flags, flag) then
+    if ValidateFlags(flags, flag) then
       flags = flags - flag
     end
 

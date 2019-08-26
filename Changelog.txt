@@ -1,3 +1,6 @@
+[1.1.10]
+- API: Create and update the ValidateFlags function. 
+
 [1.1.9]
 - ! Fixed #63 - The tracker is no longer blank with the lastest version of Scorpio (v025).
 

@@ -5,6 +5,8 @@
 --============================================================================--
 Eska                   "EskaTracker.Options.ThemeRecipes"                     ""
 -- ========================================================================== --
+ValidateFlags = EKT.API.ValidateFlags
+
 _TextTransforms       = {
   ["none"] = "None",
   ["uppercase"] = "UPPER CASE",
@@ -226,7 +228,7 @@ class "ThemePropertyRecipe" (function(_ENV)
 
   __Arguments__ { Theme.SkinFlags }
   function AddFlag(self, flag)
-    if not Enum.ValidateFlags(self.flags, flag) then
+    if not ValidateFlags(self.flags, flag) then
       self.flags = self.flags + flag
     end
 
@@ -276,7 +278,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     context.parentWidget:AddChild(group)
 
     -- 1. [FRAME] Background color
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BACKGROUND_COLOR) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BACKGROUND_COLOR) then
       local flag = Theme.SkinFlags.FRAME_BACKGROUND_COLOR
       local backgroundColor = _AceGUI:Create("ColorPicker")
       backgroundColor:SetHasAlpha(true)
@@ -294,7 +296,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 2. [FRAME] Background texture
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE) then
       local flag = Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE
       local backgroundTexture = _AceGUI:Create("LSM30_Background")
 
@@ -312,7 +314,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 3. [FRAME] Border Color
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BORDER_COLOR) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BORDER_COLOR) then
       local flag = Theme.SkinFlags.FRAME_BORDER_COLOR
       local borderColor = _AceGUI:Create("ColorPicker")
       borderColor:SetHasAlpha(true)
@@ -329,7 +331,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 4. [FRAME] Border Width
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BORDER_WIDTH) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.FRAME_BORDER_WIDTH) then
       local flag = Theme.SkinFlags.FRAME_BORDER_WIDTH
       local borderWidth = _AceGUI:Create("Slider")
       borderWidth:SetValue(10)
@@ -346,7 +348,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 5. [TEXT] Text Size
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_SIZE) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXT_SIZE) then
       local flag = Theme.SkinFlags.TEXT_SIZE
       local textSize = _AceGUI:Create("Slider")
       textSize:SetSliderValues(6, 32, 1)
@@ -363,7 +365,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 6. [TEXT] Text Color
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_COLOR) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXT_COLOR) then
       local flag = Theme.SkinFlags.TEXT_COLOR
       local textColor = _AceGUI:Create("ColorPicker")
 
@@ -379,7 +381,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 7. [TEXT] Text Font
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_FONT) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXT_FONT) then
       local flag = Theme.SkinFlags.TEXT_FONT
       local textFont = _AceGUI:Create("LSM30_Font")
       textFont:SetList(_Fonts)
@@ -396,7 +398,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 8. [TEXT] Text Transform
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_TRANSFORM) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXT_TRANSFORM) then
       local flag = Theme.SkinFlags.TEXT_TRANSFORM
       local textTransform = _AceGUI:Create("Dropdown")
       textTransform:SetList(_TextTransforms)
@@ -413,7 +415,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 9. [TEXT] Text Justify Horizontal
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL) then
       local flag = Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL
       local textJustifyH = _AceGUI:Create("Dropdown")
       textJustifyH:SetList(_TextJustifyHorizontal)
@@ -430,7 +432,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 10. [TEXT] Text Justify Vertical
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL) then
       local flag = Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL
       local textJustifyV = _AceGUI:Create("Dropdown")
       textJustifyV:SetList(_TextJustifyVertical)
@@ -447,7 +449,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     end
 
     -- 11. [TEXTURE] Texture Color
-    if Enum.ValidateFlags(self.flags, Theme.SkinFlags.TEXTURE_COLOR) then
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXTURE_COLOR) then
       local flag = Theme.SkinFlags.TEXTURE_COLOR
       local textureColor = _AceGUI:Create("ColorPicker")
       textureColor:SetHasAlpha(true)

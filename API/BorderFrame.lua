@@ -7,6 +7,8 @@ Eska                      "EskaTracker.API.BorderFrame"                       ""
 --============================================================================--
 namespace                       "EKT"
 --============================================================================--
+ValidateFlags = API.ValidateFlags
+
 class "BorderFrame" (function(_ENV)
   inherit "Frame"
   ------------------------------------------------------------------------------
@@ -194,11 +196,11 @@ class "BorderFrame" (function(_ENV)
   __Arguments__ { Table, Variable.Optional(SkinFlags, Theme.SkinFlags.FRAME_BORDER_WIDTH + Theme.SkinFlags.FRAME_BORDER_COLOR )}
   function SkinBorder(self, frame, flags)
     -- Border width
-    if Enum.ValidateFlags(flags, Theme.SkinFlags.FRAME_BORDER_WIDTH) then
+    if ValidateFlags(flags, Theme.SkinFlags.FRAME_BORDER_WIDTH) then
       self.borderWidth = Themes:GetSelected():GetElementProperty(frame.elementID, "border-width", frame.inheritElementID)
     end
 
-    if Enum.ValidateFlags(flags, Theme.SkinFlags.FRAME_BORDER_COLOR) then
+    if ValidateFlags(flags, Theme.SkinFlags.FRAME_BORDER_COLOR) then
       self.borderColor = Themes:GetSelected():GetElementProperty(frame.elementID, "border-color", frame.inheritElementID)
     end
   end
