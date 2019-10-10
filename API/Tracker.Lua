@@ -131,6 +131,19 @@ Class "Tracker" (function(_ENV)
     self:UpdateScrollbarVisibility()
   end
 
+  local function UpdateScrollStep(self, new)
+    if not self.dbReadOnly then 
+      Profiles:PrepareDatabase() 
+      if Database:SelectTable(true, "trackers", self.id) then 
+        if new then 
+          Database:SetValue("scrollStep", new)
+        end 
+      end 
+    end
+
+    self.scrollbar.scrollStep = new
+  end 
+
   local function UpdateID(self, new)
     -- Build name from id
     local name = new
@@ -733,6 +746,7 @@ Class "Tracker" (function(_ENV)
       self.locked               = Database:GetValue("locked")
       self.enabled              = Database:GetValue("enabled")
       self.showScrollbar        = Database:GetValue("showScrollbar")
+      self.scrollStep           = Database:GetValue("scrollStep")
       self.idleModeAlpha        = Database:GetValue("idle-mode-alpha")
       self.inactivityTimer      = Database:GetValue("inactivity-timer")
       self.idleModeEnabled      = Database:GetValue("idle-mode-enabled")
@@ -895,6 +909,7 @@ Class "Tracker" (function(_ENV)
   property "contentHeight"                { TYPE = Number, DEFAULT = 50, HANDLER = SetContentHeight }
   property "displayNotifications"         { TYPE = Boolean, DEFAULT = false }
   property "showScrollbar"                { TYPE = Boolean, DEFAULT = false, HANDLER = UpdateShowScrollbar }
+  property "scrollStep"                   { TYPE = Number, DEFAULT = 15, HANDLER = UpdateScrollStep}
   property "isInIdleMode"                 { TYPE = Boolean, DEFAULT = false, HANDLER = IsInIdleModeChanged }
   property "inactivityTimer"              { TYPE = Number, DEFAULT = 20, HANDLER = InactivityTimerChanged }
   property "idleModeEnabled"              { TYPE = Boolean, DEFAULT = false, HANDLER = IdleModeEnabledChanged }
@@ -979,6 +994,7 @@ Class "Tracker" (function(_ENV)
     scrollbar:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT")
     scrollbar:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT")
     scrollbar:SetWidth(6)
+    scrollbar.scrollStep = 15
     -- customize the scroll bar thumb
     local thumb = scrollbar:GetThumbTexture()
     thumb:SetTexture(_Backdrops.Common.bgFile)

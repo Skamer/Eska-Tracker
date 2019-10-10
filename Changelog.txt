@@ -1,3 +1,7 @@
+[1.1.11]
+- ! Changed the mouse wheel sensibility for scrolling.
+- + Added an option for modifying the mouse wheel sensibility for scrolling (located in Tracker > "Name of tracker" > Scroll bar > Scroll Step)
+
 [1.1.10]
 - API: Create and update the ValidateFlags function. 
 

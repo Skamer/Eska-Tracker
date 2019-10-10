@@ -181,6 +181,19 @@ function AddScrollbarTabRecipes(self)
   end)
   OptionBuilder:AddRecipe(showRecipe, "tracker/scrollbar")
 
+  -- Scroll Step 
+  local scrollStepRecipe = RangeRecipe()
+  scrollStepRecipe:SetText("Scroll step")
+  scrollStepRecipe:SetOrder(20)
+  scrollStepRecipe:SetRange(1, 750)
+  scrollStepRecipe:Get(function(recipe)
+    return GetCurrentTracker(recipe).scrollStep
+  end)
+  scrollStepRecipe:Set(function(recipe, value)
+    GetCurrentTracker(recipe).scrollStep = value
+  end)
+  OptionBuilder:AddRecipe(scrollStepRecipe, "tracker/scrollbar")
+
   -- Thumb Heading
   OptionBuilder:AddRecipe(HeadingRecipe():SetText("Thumb"):SetOrder(30), "tracker/scrollbar")
 
