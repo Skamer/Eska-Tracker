@@ -336,6 +336,11 @@ class "Utils" (function(_ENV)
   ------------------------------------------------------------------------------
   --                         Enum
   ------------------------------------------------------------------------------
+  local band              = _G.bit.band
+  function ValidateFlags(checkValue, targetValue)
+            return band(checkValue or 0, targetValue) > 0
+  end
+
   __Static__() function AddEnumFlag(flags, flag)
     if not ValidateFlags(flags, flag) then
       flags = flags + flag
