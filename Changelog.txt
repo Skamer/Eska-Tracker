@@ -1,3 +1,7 @@
+[1.2.0]
+- + Implemented a new slash command "/ekt reload" for reloading the modules. This one can be issued also by a shift+click
+on the minimap icon.
+- ! The options can now also be opened by a left click on the minimap icon.
 
 [1.1.12]
 - ! Fixed an error with API functions AddEnumFlags and RemoveEnumFlags.
