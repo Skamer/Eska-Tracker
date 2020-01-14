@@ -97,9 +97,9 @@ function SetupMinimapButton(self)
     type = "launcher",
     icon = _EKT_ICON,
     OnClick = function(_, button, down)
-      if button == "LeftButton" then
-
-      elseif button == "RightButton" then
+      if IsShiftKeyDown() then 
+        self:FireSystemEvent("EKT_HARD_RELOAD_MODULES")
+      else 
         self:FireSystemEvent("EKT_OPEN_OPTIONS")
       end
     end,
@@ -107,7 +107,8 @@ function SetupMinimapButton(self)
       tooltip:AddDoubleLine("Eska Tracker", _EKT_VERSION, 1, 106/255, 0, 1, 1, 1)
       tooltip:AddLine(" ")
       -- tooltip:AddLine(L["LDB_tooltip_left_click_text"])
-      tooltip:AddLine(L["LDB_tooltip_right_click_text"])
+      tooltip:AddLine(L["LDB_tooltip_click_text"])
+      tooltip:AddLine(L["LDB_tooltip_shift_click_text"] )
     end,
   })
 
@@ -198,6 +199,11 @@ __SlashCmd__ "ekt" "open" "- open the options"
 __SlashCmd__ "ekt" "option" "- open the options"
 function OpenOptions(self)
   self:FireSystemEvent("EKT_OPEN_OPTIONS")
+end
+
+__SlashCmd__ "ekt" "reload" "- Reload all modules"
+function Reload()
+  _M:FireSystemEvent("EKT_HARD_RELOAD_MODULES")
 end
 
 -- ========================================================================== --

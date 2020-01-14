@@ -73,6 +73,12 @@ PLoop(function(_ENV)
 
     __Arguments__{ NEString, (NEString + Function)/nil }:Throwable()
     function RegisterEvent(self, evt, handler)
+      -- If the event is "EKT_HARD_RELOAD_MODULES", ignore the below stuff 
+      if evt == "EKT_HARD_RELOAD_MODULES" then 
+        super.RegisterEvent(self, evt, handler)
+        return 
+      end
+
       handler = handler or evt
       if type(handler) == "string" then handler = self[handler] end
 

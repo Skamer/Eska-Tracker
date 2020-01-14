@@ -63,6 +63,7 @@ class "AddonInfoRecipe" inherit "OptionRecipe"
         ["open|config|option"] = "Open the category",
         ["show"] = "Show the objective tracker",
         ["hide"] = "Hide the objective tracker",
+        ["reload"] = "Reload all modules",
         ["ploop"] = "Print the PLoop version",
         ["scorpio"] = "Print the Scorpio version"
       }
