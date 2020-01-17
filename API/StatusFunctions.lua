@@ -51,7 +51,7 @@ StatusFunctions:Register(StatusFunction("is-dead", "Is Dead", function() return 
 StatusFunctions:Register(StatusFunction("is-in-raid", "Is in Raid", IsInRaid, "Group Size"))
 StatusFunctions:Register(StatusFunction("is-in-group", "Is in Group", IsInGroup, "Group Size"))
 -- Scenario
-StatusFunctions:Register(StatusFunction("is-in-scenario", "Is in Scenario", function() C_Scenario.IsInScenario() end, "Scenario"))
+StatusFunctions:Register(StatusFunction("is-in-scenario", "Is in Scenario", C_Scenario.IsInScenario, "Scenario"))
 -- Warfront
 StatusFunctions:Register(StatusFunction("is-in-warfront", "Is in Warfront", function()
   local scenarioType = select(10, C_Scenario.GetInfo())
