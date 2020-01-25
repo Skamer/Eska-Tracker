@@ -1,3 +1,7 @@
+[1.2.1]
+- ! Fixed Scenario Status Check (thank to Raikie)
+- Bump toc version for 8.3
+
 [1.2.0]
 - + Implemented a new slash command "/ekt reload" for reloading the modules. This one can be issued also by a shift+click
 on the minimap icon.
