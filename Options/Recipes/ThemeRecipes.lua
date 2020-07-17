@@ -25,6 +25,13 @@ _TextJustifyVertical = {
   ["TOP"]    = "TOP"
 }
 
+_TextFontFlags = {
+  ["NONE"]  = "NONE",
+  ["OUTLINE"] = "OUTLINE",
+  ["THICKOUTLINE"] = "THICKOUTLINE",
+  ["MONOCHROME"] = "MONOCHROME"
+}
+
 class "ThemePropertyRecipe" (function(_ENV)
   inherit "OptionRecipe"
   _FLAGS_PROPERTIES = {
@@ -38,6 +45,7 @@ class "ThemePropertyRecipe" (function(_ENV)
     [Theme.SkinFlags.TEXT_TRANSFORM]            = "text-transform",
     [Theme.SkinFlags.TEXT_JUSTIFY_HORIZONTAL]   = "text-justify-h",
     [Theme.SkinFlags.TEXT_JUSTIFY_VERTICAL]     = "text-justify-v",
+    [Theme.SkinFlags.TEXT_FONT_FLAGS]           = "text-font-flags",
     [Theme.SkinFlags.TEXTURE_COLOR]             = "texture-color",
   }
 
@@ -150,6 +158,11 @@ class "ThemePropertyRecipe" (function(_ENV)
       _FLAGS_PROPERTIES[flag], self.inheritFromElementID)
       control:SetValue(value)
       control:SetText(value)
+    elseif flag == Theme.SkinFlags.TEXT_FONT_FLAGS then 
+      local value = selectedTheme:GetElementProperty(self.rElementID,
+      _FLAGS_PROPERTIES[flag], self.inheritFromElementID)
+      control:SetValue(value)
+      control:SetText(_TextFontFlags[value])
     elseif flag == Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE then
       local value = selectedTheme:GetElementProperty(self.rElementID,
       _FLAGS_PROPERTIES[flag], self.inheritFromElementID)
@@ -216,6 +229,13 @@ class "ThemePropertyRecipe" (function(_ENV)
           self:RefreshControl(control, flag)
           Frame:SkinAll(flag, self.elementID)
         end)
+    elseif flag == Theme.SkinFlags.TEXT_FONT_FLAGS then  
+      control:SetCallback("OnValueChanged", function(_, _, value)
+        selectedTheme:SetElementPropertyToDB(self.rElementID, _FLAGS_PROPERTIES[flag], value)
+        self:ShowReset(row, control, flag)
+        self:RefreshControl(control, flag)
+        Frame:SkinAll(flag, self.elementID)
+      end)
     elseif flag == Theme.SkinFlags.FRAME_BACKGROUND_TEXTURE then
       control:SetCallback("OnValueChanged", function(_, _, value)
         selectedTheme:SetElementPropertyToDB(self.rElementID, _FLAGS_PROPERTIES[flag], value)
@@ -448,7 +468,24 @@ class "ThemePropertyRecipe" (function(_ENV)
       self:InstallCallbacks(row, textJustifyV, flag)
     end
 
-    -- 11. [TEXTURE] Texture Color
+    -- 11. [Text] Text Font Flags
+    if ValidateFlags(self.flags, Theme.SkinFlags.TEXT_FONT_FLAGS) then
+      local flag = Theme.SkinFlags.TEXT_FONT_FLAGS
+      local textFontFlags = _AceGUI:Create("Dropdown")
+      textFontFlags:SetList(_TextFontFlags)
+
+      local row = CreateRow("Text Font Flags", textFontFlags)
+      group:AddChild(row)
+
+      -- if there is a value in the DB,  add a reset button
+      if selectedTheme:GetElementPropertyFromDB(self.rElementID , _FLAGS_PROPERTIES[flag]) then
+        self:ShowReset(row, textFontFlags, flag)
+      end
+      self:RefreshControl(textFontFlags, flag)
+      self:InstallCallbacks(row, textFontFlags, flag)
+    end
+
+    -- 12. [TEXTURE] Texture Color
     if ValidateFlags(self.flags, Theme.SkinFlags.TEXTURE_COLOR) then
       local flag = Theme.SkinFlags.TEXTURE_COLOR
       local textureColor = _AceGUI:Create("ColorPicker")

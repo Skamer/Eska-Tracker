@@ -14,6 +14,7 @@ Themes:Register(TransparenceTheme)
 -- ========================================================================== --
 -- == Set Default properties
 -- ========================================================================== --
+TransparenceTheme:SetElementProperty("*", "text-font-flags", "OUTLINE")
 TransparenceTheme:SetElementProperty("text-size", 10)
 TransparenceTheme:SetElementProperty("text-location", "CENTER")
 TransparenceTheme:SetElementProperty("background-color", { r = 0, g = 0, b = 0, a = 0})

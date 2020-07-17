@@ -91,19 +91,21 @@ __Serializable__() class "Theme" (function(_ENV)
     TEXT_JUSTIFY_VERTICAL = 256,
     TEXTURE_COLOR = 512,
     FRAME_BACKGROUND_TEXTURE = 1024,
+    TEXT_FONT_FLAGS = 2048
   }
 
-  DefaultSkinFlags = SkinFlags.FRAME_BACKGROUND_COLOR   +
-                      SkinFlags.FRAME_BORDER_COLOR      +
-                      SkinFlags.FRAME_BORDER_WIDTH      +
-                      SkinFlags.TEXT_SIZE               +
-                      SkinFlags.TEXT_COLOR              +
-                      SkinFlags.TEXT_FONT               +
-                      SkinFlags.TEXT_TRANSFORM          +
-                      SkinFlags.TEXT_JUSTIFY_HORIZONTAL +
-                      SkinFlags.TEXT_JUSTIFY_VERTICAL   +
-                      SkinFlags.TEXTURE_COLOR           +
-                      SkinFlags.FRAME_BACKGROUND_TEXTURE;
+  DefaultSkinFlags = SkinFlags.FRAME_BACKGROUND_COLOR     +
+                      SkinFlags.FRAME_BORDER_COLOR        +
+                      SkinFlags.FRAME_BORDER_WIDTH        +
+                      SkinFlags.TEXT_SIZE                 +
+                      SkinFlags.TEXT_COLOR                +
+                      SkinFlags.TEXT_FONT                 +
+                      SkinFlags.TEXT_TRANSFORM            +
+                      SkinFlags.TEXT_JUSTIFY_HORIZONTAL   +
+                      SkinFlags.TEXT_JUSTIFY_VERTICAL     +
+                      SkinFlags.TEXTURE_COLOR             +
+                      SkinFlags.FRAME_BACKGROUND_TEXTURE  +
+                      SkinFlags.TEXT_FONT_FLAGS;
 
   __Static__() property "DefaultSkinFlags" {
     TYPE    = SkinFlags,
@@ -260,10 +262,11 @@ __Serializable__() class "Theme" (function(_ENV)
     end
 
     -- REMOVE:
-    local font, size = fontstring:GetFont()
+    local font, size, fontFlags = fontstring:GetFont()
     if not font then
       flags = API:AddFlag(flags, SkinFlags.TEXT_FONT)
       flags = API:AddFlag(flags, SkinFlags.TEXT_SIZE)
+      flags = API:AddFlag(flags, SkinFlags.TEXT_FONT_FLAGS)
     end
 
     local textColor = {}
@@ -276,7 +279,12 @@ __Serializable__() class "Theme" (function(_ENV)
     if ValidateFlags(flags, SkinFlags.TEXT_FONT) then
       font = _LibSharedMedia:Fetch("font", theme:GetElementProperty(elementID, "text-font", inheritElementID))
     end
-    fontstring:SetFont(font, size, "OUTLINE")
+
+    if ValidateFlags(flags, SkinFlags.TEXT_FONT_FLAGS) then 
+      fontFlags = theme:GetElementProperty(elementID, "text-font-flags", inheritElementID)
+    end
+
+    fontstring:SetFont(font, size, fontFlags)
 
     if ValidateFlags(flags, SkinFlags.TEXT_COLOR) then
       textColor = theme:GetElementProperty(elementID, "text-color", inheritElementID)
@@ -614,6 +622,7 @@ __Serializable__() class "Theme" (function(_ENV)
         ["text-offsetY"] = 0,
         ["text-justify-h"] = "LEFT",
         ["text-justify-v"] = "MIDDLE",
+        ["text-font-flags"] = "NONE",
         ["vertex-color"] = { r = 1, g = 1, b = 1},
         ["texture-color"] = { r = 1, g = 1, b = 1}
       }

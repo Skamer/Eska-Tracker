@@ -14,9 +14,11 @@ Themes:Register(EskaTheme)
 -- ========================================================================== --
 -- == Set Default properties
 -- ========================================================================== --
+EskaTheme:SetElementProperty("*", "text-font-flags", "OUTLINE")
 EskaTheme:SetElementProperty("text-size", 10)
 EskaTheme:SetElementProperty("text-location", "CENTER")
 EskaTheme:SetElementProperty("background-color", { r = 0, g = 0, b = 0, a = 0})
+
 -- ========================================================================== --
 -- == Tracker properties
 -- ========================================================================== --
