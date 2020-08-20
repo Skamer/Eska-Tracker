@@ -60,6 +60,19 @@ function OnLoad(self)
     Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).headerHeight = value
   end)
   OptionBuilder:AddRecipe(headerHeight, "block/header")
+
+
+  local contentMarginTop = RangeRecipe()
+  contentMarginTop:SetOrder(10)
+  contentMarginTop:SetText("Margin Top")
+  contentMarginTop:SetRange(0, 128)
+  contentMarginTop:Get(function(recipe)
+    return Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).contentMarginTop
+  end)
+  contentMarginTop:Set(function(recipe, value)
+    Blocks:GetCategory(GetCategoryID(recipe.context("block_category_selected"))).contentMarginTop = value
+  end)
+  OptionBuilder:AddRecipe(contentMarginTop, "block/content")
 end
 
 

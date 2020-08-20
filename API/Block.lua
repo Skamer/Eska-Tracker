@@ -70,6 +70,19 @@ class "BlockCategory" (function(_ENV)
 
     self:OnHeaderHeightChanged(new)
   end
+
+  local function UpdateContentMarginTop(self, new)
+    Profiles:PrepareDatabase()
+    if Database:SelectTable(true, "blocks", "categories", self.id) then
+      if new == self.__initContentMarginTop then 
+        Database:SetValue("content-margin-top", nil)
+      else 
+        Database:SetValue("content-margin-top", new)
+      end
+    end
+
+    self:OnContentMarginTop(new)
+  end
   ------------------------------------------------------------------------------
   --                             Methods                                      --
   ------------------------------------------------------------------------------
@@ -130,19 +143,21 @@ class "BlockCategory" (function(_ENV)
       -- Load the properties contained in the profile
       Profiles:PrepareDatabase()
 
-      local order, tracker, showHeader, headerHeight
+      local order, tracker, showHeader, headerHeight, contentMarginTop
       if Database:SelectTable(false, "blocks", "categories", self.id) then
-        order        = Database:GetValue("order")
-        tracker      = Database:GetValue("tracker")
-        showHeader   = Database:GetValue("show-header")
-        headerHeight = Database:GetValue("header-height")
+        order             = Database:GetValue("order")
+        tracker           = Database:GetValue("tracker")
+        showHeader        = Database:GetValue("show-header")
+        headerHeight      = Database:GetValue("header-height")
+        contentMarginTop  = Database:GetValue("content-margin-top")
       end
 
       -- Assign the values
-      self.order        = order
-      self.tracker      = tracker
-      self.showHeader   = showHeader
-      self.headerHeight = headerHeight
+      self.order            = order
+      self.tracker          = tracker
+      self.showHeader       = showHeader
+      self.headerHeight     = headerHeight
+      self.contentMarginTop = contentMarginTop
     end
 
   property "id"             { TYPE = String, FIELD = "__id" }
@@ -152,8 +167,10 @@ class "BlockCategory" (function(_ENV)
   property "tracker"        { TYPE = String, HANDLER = UpdateTracker, DEFAULT = "main", GET = "GetTracker", SET = "SetTracker" }
   property "showHeader"     { TYPE = Boolean, HANDLER = UpdateShowHeader, DEFAULT = true }
   property "headerHeight"   { TYPE = NaturalNumber, HANDLER = UpdateHeaderHeight, DEFAULT = 34}
+  property "contentMarginTop" { TYPE = Number, HANDLER = UpdateContentMarginTop, DEFAULT = function(self) return self._initContentMarginTop end, FIELD = "__contentMarginTop"}
   property "_initOrder"     { TYPE = Number, DEFAULT = 100 }
   property "_initSelected"  { TYPE = String }
+  property "_initContentMarginTop" { TYPE = Number, DEFAULT = 5 }
 
   __Arguments__ { String, String }
   function BlockCategory(self, id, name)
@@ -293,7 +310,7 @@ class "Block" (function(_ENV)
       self.height = self.height + self.headerHeight
 
       self.frame.header:Show()
-      self.frame.content:SetPoint("TOP", self.frame.header, "BOTTOM")
+      self.frame.content:SetPoint("TOP", self.frame.header, "BOTTOM", 0, -self.contentMarginTop)
     end
   end
 
@@ -303,7 +320,7 @@ class "Block" (function(_ENV)
       self.height = self.height - self.headerHeight
 
       self.frame.header:Hide()
-      self.frame.content:SetPoint("TOP")
+      self.frame.content:SetPoint("TOP", 0, -self.contentMarginTop)
     end
   end
 
@@ -316,6 +333,17 @@ class "Block" (function(_ENV)
       self.baseHeight = height
     end
   end
+
+  __Arguments__ { Number }
+  function SetContentMarginTop(self, height)
+    if self.frame.header:IsShown() then 
+      self.frame.content:SetPoint("TOP", self.frame.header, "BOTTOM", 0, -height)
+    else 
+      self.frame.content:SetPoint("TOP", 0, -height)
+    end
+
+    self.height = self.height + (height - self.contentMarginTop)
+  end 
 
   function Init(self)
     local prefix = self:GetClassPrefix()
@@ -334,6 +362,9 @@ class "Block" (function(_ENV)
     Theme:SkinTexture(self.frame.header.stripe)
 
     self.showHeader = Blocks:GetCategory(self.category).showHeader
+    self.contentMarginTop = Blocks:GetCategory(self.category).contentMarginTop
+    self:SetContentMarginTop(self.contentMarginTop)
+
     if not self.showHeader then
       self:HideHeader()
     end
@@ -367,16 +398,17 @@ class "Block" (function(_ENV)
   ------------------------------------------------------------------------------
   --                            Properties                                    --
   ------------------------------------------------------------------------------
-  property "id"             { TYPE = String, DEFAULT = "defaultID" }
-  property "text"           { TYPE = String, DEFAULT = "Default Header Text", HANDLER = SetText }
-  property "isActive"       { TYPE = Boolean, DEFAULT = true, HANDLER = IsActiveChanged }
-  property "order"          { TYPE = Number, DEFAULT = 100, EVENT = "OnOrderChanged", FIELD = "__order" } -- is a shortcut of the category order
-  property "category"       { TYPE = String }
-  property "tracker"        { TYPE = String  }
-  property "expanded"       { TYPE = Boolean, DEFAULT = true }
-  property "contentHeight"  { TYPE = Number, DEFAULT = 0, HANDLER = SetContentHeight }
-  property "headerHeight"   { TYPE = NaturalNumber, DEFAULT = 34 }
-  property "showHeader"     { TYPE = Boolean, DEFAULT = true }
+  property "id"               { TYPE = String, DEFAULT = "defaultID" }
+  property "text"             { TYPE = String, DEFAULT = "Default Header Text", HANDLER = SetText }
+  property "isActive"         { TYPE = Boolean, DEFAULT = true, HANDLER = IsActiveChanged }
+  property "order"            { TYPE = Number, DEFAULT = 100, EVENT = "OnOrderChanged", FIELD = "__order" } -- is a shortcut of the category order
+  property "category"         { TYPE = String }
+  property "tracker"          { TYPE = String  }
+  property "expanded"         { TYPE = Boolean, DEFAULT = true }
+  property "contentHeight"    { TYPE = Number, DEFAULT = 0, HANDLER = SetContentHeight }
+  property "headerHeight"     { TYPE = NaturalNumber, DEFAULT = 34 }
+  property "showHeader"       { TYPE = Boolean, DEFAULT = true }
+  property "contentMarginTop" { TYPE = Number, DEFAULT = 5 }
 
 
   __Static__() property "_prefix" { DEFAULT = "block"}
@@ -420,7 +452,7 @@ class "Block" (function(_ENV)
     headerFrame.text = headerText
 
     local content = CreateFrame("Frame", nil, self.frame)
-    content:SetPoint("TOP", headerFrame, "BOTTOM")
+    content:SetPoint("TOP", headerFrame, "BOTTOM", 0, -self.contentMarginTop)
     content:SetPoint("LEFT")
     content:SetPoint("RIGHT")
     content:SetPoint("BOTTOM")
@@ -492,6 +524,19 @@ class "Blocks"
       end
     end
 
+    category.OnContentMarginTop = function(self, new)
+      for _, tracker in Trackers:GetIterator() do
+        for _, block in tracker:GetBlocks():GetIterator() do
+          if block.category == category.id then
+            if new then
+              block:SetContentMarginTop(new)
+            end
+            block.contentMarginTop = new
+          end
+        end
+      end
+    end 
+
     category:LoadPropsFromDatabase()
 
   end
@@ -542,6 +587,7 @@ class "Blocks"
     __Static__() function ProcessPendingBlocks(self)
       for block, trackerID in _PENDING_BLOCKS:GetIterator() do
         local tracker = Trackers:Get(trackerID)
+        
         if tracker then
           if block.isActive then
             tracker:AddBlock(block)

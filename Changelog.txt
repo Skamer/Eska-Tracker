@@ -1,3 +1,6 @@
+[1.4.0]
+- + Implemented #79: Adding an option for changing the margin top of content.
+
 [1.3.0]
 - The text font is now flagged as "NONE" by default instead of "OUTLINE". 
 - The theme files has been updated for taking as account the change above so the users of Transparence and Eska themes won't noticed it.
