@@ -1031,7 +1031,7 @@ class "FrameRow" (function(_ENV)
   --                         Constructor                                      --
   ------------------------------------------------------------------------------
   function FrameRow(self)
-    super(self, CreateFrame("Frame"))
+    super(self, CreateFrame("Frame", nil, nil, "BackdropTemplate"))
 
     self.frames = List()
 

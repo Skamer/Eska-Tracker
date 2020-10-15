@@ -56,7 +56,7 @@ class "ActionButton" (function(_ENV)
 
   __Arguments__ { }
   function ActionButton(self)
-    This(self, CreateFrame("Button"))
+    This(self, CreateFrame("Button", nil, nil, "BackdropTemplate"))
   end
 end)
 
@@ -338,7 +338,7 @@ class "ActionBar" (function(_ENV)
     self.id = id
 
     -- Call our super constructor
-    super(self, CreateFrame("Frame", name, UIParent), true)
+    super(self, CreateFrame("Frame", name, UIParent, "BackdropTemplate"), true)
 
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 1, 0, 1)
@@ -671,14 +671,14 @@ class "ItemButton" (function(_ENV)
 
   function ItemButton(self)
     local name = "EKT-ItemButton"..ItemButton.index
-    super(self, CreateFrame("Button", name, nil, "SecureActionButtonTemplate"))
+    super(self, CreateFrame("Button", name, nil, "SecureActionButtonTemplate, BackdropTemplate"))
 
     local texture = self.frame:CreateTexture()
     texture:SetAllPoints()
     texture:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     self.frame.texture = texture
 
-    local cooldown = CreateFrame("Cooldown", string.format("%sCooldown", name), self.frame, "CooldownFrameTemplate")
+    local cooldown = CreateFrame("Cooldown", string.format("%sCooldown", name), self.frame, "CooldownFrameTemplate, BackdropTemplate")
     cooldown:SetAllPoints()
     self.frame.cooldown = cooldown
 
@@ -714,13 +714,12 @@ function OnLoad(self)
   Scorpio.FireSystemEvent("EKT_ACTION_BARS_LOADED")
 end
 
-
 __SystemEvent__()
 function BAG_UPDATE_COOLDOWN(...)
   for itemButton in ItemButton:GetIterator() do
     local questID = itemButton.id
     if questID then
-      local start, duration, enable = GetQuestLogSpecialItemCooldown(GetQuestLogIndexByID(questID))
+      local start, duration, enable = GetQuestLogSpecialItemCooldown(C_QuestLog.GetLogIndexForQuestID(questID))
       if start then
         CooldownFrame_Set(itemButton.frame.cooldown, start, duration, enable)
         if duration > 0 and enable == 0 then

@@ -17,7 +17,7 @@ class "BaseMenuItem" (function(_ENV)
   end
 
   function BaseMenuItem(self)
-    self.frame = CreateFrame("Frame")
+    self.frame = CreateFrame("Frame", nil, nil, "BackdropTemplate")
 
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 0, 0, 0)
@@ -85,7 +85,7 @@ class "MenuItem" (function(_ENV)
   function MenuItem(self)
     super(self)
 
-    local btn = CreateFrame("button", nil, self.frame)
+    local btn = CreateFrame("button", nil, self.frame, "BackdropTemplate")
     btn:SetAllPoints()
     self.btn = btn
 
@@ -357,7 +357,7 @@ class "ContextMenu" (function(_ENV)
     arrow:SetVertexColor(0, 0, 0, 0.6)
     self.arrow = arrow
 
-    self.frame = CreateFrame("Frame", "EKT-ContextMenu", UIParent)
+    self.frame = CreateFrame("Frame", "EKT-ContextMenu", UIParent, "BackdropTemplate")
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 0, 0, 0.6)
     self.frame:SetBackdropBorderColor(0, 0, 0, 0)

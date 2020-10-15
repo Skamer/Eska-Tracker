@@ -178,7 +178,7 @@ class "Notification" (function(_ENV)
   --                         Constructor                                      --
   ------------------------------------------------------------------------------
   function Notification(self)
-    self.frame = CreateFrame("Frame")
+    self.frame = CreateFrame("Frame", nil, nil, "BackdropTemplate")
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 148/255, 1, 0.65)
     -- Fade off system
@@ -190,7 +190,7 @@ class "Notification" (function(_ENV)
       end
     end)
 
-    local fIcon = CreateFrame("Frame", nil, self.frame)
+    local fIcon = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     fIcon:SetBackdrop(_Backdrops.Common)
     fIcon:SetBackdropColor(0, 0, 0, 0.9)
     fIcon:SetWidth(20)
@@ -205,7 +205,7 @@ class "Notification" (function(_ENV)
     icon:SetTexCoord(0.13476563, 0.17187500, 0.01562500, 0.53125000)
     self.frame.icon = icon
 
-    local headerFrame = CreateFrame("Frame", nil, self.frame)
+    local headerFrame = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     headerFrame:SetBackdrop(_Backdrops.Common)
     headerFrame:SetBackdropColor(1, 1, 1, 0.15)
     headerFrame:SetPoint("TOP", 0, -2)
@@ -231,7 +231,7 @@ class "Notification" (function(_ENV)
     self.frame.title = title
 
 
-    local content = CreateFrame("Frame", nil, self.frame)
+    local content = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     content:SetPoint("LEFT", 1, 0)
     content:SetPoint("RIGHT", -1, 0)
     content:SetPoint("BOTTOM", 0, 1)
@@ -343,7 +343,7 @@ class "InteractiveNotification" (function(_ENV)
   --                         Constructor                                      --
   ------------------------------------------------------------------------------
   function InteractiveNotification(self)
-    super(self, CreateFrame("Button"))
+    super(self, CreateFrame("Button", nil, nil, "BackdropTemplate"))
 
     --self.frame = CreateFrame("Button")
     self.frame:SetBackdrop(_Backdrops.Common)
@@ -606,7 +606,7 @@ class "Notifications" (function(_ENV)
   function Notifications(self)
     super(self)
 
-    self.frame = CreateFrame("Frame", nil, UIParent)
+    self.frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 0, 0, 0)
     self.frame:SetScript("OnUpdate", function(_, delta) self:UpdateNotifications(delta) end)

@@ -583,7 +583,7 @@ Class "Tracker" (function(_ENV)
     local prefix = self:GetClassPrefix()
 
     Theme:RegisterFrame(prefix.."."..self.id..".frame", self.frame, prefix..".frame")
-    Theme:RegisterFrame(prefix.."."..self.id..".scrollbar", self.scrollbar, prefix..".scrollbar")
+    -- Theme:RegisterFrame(prefix.."."..self.id..".scrollbar", self.scrollbar, prefix..".scrollbar")
     Theme:RegisterTexture(prefix.."."..self.id..".scrollbar.thumb", self.scrollbar.thumb, prefix..".scrollbar.thumb")
 
     Theme:SkinFrame(self.frame)
@@ -929,7 +929,7 @@ Class "Tracker" (function(_ENV)
     local name = string.format("EskaTracker-%s", id)
     self.id = id
     -- Call our super constructor
-    super(self, CreateFrame("Frame", name))
+    super(self, CreateFrame("Frame", name, nil, "BackdropTemplate"))
 
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropColor(0, 1, 0, 1)
@@ -967,7 +967,7 @@ Class "Tracker" (function(_ENV)
     end
 
     local scrollFrameName = string.format("%s%s", name, "ScrollFrame")
-    local scrollFrame     = CreateFrame("ScrollFrame", name, self.frame, "UIPanelScrollFrameTemplate")
+    local scrollFrame     = CreateFrame("ScrollFrame", name, self.frame, "UIPanelScrollFrameTemplate, BackdropTemplate")
     scrollFrame:SetPoint("TOP")
     scrollFrame:SetPoint("LEFT")
     scrollFrame:SetPoint("RIGHT")
@@ -989,7 +989,7 @@ Class "Tracker" (function(_ENV)
     scrolldownbutton:ClearAllPoints()
 
     -- customize the scroll bar
-    scrollbar:SetBackdrop(_Backdrops.Common)
+    -- scrollbar:SetBackdrop(_Backdrops.Common)
     scrollbar:ClearAllPoints()
     scrollbar:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT")
     scrollbar:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT")
@@ -1002,7 +1002,7 @@ Class "Tracker" (function(_ENV)
     thumb:SetWidth(8)
 
     local contentName = string.format("%s%s", name, "ContentFrame")
-    local content = CreateFrame("Frame", contentName)
+    local content = CreateFrame("Frame", contentName, nil, "BackdropTemplate")
     scrollFrame:SetScrollChild(content)
     content:SetParent(scrollFrame)
     content:SetPoint("LEFT")

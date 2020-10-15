@@ -220,9 +220,9 @@ class "BorderFrame" (function(_ENV)
     super(self)
 
     if isSecure then
-      self.containerFrame = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
+      self.containerFrame = CreateFrame("Frame", nil, nil, "SecureFrameTemplate, BackdropTemplate")
     else
-      self.containerFrame = CreateFrame("Frame")
+      self.containerFrame = CreateFrame("Frame", nil, nil, "BackdropTemplate")
     end
   end
 

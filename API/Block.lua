@@ -414,11 +414,11 @@ class "Block" (function(_ENV)
   __Static__() property "_prefix" { DEFAULT = "block"}
 
   function Block(self)
-    super(self, CreateFrame("Frame"))
+    super(self, CreateFrame("Frame", nil, nil, "BackdropTemplate"))
     self.frame:SetBackdrop(_Backdrops.Common)
     self.frame:SetBackdropBorderColor(0, 0, 0, 0)
 
-    local headerFrame = CreateFrame("Button", nil, self.frame)
+    local headerFrame = CreateFrame("Button", nil, self.frame, "BackdropTemplate")
     headerFrame:SetPoint("TOPLEFT")
     headerFrame:SetPoint("TOPRIGHT")
     headerFrame:SetFrameStrata("HIGH")
@@ -451,7 +451,7 @@ class "Block" (function(_ENV)
     headerText:SetShadowOffset(1, -1)
     headerFrame.text = headerText
 
-    local content = CreateFrame("Frame", nil, self.frame)
+    local content = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     content:SetPoint("TOP", headerFrame, "BOTTOM", 0, -self.contentMarginTop)
     content:SetPoint("LEFT")
     content:SetPoint("RIGHT")
