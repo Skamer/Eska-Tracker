@@ -75,14 +75,25 @@ end
 
 __SystemEvent__()
 function BLIZZARD_TRACKER_VISIBLITY_CHANGED(isVisible)
-  if isVisible then
+  local wasInitialized = false
+  if not ObjectiveTrackerFrame.initialized then 
     ObjectiveTracker_Initialize(ObjectiveTrackerFrame)
+    wasInitilized = true
+  end
+
+  if isVisible and not wasInitialized then
     ObjectiveTrackerFrame:SetScript("OnEvent", ObjectiveTracker_OnEvent)
+    WorldMapFrame:RegisterCallback("SetFocusedQuestID", ObjectiveTracker_OnFocusedQuestChanged, ObjectiveTrackerFrame)
+    WorldMapFrame:RegisterCallback("ClearFocusedQuestID", ObjectiveTracker_OnFocusedQuestChanged, ObjectiveTrackerFrame)
+    
     ObjectiveTrackerFrame:Show()
     ObjectiveTracker_Update()
   else
     ObjectiveTrackerFrame:Hide()
+
     ObjectiveTrackerFrame:SetScript("OnEvent", nil)
+    WorldMapFrame:RegisterCallback("SetFocusedQuestID", nil, ObjectiveTrackerFrame)
+    WorldMapFrame:RegisterCallback("ClearFocusedQuestID", nil, ObjectiveTrackerFrame)
   end
 end
 
