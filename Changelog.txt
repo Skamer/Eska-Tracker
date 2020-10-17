@@ -1,3 +1,6 @@
+[1.5.2]
+- Resolved the errors about notifications.
+
 [1.5.1]
 - Fixed the errors when opening the map.
 

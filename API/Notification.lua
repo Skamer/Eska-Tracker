@@ -353,7 +353,7 @@ class "InteractiveNotification" (function(_ENV)
 
     end)--]]
 
-    local fIcon = CreateFrame("Frame", nil, self.frame)
+    local fIcon = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     fIcon:SetBackdrop(_Backdrops.Common)
     fIcon:SetBackdropColor(0, 0, 0, 0.9)
     fIcon:SetWidth(20)
@@ -368,7 +368,7 @@ class "InteractiveNotification" (function(_ENV)
     icon:SetTexCoord(0.13476563, 0.17187500, 0.01562500, 0.53125000)
     self.frame.icon = icon
 
-    local headerFrame = CreateFrame("Frame", nil, self.frame)
+    local headerFrame = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     headerFrame:SetBackdrop(_Backdrops.Common)
     headerFrame:SetBackdropColor(1, 1, 1, 0.15)
     headerFrame:SetPoint("TOP", 0, -2)
@@ -394,7 +394,7 @@ class "InteractiveNotification" (function(_ENV)
     self.frame.title = title
 
 
-    local content = CreateFrame("Frame", nil, self.frame)
+    local content = CreateFrame("Frame", nil, self.frame, "BackdropTemplate")
     content:SetPoint("LEFT", 1, 0)
     content:SetPoint("RIGHT", -1, 0)
     content:SetPoint("BOTTOM")
