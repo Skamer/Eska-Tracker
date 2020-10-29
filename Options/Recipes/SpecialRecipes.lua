@@ -209,7 +209,7 @@ class "StateSelectRecipe" (function(_ENV)
 
     for index, stateID in self.statesID:GetIterator() do
 
-      local stateButton = _AceGUI:Create("Icon")
+      local stateButton = _AceGUI:Create("EKT-Icon")
       stateButton:SetImageSize(20, 20)
       stateButton.frame:SetBackdrop(_Backdrops.Common)
 

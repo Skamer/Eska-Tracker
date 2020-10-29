@@ -1,3 +1,6 @@
+[1.5.3]
+- Fixed some issues relative to BackdropTemplate
+
 [1.5.2]
 - Resolved the errors about notifications.
 

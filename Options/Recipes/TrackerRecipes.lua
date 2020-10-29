@@ -453,7 +453,7 @@ class "DisplayRulesRecipe" (function(_ENV)
     group:SetLayout("Flow")
     group:SetRelativeWidth(1.0)
 
-    local removeIcon = _AceGUI:Create("Icon")
+    local removeIcon = _AceGUI:Create("EKT-Icon")
     removeIcon:SetImage(_REMOVE_ICON)
     removeIcon:SetImageSize(16, 16)
     removeIcon:SetWidth(20)
@@ -537,7 +537,7 @@ class "DisplayRulesRecipe" (function(_ENV)
     group:AddChild(continueCheckbox)
 
     if not first then
-      local upIcon = _AceGUI:Create("Icon")
+      local upIcon = _AceGUI:Create("EKT-Icon")
       upIcon.frame:SetBackdropColor(0, 0, 0, 0)
       upIcon:SetImage(_UP_ARROW_ICON)
       upIcon:SetImageSize(16, 16)
@@ -549,7 +549,7 @@ class "DisplayRulesRecipe" (function(_ENV)
     end
 
     if not last then
-      local downIcon = _AceGUI:Create("Icon")
+      local downIcon = _AceGUI:Create("EKT-Icon")
       downIcon:SetImage(_DOWN_ARROW_ICON)
       downIcon:SetImageSize(16, 16)
       downIcon:SetWidth(24)

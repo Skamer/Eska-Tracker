@@ -35,6 +35,11 @@ class "StatusFunctions" (function(_ENV)
   end
 end)
 
+-- Quest
+StatusFunctions:Register(StatusFunction("has-watched-quests", "Has Watched Quests", function() return  C_QuestLog.GetNumQuestWatches() > 0 end, "Quest"))
+-- Achievement
+StatusFunctions:Register(StatusFunction("has-achievements", "Has Achievements", function() return GetTrackedAchievements() ~= nil end, "Achievement"))
+
 -- Dungeon
 StatusFunctions:Register(StatusFunction("is-in-dungeon", "Is in Dungeon", Utils.Instance.IsInDungeon, "Dungeon"))
 StatusFunctions:Register(StatusFunction("is-in-keystone", "Is in Mythic +", function() return C_ChallengeMode.GetActiveKeystoneInfo() > 0 end, "Dungeon"))
