@@ -2,4 +2,5 @@
 ..\FrameXML\UI.xsd">
 	<Script file="AceGUIWidget-EskaTrackerDropDown.lua" />
 	<Script file="AceGUIWidget-EskaTrackerMultiLineEditBox.lua" />
+	<Script file="AceGUIWidget-EskaTrackerIcon.lua" />
 </Ui>
